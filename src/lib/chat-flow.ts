@@ -276,8 +276,19 @@ export const CHAT_FLOW: ChatStep[] = [
       }
       const years = yearsSince(data.abnLookup.abnRegisteredDate);
       const gstStatus = data.abnLookup.gstRegistered ? 'GST registered ✓' : 'Not GST registered';
+
+      // Build trading history string - handle missing dates gracefully
+      let tradingInfo = '';
+      if (data.abnLookup.abnRegisteredDate && years > 0) {
+        tradingInfo = `Trading since ${formatDate(data.abnLookup.abnRegisteredDate)} (${years} year${years !== 1 ? 's' : ''})`;
+      } else if (data.abnLookup.abnRegisteredDate) {
+        tradingInfo = `Trading since ${formatDate(data.abnLookup.abnRegisteredDate)}`;
+      } else {
+        tradingInfo = 'ABN Active';
+      }
+
       return [
-        `✅ Found it!\n\n${data.abnLookup.entityName}\nTrading since ${formatDate(data.abnLookup.abnRegisteredDate)} (${years} year${years !== 1 ? 's' : ''})\n${gstStatus}`,
+        `✅ Found it!\n\n${data.abnLookup.entityName}\n${tradingInfo}\n${gstStatus}`,
         "Is this your business?"
       ];
     },
@@ -289,11 +300,18 @@ export const CHAT_FLOW: ChatStep[] = [
       }
       // Check eligibility - ABN 2+ years
       if (!data.abnLookup) return 'abn_retry';
-      const abnYears = yearsSince(data.abnLookup.abnRegisteredDate);
-      if (abnYears < 2) return 'abn_too_young';
+
+      // If we have a registration date, check the 2 year requirement
+      // If no date is available (API didn't return it), skip this check
+      if (data.abnLookup.abnRegisteredDate) {
+        const abnYears = yearsSince(data.abnLookup.abnRegisteredDate);
+        if (abnYears < 2) return 'abn_too_young';
+      }
+
       // Check GST registration
       if (!data.abnLookup.gstRegistered) return 'no_gst_warning';
-      // Check GST 2+ years
+
+      // Check GST 2+ years (only if we have the date)
       if (data.abnLookup.gstRegisteredDate) {
         const gstYears = yearsSince(data.abnLookup.gstRegisteredDate);
         if (gstYears < 2) return 'gst_too_young';
