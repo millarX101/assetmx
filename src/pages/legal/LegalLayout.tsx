@@ -1,15 +1,26 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 
 interface LegalLayoutProps {
   title: string;
   lastUpdated: string;
   children: React.ReactNode;
+  seoTitle?: string;
+  seoDescription?: string;
+  canonicalUrl?: string;
 }
 
-export function LegalLayout({ title, lastUpdated, children }: LegalLayoutProps) {
+export function LegalLayout({ title, lastUpdated, children, seoTitle, seoDescription, canonicalUrl }: LegalLayoutProps) {
   return (
     <div className="min-h-screen bg-ivory">
+      {seoTitle && seoDescription && (
+        <SEO
+          title={seoTitle}
+          description={seoDescription}
+          canonicalUrl={canonicalUrl}
+        />
+      )}
       {/* Header */}
       <header className="bg-white border-b border-slate-200">
         <div className="container mx-auto px-4 py-4">

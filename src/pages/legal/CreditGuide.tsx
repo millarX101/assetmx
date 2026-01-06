@@ -2,7 +2,13 @@ import { LegalLayout } from './LegalLayout';
 
 export function CreditGuide() {
   return (
-    <LegalLayout title="Credit Guide" lastUpdated="January 2025">
+    <LegalLayout
+      title="Credit Guide"
+      lastUpdated="January 2025"
+      seoTitle="Credit Guide | AssetMX Australia | ACL 569484"
+      seoDescription="Credit Guide for AssetMX. Understand our credit services, fees ($800 flat fee), lender commissions, and your rights when applying for asset finance."
+      canonicalUrl="https://assetmx.com.au/credit-guide"
+    >
       <section>
         <p className="text-lg font-medium text-slate-700 mb-6">
           This Credit Guide is designed to help you understand the credit services we provide

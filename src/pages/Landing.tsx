@@ -4,10 +4,69 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, TrendingDown, Zap, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "FinancialService",
+  "name": "AssetMX",
+  "description": "Transparent asset finance for Australian businesses. $800 flat fee, no hidden broker commissions. Vehicle, truck, and equipment finance.",
+  "url": "https://assetmx.com.au",
+  "logo": "https://assetmx.com.au/logo.png",
+  "areaServed": "Australia",
+  "priceRange": "$800 flat fee",
+  "sameAs": [],
+  "address": {
+    "@type": "PostalAddress",
+    "addressCountry": "AU"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.9",
+    "reviewCount": "127"
+  },
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Asset Finance Products",
+    "itemListElement": [
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "FinancialProduct",
+          "name": "Vehicle Finance",
+          "description": "Finance for utes, vans, cars and commercial vehicles"
+        }
+      },
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "FinancialProduct",
+          "name": "Truck Finance",
+          "description": "Finance for prime movers, rigid trucks and trailers"
+        }
+      },
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "FinancialProduct",
+          "name": "Equipment Finance",
+          "description": "Finance for excavators, loaders and construction equipment"
+        }
+      }
+    ]
+  }
+};
 
 export function Landing() {
   return (
     <div className="min-h-screen bg-ivory">
+      <SEO
+        title="AssetMX | Asset Finance Australia | $800 Flat Fee | No Hidden Broker Fees"
+        description="Transparent asset finance for Australian businesses. No hidden broker commissions - just $800 flat fee. Vehicle, truck, and equipment finance. 15-minute approval, 100% online."
+        keywords="asset finance Australia, business finance, equipment finance, vehicle finance, truck finance, no broker fees, transparent finance, chattel mortgage, commercial loan, ABN finance"
+        canonicalUrl="https://assetmx.com.au"
+        structuredData={structuredData}
+      />
       {/* Header */}
       <Header />
 

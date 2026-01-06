@@ -2,7 +2,13 @@ import { LegalLayout } from './LegalLayout';
 
 export function Terms() {
   return (
-    <LegalLayout title="Terms of Service" lastUpdated="January 2025">
+    <LegalLayout
+      title="Terms of Service"
+      lastUpdated="January 2025"
+      seoTitle="Terms of Service | AssetMX Australia"
+      seoDescription="Terms of Service for AssetMX asset finance platform. Read our terms and conditions for using our $800 flat fee finance service."
+      canonicalUrl="https://assetmx.com.au/terms"
+    >
       <section>
         <h2>1. Introduction</h2>
         <p>

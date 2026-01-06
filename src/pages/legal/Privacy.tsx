@@ -2,7 +2,13 @@ import { LegalLayout } from './LegalLayout';
 
 export function Privacy() {
   return (
-    <LegalLayout title="Privacy Policy" lastUpdated="January 2025">
+    <LegalLayout
+      title="Privacy Policy"
+      lastUpdated="January 2025"
+      seoTitle="Privacy Policy | AssetMX Australia"
+      seoDescription="Privacy Policy for AssetMX. Learn how we collect, use, and protect your personal information when applying for asset finance."
+      canonicalUrl="https://assetmx.com.au/privacy"
+    >
       <section>
         <h2>1. Introduction</h2>
         <p>
