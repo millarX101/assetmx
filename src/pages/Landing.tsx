@@ -80,8 +80,8 @@ export function Landing() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-slate-900">Apply Online</h3>
               <p className="text-slate-500">
-                10-minute application. Upload docs. Our AI verifies everything instantly. Conditional approval
-                in 15 minutes.
+                10-minute application. Upload your documents and our system extracts and verifies the details.
+                Conditional approval in 15 minutes, subject to verification of your information.
               </p>
             </div>
             <div className="text-center">
@@ -183,9 +183,9 @@ export function Landing() {
                 <div className="h-10 w-10 rounded-lg bg-gradient-brand flex items-center justify-center mb-3">
                   <Zap className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="font-semibold mb-2 text-slate-900">AI-Powered Speed</h3>
+                <h3 className="font-semibold mb-2 text-slate-900">Smart Document Processing</h3>
                 <p className="text-sm text-slate-500">
-                  15-minute conditional approvals. AI document verification. No waiting.
+                  Upload your documents once. We extract and verify the details automatically, then confirm with you.
                 </p>
               </CardContent>
             </Card>
