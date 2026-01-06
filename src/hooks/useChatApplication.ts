@@ -12,6 +12,7 @@ import { lookupABN, cleanABN, searchABNByName } from '@/lib/abn-lookup';
 import { calculateQuote } from '@/lib/calculator';
 import type { ApplicationData, AssetType, AssetCondition } from '@/types/application';
 import { createEmptyApplication } from '@/types/application';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 
 // Generate a simple UUID without external dependency
 function generateId(): string {
@@ -296,6 +297,152 @@ export function useChatApplication() {
         }
         break;
       }
+
+      case 'save_lead': {
+        // Save a lead (non-qualifying applicant) to Supabase
+        if (!isSupabaseConfigured()) {
+          console.log('Supabase not configured - skipping lead save');
+          break;
+        }
+
+        const lead = flowData.lead;
+        const abnLookup = flowData.abnLookup;
+        const business = flowData.application.business;
+
+        try {
+          const { error: insertError } = await supabase.from('leads').insert({
+            name: lead?.name || '',
+            email: lead?.email || '',
+            phone: lead?.phone || '',
+            business_name: abnLookup?.entityName || business?.entityName || business?.businessName || '',
+            abn: business?.abn || '',
+            asset_type: flowData.application.asset?.assetType || '',
+            reason: lead?.reason || 'Did not qualify via chat',
+            source: 'chat_application',
+            status: 'new',
+            consent_to_share: lead?.consentToShare ?? false,
+          } as never);
+
+          if (insertError) {
+            console.error('Failed to save lead:', insertError);
+          } else {
+            console.log('Lead saved successfully');
+            clearSavedState();
+          }
+        } catch (error) {
+          console.error('Lead save error:', error);
+        }
+        break;
+      }
+
+      case 'submit_application': {
+        // Submit the complete application to Supabase
+        if (!isSupabaseConfigured()) {
+          console.log('Supabase not configured - skipping submission');
+          break;
+        }
+
+        const app = flowData.application;
+        const business = app.business;
+        const asset = app.asset;
+        const loan = app.loan;
+        const directors = app.directors?.directors || [];
+        const quote = flowData.quote;
+        const abnLookup = flowData.abnLookup;
+
+        try {
+          const { error: insertError } = await supabase.from('applications').insert({
+            // Business details
+            abn: business?.abn || '',
+            abn_status: abnLookup?.abnStatus || 'Active',
+            abn_registered_date: abnLookup?.abnRegisteredDate ? new Date(abnLookup.abnRegisteredDate).toISOString().split('T')[0] : null,
+            entity_name: business?.entityName || abnLookup?.entityName || '',
+            entity_type: business?.entityType || abnLookup?.entityType || '',
+            gst_registered: abnLookup?.gstRegistered ?? business?.gstRegistered ?? false,
+            gst_registered_date: abnLookup?.gstRegisteredDate ? new Date(abnLookup.gstRegisteredDate).toISOString().split('T')[0] : null,
+            trading_name: business?.tradingName || '',
+            business_address: business?.businessAddress || '',
+            business_state: business?.businessState || abnLookup?.state || '',
+            business_postcode: business?.businessPostcode || abnLookup?.postcode || '',
+
+            // Asset details
+            asset_type: asset?.assetType || 'vehicle',
+            asset_condition: asset?.assetCondition || 'new',
+            asset_year: asset?.assetYear || null,
+            asset_make: asset?.assetMake || '',
+            asset_model: asset?.assetModel || '',
+            asset_description: asset?.assetDescription || '',
+            supplier_name: asset?.supplierName || '',
+            asset_price_ex_gst: asset?.assetPriceExGst || 0,
+            asset_gst: asset?.assetGst || 0,
+            asset_price_inc_gst: asset?.assetPriceIncGst || 0,
+
+            // Loan details
+            loan_amount: loan?.loanAmount || (asset?.assetPriceIncGst || 0) - (loan?.depositAmount || 0),
+            deposit_amount: loan?.depositAmount || 0,
+            trade_in_amount: loan?.tradeInAmount || 0,
+            term_months: loan?.termMonths || 60,
+            balloon_percentage: loan?.balloonPercentage || 0,
+            balloon_amount: loan?.balloonAmount || 0,
+            business_use_percentage: loan?.businessUsePercentage || 100,
+
+            // Quote
+            indicative_rate: quote?.indicativeRate || 0,
+            monthly_repayment: quote?.monthlyRepayment || 0,
+
+            // Directors as JSONB (includes personal financial position)
+            directors: directors.map(d => {
+              // Calculate totals
+              const propertyValue = Number(d.propertyValue) || 0;
+              const vehiclesValue = Number(d.vehiclesValue) || 0;
+              const savingsValue = Number(d.savingsValue) || 0;
+              const mortgageBalance = Number(d.mortgageBalance) || 0;
+              const otherLoansBalance = Number(d.otherLoansBalance) || 0;
+              const creditCardLimit = Number(d.creditCardLimit) || 0;
+
+              const totalAssets = propertyValue + vehiclesValue + savingsValue;
+              const totalLiabilities = mortgageBalance + otherLoansBalance + creditCardLimit;
+
+              return {
+                firstName: d.firstName,
+                lastName: d.lastName,
+                dateOfBirth: d.dob,
+                email: d.email,
+                phone: d.phone,
+                address: d.residentialAddress || d.address,
+                licenceNumber: d.licenceNumber,
+                licenceState: d.licenceState,
+                // Personal financial position
+                propertyValue,
+                mortgageBalance,
+                vehiclesValue,
+                savingsValue,
+                otherLoansBalance,
+                creditCardLimit,
+                totalAssets,
+                totalLiabilities,
+                netPosition: totalAssets - totalLiabilities,
+              };
+            }),
+            primary_contact_index: app.directors?.primaryContactIndex || 0,
+
+            // Status
+            status: 'submitted',
+            step_completed: 5,
+          } as never);
+
+          if (insertError) {
+            console.error('Failed to submit application:', insertError);
+          } else {
+            console.log('Application submitted successfully');
+            // Clear saved progress after successful submission
+            clearSavedState();
+          }
+        } catch (error) {
+          console.error('Application submission error:', error);
+        }
+        break;
+      }
     }
 
     return updatedData;
@@ -380,11 +527,40 @@ export function useChatApplication() {
         value = mapOptionToValue(input, currentStep.field);
       }
 
-      flowData.application = setNestedValue(
-        flowData.application as Record<string, unknown>,
-        currentStep.field,
-        value
-      ) as Partial<ApplicationData>;
+      // Handle lead.* fields
+      if (currentStep.field.startsWith('lead.')) {
+        const leadField = currentStep.field.replace('lead.', '');
+        // Special handling for consent field - convert to boolean
+        if (leadField === 'consentToShare') {
+          const boolValue = input.toLowerCase().includes('yes') || input.toLowerCase().includes('fine');
+          flowData.lead = {
+            ...(flowData.lead || {}),
+            [leadField]: boolValue,
+          };
+        } else {
+          flowData.lead = {
+            ...(flowData.lead || {}),
+            [leadField]: value,
+          };
+        }
+      }
+      // Handle eligibility.* fields
+      else if (currentStep.field.startsWith('eligibility.')) {
+        const eligibilityField = currentStep.field.replace('eligibility.', '');
+        const boolValue = input.toLowerCase().includes('yes');
+        flowData.eligibility = {
+          ...(flowData.eligibility || {}),
+          [eligibilityField]: boolValue,
+        };
+      }
+      // Handle application fields
+      else {
+        flowData.application = setNestedValue(
+          flowData.application as Record<string, unknown>,
+          currentStep.field,
+          value
+        ) as Partial<ApplicationData>;
+      }
     }
 
     // Handle ABN selection from search results - extract ABN and store it

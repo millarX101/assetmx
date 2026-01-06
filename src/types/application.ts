@@ -15,6 +15,26 @@ export type AssetCondition = 'new' | 'demo' | 'used_0_3' | 'used_4_7' | 'used_8_
 
 export type EntityType = 'company' | 'trust' | 'sole_trader' | 'partnership';
 
+// Personal asset types
+export interface PersonalAsset {
+  type: 'property' | 'vehicle' | 'savings' | 'investments' | 'superannuation' | 'other';
+  description: string;
+  estimatedValue: number;
+  hasLoan?: boolean;
+  loanBalance?: number;
+  lender?: string;
+}
+
+// Personal liability types
+export interface PersonalLiability {
+  type: 'mortgage' | 'car_loan' | 'personal_loan' | 'credit_card' | 'hecs' | 'other';
+  description: string;
+  lender: string;
+  balance: number;
+  monthlyPayment: number;
+  limit?: number; // For credit cards
+}
+
 export interface Director {
   firstName: string;
   lastName: string;
@@ -25,8 +45,23 @@ export interface Director {
   suburb: string;
   state: string;
   postcode: string;
+  residentialAddress?: string; // Full address string from chat
   licenceNumber?: string;
   licenceState?: string;
+  // Personal financial position - simplified for chat flow
+  propertyValue?: number;
+  mortgageBalance?: number;
+  vehiclesValue?: number;
+  savingsValue?: number;
+  otherLoansBalance?: number;
+  creditCardLimit?: number;
+  // Calculated totals
+  totalAssets?: number;
+  totalLiabilities?: number;
+  netPosition?: number;
+  // Detailed breakdown (optional, for more complex flows)
+  personalAssets?: PersonalAsset[];
+  personalLiabilities?: PersonalLiability[];
 }
 
 export interface ABNLookupResult {
@@ -123,7 +158,8 @@ export interface ApplicationData {
     monthlyRepayment: number;
     totalInterest: number;
     totalRepayments: number;
-    totalFees: number;
+    totalFeesFinanced: number;
+    totalFeesUpfront: number;
     totalCost: number;
   };
 

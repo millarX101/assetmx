@@ -5,6 +5,7 @@ import {
   formatCurrency,
   formatPercentage,
   getMaxBalloon,
+  PLATFORM_FEE,
   type QuoteInput,
 } from '@/lib/calculator';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/ui/checkbox';
 import { InfoIcon, ArrowRight } from 'lucide-react';
 import { CostBreakdown } from './CostBreakdown';
 import { BrokerComparison } from './BrokerComparison';
@@ -46,8 +48,6 @@ const termOptions = [
   { months: 36, label: '3yr' },
   { months: 48, label: '4yr' },
   { months: 60, label: '5yr' },
-  { months: 72, label: '6yr' },
-  { months: 84, label: '7yr' },
 ];
 
 export function QuoteCalculator() {
@@ -61,7 +61,9 @@ export function QuoteCalculator() {
     loanAmount: 50000,
     termMonths: 60,
     balloonPercentage: 20,
+    financePlatformFee: true, // Default: finance the $800 fee
   });
+  const [payFeeUpfront, setPayFeeUpfront] = useState(false);
 
   // Get max balloon for current term
   const maxBalloon = getMaxBalloon(formData.termMonths);
@@ -227,6 +229,29 @@ export function QuoteCalculator() {
                 </div>
               </div>
 
+              {/* Platform Fee Option */}
+              <div className="flex items-start space-x-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <Checkbox
+                  id="pay-fee-upfront"
+                  checked={payFeeUpfront}
+                  onCheckedChange={(checked) => {
+                    setPayFeeUpfront(checked === true);
+                    setFormData({ ...formData, financePlatformFee: checked !== true });
+                  }}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <Label htmlFor="pay-fee-upfront" className="text-slate-700 font-medium cursor-pointer">
+                    Pay {formatCurrency(PLATFORM_FEE)} platform fee upfront
+                  </Label>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {payFeeUpfront
+                      ? 'Fee will be due before settlement is lodged.'
+                      : 'Fee is financed into your loan (most popular option).'}
+                  </p>
+                </div>
+              </div>
+
               {/* Live Quote Preview */}
               {liveQuote && (
                 <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
@@ -242,22 +267,25 @@ export function QuoteCalculator() {
                       <div className="text-center">
                         <p className="text-xs text-slate-500">Weekly</p>
                         <p className="text-base md:text-lg font-mono font-semibold text-slate-900">
-                          {formatCurrency(liveQuote.weeklyRepayment)}
+                          {formatCurrency(payFeeUpfront ? liveQuote.weeklyRepaymentFeeUpfront : liveQuote.weeklyRepayment)}
                         </p>
                       </div>
                       <div className="text-center">
                         <p className="text-xs text-slate-500">Fortnightly</p>
                         <p className="text-base md:text-lg font-mono font-semibold text-slate-900">
-                          {formatCurrency(liveQuote.fortnightlyRepayment)}
+                          {formatCurrency(payFeeUpfront ? liveQuote.fortnightlyRepaymentFeeUpfront : liveQuote.fortnightlyRepayment)}
                         </p>
                       </div>
                       <div className="text-center">
                         <p className="text-xs text-slate-500">Monthly</p>
                         <p className="text-base md:text-lg font-mono font-semibold text-slate-900">
-                          {formatCurrency(liveQuote.monthlyRepayment)}
+                          {formatCurrency(payFeeUpfront ? liveQuote.monthlyRepaymentFeeUpfront : liveQuote.monthlyRepayment)}
                         </p>
                       </div>
                     </div>
+                    <p className="text-xs text-slate-500 text-center mt-4">
+                      Payments in advance • First payment due at contract start
+                    </p>
                   </CardContent>
                 </Card>
               )}
@@ -276,7 +304,7 @@ export function QuoteCalculator() {
         {/* Results Section */}
         {showResults && liveQuote && (
           <div id="results-section" className="mt-8 space-y-6 scroll-mt-8">
-            <CostBreakdown quote={liveQuote} loanAmount={formData.loanAmount} />
+            <CostBreakdown quote={liveQuote} loanAmount={formData.loanAmount} payFeeUpfront={payFeeUpfront} />
             <BrokerComparison quote={liveQuote} />
 
             {/* CTA */}

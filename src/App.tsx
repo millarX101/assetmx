@@ -9,6 +9,7 @@ import { CreditGuide } from '@/pages/legal/CreditGuide';
 import { AdminLogin } from '@/pages/admin/Login';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { AdminDashboard } from '@/pages/admin/Dashboard';
+import { AdminApplications } from '@/pages/admin/Applications';
 import { AdminLeads } from '@/pages/admin/Leads';
 import { AdminRates } from '@/pages/admin/Rates';
 import { useAuthStore } from '@/stores/authStore';
@@ -63,6 +64,7 @@ function App() {
           }
         >
           <Route index element={<AdminDashboard />} />
+          <Route path="applications" element={<AdminApplications />} />
           <Route path="leads" element={<AdminLeads />} />
           <Route path="rates" element={<AdminRates />} />
         </Route>
