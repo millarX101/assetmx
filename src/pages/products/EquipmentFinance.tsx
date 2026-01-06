@@ -65,11 +65,11 @@ export function EquipmentFinance() {
                     Get Your Quote <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <a href="#comparison">
+                <Link to="/how-we-compare">
                   <Button size="lg" variant="outline" className="border-white/50 text-white bg-white/10 hover:bg-white/20">
                     See How We Compare
                   </Button>
-                </a>
+                </Link>
               </div>
             </div>
 

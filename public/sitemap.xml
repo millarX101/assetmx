@@ -36,6 +36,14 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- How We Compare -->
+  <url>
+    <loc>https://assetmx.com.au/how-we-compare</loc>
+    <lastmod>2025-01-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Legal Pages -->
   <url>
     <loc>https://assetmx.com.au/terms</loc>
