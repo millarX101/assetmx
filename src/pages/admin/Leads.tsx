@@ -107,7 +107,7 @@ export function AdminLeads() {
     try {
       const { error } = await supabase
         .from('leads')
-        .update({ status: newStatus })
+        .update({ status: newStatus } as never)
         .eq('id', leadId);
 
       if (error) throw error;
@@ -130,7 +130,7 @@ export function AdminLeads() {
     try {
       const { error } = await supabase
         .from('leads')
-        .update({ notes })
+        .update({ notes } as never)
         .eq('id', leadId);
 
       if (error) throw error;

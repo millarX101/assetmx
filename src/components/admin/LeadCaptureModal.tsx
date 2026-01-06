@@ -72,7 +72,7 @@ export function LeadCaptureModal({
         total_cost: quote.totalCost,
         estimated_saving: quote.estimatedSaving,
         status: 'new',
-      });
+      } as never);
 
       if (insertError) {
         throw insertError;

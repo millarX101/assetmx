@@ -52,29 +52,45 @@ export interface AdminUser {
 }
 
 // Supabase Database interface for type safety
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       leads: {
         Row: Lead;
         Insert: Omit<Lead, 'id' | 'created_at'> & { id?: string; created_at?: string };
         Update: Partial<Omit<Lead, 'id'>>;
+        Relationships: [];
       };
       rate_config: {
         Row: RateConfig;
         Insert: Omit<RateConfig, 'id' | 'updated_at'> & { id?: string; updated_at?: string };
         Update: Partial<Omit<RateConfig, 'id'>>;
+        Relationships: [];
       };
       fee_config: {
         Row: FeeConfig;
         Insert: Omit<FeeConfig, 'id' | 'updated_at'> & { id?: string; updated_at?: string };
         Update: Partial<Omit<FeeConfig, 'id'>>;
+        Relationships: [];
       };
       admin_users: {
         Row: AdminUser;
         Insert: AdminUser;
         Update: Partial<Omit<AdminUser, 'id'>>;
+        Relationships: [];
       };
     };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [_ in never]: never;
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
-}
+};

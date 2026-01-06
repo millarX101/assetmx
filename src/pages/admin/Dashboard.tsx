@@ -39,10 +39,11 @@ export function AdminDashboard() {
         if (error) throw error;
 
         if (leads) {
-          const totalLeads = leads.length;
-          const newLeads = leads.filter((l) => l.status === 'new').length;
-          const converted = leads.filter((l) => l.status === 'converted').length;
-          const totalLoanValue = leads.reduce((sum, l) => sum + Number(l.loan_amount), 0);
+          const leadsData = leads as Lead[];
+          const totalLeads = leadsData.length;
+          const newLeads = leadsData.filter((l) => l.status === 'new').length;
+          const converted = leadsData.filter((l) => l.status === 'converted').length;
+          const totalLoanValue = leadsData.reduce((sum, l) => sum + Number(l.loan_amount), 0);
           const conversionRate = totalLeads > 0 ? (converted / totalLeads) * 100 : 0;
 
           setStats({
@@ -52,7 +53,7 @@ export function AdminDashboard() {
             conversionRate,
           });
 
-          setRecentLeads(leads.slice(0, 5));
+          setRecentLeads(leadsData.slice(0, 5));
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);

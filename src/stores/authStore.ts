@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // Listen for auth changes
-          supabase.auth.onAuthStateChange(async (event, session) => {
+          supabase.auth.onAuthStateChange(async (_event, session) => {
             if (session?.user) {
               const isAdmin = await get().checkAdminStatus(session.user.id);
               set({
@@ -147,10 +147,11 @@ export const useAuthStore = create<AuthState>()(
             return false;
           }
 
+          const adminData = data as AdminUser;
           set({
-            adminUser: data as AdminUser,
+            adminUser: adminData,
             isAdmin: true,
-            role: data.role as AdminRole
+            role: adminData.role as AdminRole
           });
           return true;
         } catch {
@@ -161,7 +162,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({
+      partialize: (_state) => ({
         // Don't persist sensitive data
       }),
     }

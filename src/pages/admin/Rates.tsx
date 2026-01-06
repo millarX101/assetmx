@@ -145,7 +145,7 @@ export function AdminRates() {
                   asset_condition: condition,
                   base_rate: rate,
                   updated_at: new Date().toISOString(),
-                },
+                } as never,
                 { onConflict: 'asset_type,asset_condition' }
               );
           }
@@ -162,7 +162,7 @@ export function AdminRates() {
               amount: feeData.amount,
               description: feeData.description,
               updated_at: new Date().toISOString(),
-            },
+            } as never,
             { onConflict: 'fee_name' }
           );
       }
