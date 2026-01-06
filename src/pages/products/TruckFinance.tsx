@@ -3,10 +3,37 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, ArrowRight, TrendingDown, Clock, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "FinancialProduct",
+  "name": "Truck & Trailer Finance",
+  "description": "Finance for prime movers, rigid trucks and trailers with transparent $800 flat fee",
+  "provider": {
+    "@type": "FinancialService",
+    "name": "AssetMX",
+    "url": "https://assetmx.com.au"
+  },
+  "areaServed": "Australia",
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "AUD",
+    "price": "800",
+    "description": "Flat fee - no hidden commissions"
+  }
+};
 
 export function TruckFinance() {
   return (
     <div className="min-h-screen bg-ivory">
+      <SEO
+        title="Truck Finance Australia | Prime Mover & Trailer Finance | $800 Flat Fee"
+        description="Finance your prime mover, rigid truck or trailer with transparent pricing. Kenworth, Mack, Volvo, Freightliner - no broker markup, just $800 flat fee. Fast approval for transport operators."
+        keywords="truck finance Australia, prime mover finance, trailer finance, Kenworth finance, Mack truck finance, rigid truck loan, transport finance, fleet truck finance, semi trailer finance"
+        canonicalUrl="https://assetmx.com.au/truck-finance"
+        structuredData={structuredData}
+      />
       <Header />
 
       {/* Hero Section */}

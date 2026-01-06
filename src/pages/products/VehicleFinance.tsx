@@ -3,10 +3,37 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, ArrowRight, TrendingDown, Clock, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "FinancialProduct",
+  "name": "Vehicle Finance",
+  "description": "Finance for utes, vans, cars and commercial vehicles with transparent $800 flat fee",
+  "provider": {
+    "@type": "FinancialService",
+    "name": "AssetMX",
+    "url": "https://assetmx.com.au"
+  },
+  "areaServed": "Australia",
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "AUD",
+    "price": "800",
+    "description": "Flat fee - no hidden commissions"
+  }
+};
 
 export function VehicleFinance() {
   return (
     <div className="min-h-screen bg-ivory">
+      <SEO
+        title="Vehicle Finance Australia | Ute, Van & Car Finance | $800 Flat Fee"
+        description="Finance your next ute, van or company car with transparent pricing. No hidden broker fees, just $800 flat. Ford Ranger, Toyota Hilux, Mercedes Sprinter - fast 15-minute approval."
+        keywords="vehicle finance Australia, ute finance, van finance, car finance business, Ford Ranger finance, Toyota Hilux finance, fleet finance, commercial vehicle loan, chattel mortgage"
+        canonicalUrl="https://assetmx.com.au/vehicle-finance"
+        structuredData={structuredData}
+      />
       <Header />
 
       {/* Hero Section */}

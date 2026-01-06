@@ -1,0 +1,13 @@
+# AssetMX Robots.txt
+# https://assetmx.com.au
+
+User-agent: *
+Allow: /
+
+# Disallow admin and internal pages
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/*
+
+# Sitemap location
+Sitemap: https://assetmx.com.au/sitemap.xml

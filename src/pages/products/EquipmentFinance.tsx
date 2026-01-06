@@ -3,10 +3,37 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, ArrowRight, TrendingDown, Clock, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "FinancialProduct",
+  "name": "Equipment Finance",
+  "description": "Finance for excavators, loaders and construction equipment with transparent $800 flat fee",
+  "provider": {
+    "@type": "FinancialService",
+    "name": "AssetMX",
+    "url": "https://assetmx.com.au"
+  },
+  "areaServed": "Australia",
+  "offers": {
+    "@type": "Offer",
+    "priceCurrency": "AUD",
+    "price": "800",
+    "description": "Flat fee - no hidden commissions"
+  }
+};
 
 export function EquipmentFinance() {
   return (
     <div className="min-h-screen bg-ivory">
+      <SEO
+        title="Equipment Finance Australia | Excavator & Loader Finance | $800 Flat Fee"
+        description="Finance your excavator, loader or construction equipment with transparent pricing. CAT, Komatsu, Hitachi, Kubota - no broker markup, just $800 flat fee. Fast approval for tradies and contractors."
+        keywords="equipment finance Australia, excavator finance, loader finance, construction equipment loan, CAT finance, Komatsu finance, earthmoving finance, skid steer finance, machinery loan"
+        canonicalUrl="https://assetmx.com.au/equipment-finance"
+        structuredData={structuredData}
+      />
       <Header />
 
       {/* Hero Section */}
