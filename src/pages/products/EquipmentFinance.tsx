@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, ArrowRight, TrendingDown, Clock, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
+import { getImageUrl } from '@/lib/supabase';
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -70,7 +71,7 @@ export function EquipmentFinance() {
             <div className="relative">
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&h=600&fit=crop"
+                  src={getImageUrl('products/equipment/hero-excavator.jpg')}
                   alt="CAT excavator on construction site"
                   className="w-full h-full object-cover"
                 />
@@ -103,7 +104,7 @@ export function EquipmentFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop"
+                  src={getImageUrl('products/equipment/excavators.jpg')}
                   alt="Excavator digging on construction site"
                   className="w-full h-full object-cover"
                 />
@@ -130,7 +131,7 @@ export function EquipmentFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src="https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&h=400&fit=crop"
+                  src={getImageUrl('products/equipment/loaders.jpg')}
                   alt="Wheel loader moving materials"
                   className="w-full h-full object-cover"
                 />
@@ -157,7 +158,7 @@ export function EquipmentFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src="https://images.unsplash.com/photo-1580901368919-7738efb0f87e?w=600&h=400&fit=crop"
+                  src={getImageUrl('products/equipment/earthmoving.jpg')}
                   alt="Bulldozer on earthmoving site"
                   className="w-full h-full object-cover"
                 />

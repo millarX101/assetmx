@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, ArrowRight, TrendingDown, Clock, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
+import { getImageUrl } from '@/lib/supabase';
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -70,7 +71,7 @@ export function VehicleFinance() {
             <div className="relative">
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src="https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&h=600&fit=crop"
+                  src={getImageUrl('products/vehicles/hero-ranger.jpg')}
                   alt="Ford Ranger Wildtrak - Premium Australian ute"
                   className="w-full h-full object-cover"
                 />
@@ -103,7 +104,7 @@ export function VehicleFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop"
+                  src={getImageUrl('products/vehicles/utes-hilux.jpg')}
                   alt="Toyota Hilux - Popular Australian work ute"
                   className="w-full h-full object-cover"
                 />
@@ -130,7 +131,7 @@ export function VehicleFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=600&h=400&fit=crop"
+                  src={getImageUrl('products/vehicles/vans-transit.jpg')}
                   alt="Commercial van for business deliveries"
                   className="w-full h-full object-cover"
                 />
@@ -157,7 +158,7 @@ export function VehicleFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src="https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=600&h=400&fit=crop"
+                  src={getImageUrl('products/vehicles/prestige-bmw.jpg')}
                   alt="BMW M3 - Prestige vehicle finance"
                   className="w-full h-full object-cover"
                 />

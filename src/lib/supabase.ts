@@ -19,3 +19,16 @@ export const supabase = createClient<Database>(
 export const isSupabaseConfigured = () => {
   return Boolean(supabaseUrl && supabaseAnonKey);
 };
+
+/**
+ * Get public URL for an image in the website-images bucket
+ * @param path - Path within the bucket, e.g. "products/vehicles/hero-ranger.jpg"
+ * @returns Full public URL to the image
+ */
+export const getImageUrl = (path: string): string => {
+  if (!supabaseUrl) {
+    console.warn('Supabase URL not configured, using placeholder');
+    return `https://placehold.co/800x600?text=${encodeURIComponent(path)}`;
+  }
+  return `${supabaseUrl}/storage/v1/object/public/website-images/${path}`;
+};

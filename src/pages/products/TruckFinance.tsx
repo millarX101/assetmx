@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, ArrowRight, TrendingDown, Clock, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
+import { getImageUrl } from '@/lib/supabase';
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -70,7 +71,7 @@ export function TruckFinance() {
             <div className="relative">
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=800&h=600&fit=crop"
+                  src={getImageUrl('products/trucks/hero-kenworth.jpg')}
                   alt="Kenworth truck - Australian prime mover"
                   className="w-full h-full object-cover"
                 />
@@ -103,7 +104,7 @@ export function TruckFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src="https://images.unsplash.com/photo-1586191582066-a28793f0c8d5?w=600&h=400&fit=crop"
+                  src={getImageUrl('products/trucks/prime-movers.jpg')}
                   alt="Kenworth prime mover - Australian trucking"
                   className="w-full h-full object-cover"
                 />
@@ -130,7 +131,7 @@ export function TruckFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src="https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=600&h=400&fit=crop"
+                  src={getImageUrl('products/trucks/rigid-trucks.jpg')}
                   alt="Rigid truck - Medium freight vehicle"
                   className="w-full h-full object-cover"
                 />
@@ -157,7 +158,7 @@ export function TruckFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src="https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=600&h=400&fit=crop"
+                  src={getImageUrl('products/trucks/trailers.jpg')}
                   alt="Semi-trailer on highway"
                   className="w-full h-full object-cover"
                 />
