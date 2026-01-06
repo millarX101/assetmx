@@ -2,9 +2,10 @@ import { QuoteCalculator } from '@/components/calculator/QuoteCalculator';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, TrendingDown, Zap, Shield } from 'lucide-react';
+import { CheckCircle, TrendingDown, Zap, Shield, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
+import { getImageUrl } from '@/lib/supabase';
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -41,8 +42,8 @@ const structuredData = {
         "@type": "Offer",
         "itemOffered": {
           "@type": "FinancialProduct",
-          "name": "Truck Finance",
-          "description": "Finance for prime movers, rigid trucks and trailers"
+          "name": "Truck & Van Finance",
+          "description": "Finance for rigid trucks and commercial vans"
         }
       },
       {
@@ -114,6 +115,86 @@ export function Landing() {
               <div className="text-sm text-slate-500">Self-service online</div>
             </CardContent>
           </Card>
+        </div>
+      </section>
+
+      {/* What We Finance */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-display text-center mb-4 text-slate-900">
+            What We Finance
+          </h2>
+          <p className="text-center text-slate-600 mb-12 max-w-2xl mx-auto">
+            Same $800 flat fee across all asset types. No hidden commissions, no matter what you're financing.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {/* Vehicles */}
+            <Link to="/vehicle-finance" className="group">
+              <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+                <div className="aspect-[16/10] relative overflow-hidden">
+                  <img
+                    src={getImageUrl('hero-ranger.jpg')}
+                    alt="Ute and vehicle finance"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900">Vehicles</h3>
+                      <p className="text-sm text-slate-500">Utes, vans, cars & 4WDs</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Trucks & Vans */}
+            <Link to="/truck-finance" className="group">
+              <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+                <div className="aspect-[16/10] relative overflow-hidden">
+                  <img
+                    src={getImageUrl('hero-truck.jpg')}
+                    alt="Truck and van finance"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900">Trucks & Vans</h3>
+                      <p className="text-sm text-slate-500">Rigid trucks & commercial vans</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Equipment */}
+            <Link to="/equipment-finance" className="group">
+              <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+                <div className="aspect-[16/10] relative overflow-hidden">
+                  <img
+                    src={getImageUrl('hero-excavator.jpg')}
+                    alt="Equipment and machinery finance"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900">Equipment</h3>
+                      <p className="text-sm text-slate-500">Excavators, loaders & machinery</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
         </div>
       </section>
 
