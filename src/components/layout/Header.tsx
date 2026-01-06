@@ -92,7 +92,7 @@ export function Header() {
                     <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
                       <span className="text-purple-700 text-xs font-bold">T</span>
                     </div>
-                    Truck & Trailer
+                    Truck & Van
                   </Link>
                 </div>
               </div>
@@ -198,7 +198,7 @@ export function Header() {
                     className="px-3 py-2 text-sm text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Truck & Trailer
+                    Truck & Van
                   </Link>
                 </div>
               </div>

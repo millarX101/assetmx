@@ -9,8 +9,8 @@ import { getImageUrl } from '@/lib/supabase';
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "FinancialProduct",
-  "name": "Truck & Trailer Finance",
-  "description": "Finance for prime movers, rigid trucks and trailers with transparent $800 flat fee",
+  "name": "Truck & Van Finance",
+  "description": "Finance for rigid trucks, vans and light commercial vehicles with transparent $800 flat fee",
   "provider": {
     "@type": "FinancialService",
     "name": "AssetMX",
@@ -29,9 +29,9 @@ export function TruckFinance() {
   return (
     <div className="min-h-screen bg-ivory">
       <SEO
-        title="Truck Finance Australia | Prime Mover & Trailer Finance | $800 Flat Fee"
-        description="Finance your prime mover, rigid truck or trailer with transparent pricing. Kenworth, Mack, Volvo, Freightliner - no broker markup, just $800 flat fee. Fast approval for transport operators."
-        keywords="truck finance Australia, prime mover finance, trailer finance, Kenworth finance, Mack truck finance, rigid truck loan, transport finance, fleet truck finance, semi trailer finance"
+        title="Truck & Van Finance Australia | Rigid Trucks & Commercial Vans | $800 Flat Fee"
+        description="Finance your rigid truck, van or light commercial vehicle with transparent pricing. Isuzu, Hino, Fuso, Transit, Sprinter - no broker markup, just $800 flat fee. Fast approval for business owners."
+        keywords="truck finance Australia, rigid truck finance, van finance, Isuzu truck finance, Hino finance, commercial van loan, light truck finance, business vehicle finance"
         canonicalUrl="https://assetmx.com.au/truck-finance"
         structuredData={structuredData}
       />
@@ -39,25 +39,28 @@ export function TruckFinance() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-purple-900" />
+        {/* Background gradient - on brand purple */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-purple-800 to-pink-800" />
 
         {/* Hero content */}
         <div className="relative container mx-auto px-4 py-16 md:py-24">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-white">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display mb-6">
-                Truck & Trailer
+                Truck & Van Finance
                 <br />
-                <span className="text-pink-300">Finance That Delivers</span>
+                <span className="text-pink-300">For Growing Businesses</span>
               </h1>
-              <p className="text-xl text-slate-200 mb-8 max-w-lg">
-                From single prime movers to entire fleets - get the transparent financing
-                your transport business deserves. No hidden commissions, ever.
+              <p className="text-lg text-purple-100 mb-4">
+                Delivery drivers, tradies, removalists, couriers - get your business moving
+                with transparent finance. No hidden broker commissions, just honest rates.
+              </p>
+              <p className="text-sm text-purple-200 mb-8 max-w-lg">
+                From small rigid trucks to commercial vans - same $800 flat fee for all.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/chat-apply">
-                  <Button size="lg" className="bg-white text-slate-800 hover:bg-slate-50 shadow-lg">
+                  <Button size="lg" className="bg-white text-purple-800 hover:bg-purple-50 shadow-lg">
                     Get Your Quote <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -67,20 +70,20 @@ export function TruckFinance() {
               </div>
             </div>
 
-            {/* Hero image - Kenworth/Prime Mover */}
+            {/* Hero image - Rigid Truck */}
             <div className="relative">
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src={getImageUrl('products/trucks/hero-kenworth.jpg')}
-                  alt="Kenworth truck - Australian prime mover"
+                  src={getImageUrl('products/trucks/hero-truck.jpg')}
+                  alt="Isuzu rigid truck for business"
                   className="w-full h-full object-cover"
                 />
               </div>
               {/* Floating price card */}
               <Card className="absolute -bottom-6 -left-6 shadow-xl border-0">
                 <CardContent className="p-4">
-                  <div className="text-sm text-slate-500 mb-1">Example: $350,000 prime mover</div>
-                  <div className="text-2xl font-bold text-gradient-brand">~$6,850/mo</div>
+                  <div className="text-sm text-slate-500 mb-1">Example: $85,000 rigid truck</div>
+                  <div className="text-2xl font-bold text-gradient-brand">~$1,650/mo</div>
                   <div className="text-xs text-slate-400">5 years @ 6.45%</div>
                 </CardContent>
               </Card>
@@ -93,26 +96,80 @@ export function TruckFinance() {
       <section className="py-16 bg-ivory">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-display text-center mb-4 text-slate-900">
-            Trucks & Trailers We Finance
+            Trucks & Vans We Finance
           </h2>
           <p className="text-center text-slate-600 mb-12 max-w-2xl mx-auto">
-            Heavy haulage to light commercial - same transparent pricing across the board.
+            Light commercial to medium rigid - same transparent pricing across the board.
           </p>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Prime Movers */}
+            {/* Small Rigid Trucks */}
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src={getImageUrl('products/trucks/prime-movers.jpg')}
-                  alt="Kenworth prime mover - Australian trucking"
+                  src={getImageUrl('products/trucks/rigid-trucks.jpg')}
+                  alt="Small rigid truck for deliveries"
                   className="w-full h-full object-cover"
                 />
               </div>
               <CardContent className="pt-6">
-                <h3 className="text-xl font-semibold mb-2 text-slate-900">Prime Movers</h3>
+                <h3 className="text-xl font-semibold mb-2 text-slate-900">Small Rigid Trucks</h3>
                 <p className="text-slate-500 mb-4">
-                  Kenworth, Mack, Freightliner, Volvo - the power behind Australian freight.
+                  Isuzu, Hino, Fuso, UD - reliable workhorses for local deliveries and trades.
+                </p>
+                <ul className="space-y-2 text-sm text-slate-600">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Tray, tipper & pantech bodies
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Body & fitout included
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Commercial Vans */}
+            <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+              <div className="aspect-[16/10] relative">
+                <img
+                  src={getImageUrl('products/trucks/vans.jpg')}
+                  alt="Commercial van for business"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-2 text-slate-900">Commercial Vans</h3>
+                <p className="text-slate-500 mb-4">
+                  Transit, Sprinter, HiAce, Crafter - perfect for tradies, couriers and deliveries.
+                </p>
+                <ul className="space-y-2 text-sm text-slate-600">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    All sizes & configurations
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Fitout finance included
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Light Trucks */}
+            <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+              <div className="aspect-[16/10] relative">
+                <img
+                  src={getImageUrl('products/trucks/light-trucks.jpg')}
+                  alt="Light truck for business use"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-2 text-slate-900">Light Trucks</h3>
+                <p className="text-slate-500 mb-4">
+                  Cab chassis, tray backs, service bodies - versatile options for any business.
                 </p>
                 <ul className="space-y-2 text-sm text-slate-600">
                   <li className="flex items-center gap-2">
@@ -121,61 +178,7 @@ export function TruckFinance() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    Fleet packages available
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            {/* Rigid Trucks */}
-            <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
-              <div className="aspect-[16/10] relative">
-                <img
-                  src={getImageUrl('products/trucks/rigid-trucks.jpg')}
-                  alt="Rigid truck - Medium freight vehicle"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <CardContent className="pt-6">
-                <h3 className="text-xl font-semibold mb-2 text-slate-900">Rigid Trucks</h3>
-                <p className="text-slate-500 mb-4">
-                  Isuzu, Hino, Fuso - reliable rigid bodies for local and metro deliveries.
-                </p>
-                <ul className="space-y-2 text-sm text-slate-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    Body & fitout included
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
                     Quick approval
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            {/* Trailers */}
-            <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
-              <div className="aspect-[16/10] relative">
-                <img
-                  src={getImageUrl('products/trucks/trailers.jpg')}
-                  alt="Semi-trailer on highway"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <CardContent className="pt-6">
-                <h3 className="text-xl font-semibold mb-2 text-slate-900">Trailers</h3>
-                <p className="text-slate-500 mb-4">
-                  Flat tops, curtainsiders, refrigerated - complete your fleet with transparent finance.
-                </p>
-                <ul className="space-y-2 text-sm text-slate-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    All trailer types
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    Bundled with prime mover
                   </li>
                 </ul>
               </CardContent>
@@ -188,7 +191,7 @@ export function TruckFinance() {
       <section className="py-16 bg-gradient-light">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-display text-center mb-12 text-slate-900">
-            Why Transport Operators Choose Us
+            Why Business Owners Choose Us
           </h2>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
@@ -196,10 +199,10 @@ export function TruckFinance() {
               <div className="h-14 w-14 rounded-2xl bg-gradient-brand flex items-center justify-center mx-auto mb-4">
                 <TrendingDown className="h-7 w-7 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-slate-900">Massive Savings</h3>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">Transparent Savings</h3>
               <p className="text-slate-500">
-                On a $350k prime mover, traditional brokers hide $7,000+ in commission.
-                We charge $800 flat. You do the maths.
+                Traditional brokers hide thousands in commission in your rate.
+                We charge $800 flat. Simple and transparent.
               </p>
             </div>
 
@@ -209,8 +212,8 @@ export function TruckFinance() {
               </div>
               <h3 className="text-xl font-semibold mb-2 text-slate-900">Fast Turnaround</h3>
               <p className="text-slate-500">
-                We know time is money in transport. Conditional approval in 15 minutes,
-                settle the same week. Get your truck on the road faster.
+                We know you need to get moving. Conditional approval in 15 minutes,
+                settle the same week. Get your vehicle on the road faster.
               </p>
             </div>
 
@@ -218,10 +221,10 @@ export function TruckFinance() {
               <div className="h-14 w-14 rounded-2xl bg-gradient-brand flex items-center justify-center mx-auto mb-4">
                 <Shield className="h-7 w-7 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-slate-900">Industry Experience</h3>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">We Get Business</h3>
               <p className="text-slate-500">
-                We understand the transport industry. Seasonal cash flow, fleet requirements,
-                and what lenders are looking for.
+                Built for business owners who need reliable vehicles to keep their
+                operations running. No complicated processes, just results.
               </p>
             </div>
           </div>
@@ -234,7 +237,7 @@ export function TruckFinance() {
           <Card className="max-w-3xl mx-auto bg-gradient-brand border-0 shadow-2xl shadow-purple-900/30">
             <CardContent className="pt-8 pb-8 text-center">
               <h2 className="text-2xl md:text-3xl font-display mb-4 text-white">
-                Ready to Grow Your Fleet?
+                Ready to Finance Your Truck or Van?
               </h2>
               <p className="text-lg text-purple-100 mb-6">
                 Get your transparent quote in 30 seconds. No credit check required.
