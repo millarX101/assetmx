@@ -75,7 +75,7 @@ export function EquipmentFinance() {
             <div className="relative">
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src={getImageUrl('products/equipment/hero-excavator.jpg')}
+                  src={getImageUrl('hero-excavator.jpg')}
                   alt="CAT excavator on construction site"
                   className="w-full h-full object-cover"
                 />
@@ -108,7 +108,7 @@ export function EquipmentFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src={getImageUrl('products/equipment/excavators.jpg')}
+                  src={getImageUrl('excavators.jpg')}
                   alt="Excavator digging on construction site"
                   className="w-full h-full object-cover"
                 />
@@ -135,7 +135,7 @@ export function EquipmentFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src={getImageUrl('products/equipment/loaders.jpg')}
+                  src={getImageUrl('loaders.jpg')}
                   alt="Wheel loader moving materials"
                   className="w-full h-full object-cover"
                 />
@@ -162,7 +162,7 @@ export function EquipmentFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src={getImageUrl('products/equipment/earthmoving.jpg')}
+                  src={getImageUrl('earthmoving.jpg')}
                   alt="Bulldozer on earthmoving site"
                   className="w-full h-full object-cover"
                 />

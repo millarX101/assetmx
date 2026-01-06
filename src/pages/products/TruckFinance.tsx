@@ -74,7 +74,7 @@ export function TruckFinance() {
             <div className="relative">
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src={getImageUrl('products/trucks/hero-truck.jpg')}
+                  src={getImageUrl('hero-truck.jpg')}
                   alt="Isuzu rigid truck for business"
                   className="w-full h-full object-cover"
                 />
@@ -107,7 +107,7 @@ export function TruckFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src={getImageUrl('products/trucks/rigid-trucks.jpg')}
+                  src={getImageUrl('rigid-trucks.jpg')}
                   alt="Small rigid truck for deliveries"
                   className="w-full h-full object-cover"
                 />
@@ -134,7 +134,7 @@ export function TruckFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src={getImageUrl('products/trucks/vans.jpg')}
+                  src={getImageUrl('vans.jpg')}
                   alt="Commercial van for business"
                   className="w-full h-full object-cover"
                 />
@@ -161,7 +161,7 @@ export function TruckFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src={getImageUrl('products/trucks/light-trucks.jpg')}
+                  src={getImageUrl('light-trucks.jpg')}
                   alt="Light truck for business use"
                   className="w-full h-full object-cover"
                 />

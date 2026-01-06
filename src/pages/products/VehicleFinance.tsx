@@ -71,7 +71,7 @@ export function VehicleFinance() {
             <div className="relative">
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src={getImageUrl('products/vehicles/hero-ranger.jpg')}
+                  src={getImageUrl('hero-ranger.jpg')}
                   alt="Ford Ranger Wildtrak - Premium Australian ute"
                   className="w-full h-full object-cover"
                 />
@@ -104,7 +104,7 @@ export function VehicleFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src={getImageUrl('products/vehicles/utes-hilux.jpg')}
+                  src={getImageUrl('utes-hilux.jpg')}
                   alt="Toyota Hilux - Popular Australian work ute"
                   className="w-full h-full object-cover"
                 />
@@ -131,7 +131,7 @@ export function VehicleFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src={getImageUrl('products/vehicles/vans-transit.jpg')}
+                  src={getImageUrl('vans-transit.jpg')}
                   alt="Commercial van for business deliveries"
                   className="w-full h-full object-cover"
                 />
@@ -158,7 +158,7 @@ export function VehicleFinance() {
             <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
-                  src={getImageUrl('products/vehicles/prestige-bmw.jpg')}
+                  src={getImageUrl('prestige-bmw.jpg')}
                   alt="BMW M3 - Prestige vehicle finance"
                   className="w-full h-full object-cover"
                 />
