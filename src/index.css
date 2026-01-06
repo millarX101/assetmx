@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* MillarX Brand - Purple/Pink Theme */
+    --background: 30 20% 98%; /* Ivory #FAFAF9 */
+    --foreground: 215 28% 17%; /* Slate 800 */
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+    --primary: 293 78% 33%; /* Purple 700 #86198F */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 300 100% 98%; /* Purple 50 */
+    --secondary-foreground: 293 78% 33%;
+    --muted: 30 6% 96%; /* Cream */
+    --muted-foreground: 215 16% 47%;
+    --accent: 300 100% 98%;
+    --accent-foreground: 293 78% 33%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 293 78% 33%; /* Purple 700 */
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 293 95% 10%; /* Purple 900 */
+    --foreground: 300 100% 98%;
+    --card: 293 62% 22%; /* Purple 800 */
+    --card-foreground: 300 100% 98%;
+    --popover: 293 62% 22%;
+    --popover-foreground: 300 100% 98%;
+    --primary: 300 76% 72%; /* Purple 300 */
+    --primary-foreground: 293 95% 10%;
+    --secondary: 293 62% 22%;
+    --secondary-foreground: 300 100% 98%;
+    --muted: 293 62% 22%;
+    --muted-foreground: 300 50% 80%;
+    --accent: 293 62% 22%;
+    --accent-foreground: 300 100% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 293 62% 22%;
+    --input: 293 62% 22%;
+    --ring: 300 76% 72%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  /* MillarX Brand Gradients */
+  .bg-gradient-brand {
+    background: linear-gradient(135deg, #4A044E 0%, #86198F 50%, #EC4899 100%);
+  }
+
+  .bg-gradient-dark {
+    background: linear-gradient(135deg, #4A044E 0%, #701A75 50%, #A21CAF 100%);
+  }
+
+  .bg-gradient-light {
+    background: linear-gradient(135deg, #FAE8FF 0%, #F5D0FE 50%, #FDF4FF 100%);
+  }
+
+  /* Gradient Text */
+  .text-gradient-brand {
+    background: linear-gradient(to right, #701A75, #A21CAF, #EC4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Financial Figures Styling */
+  .font-financial {
+    @apply font-mono font-medium tabular-nums;
+  }
+
+  /* Focus Ring - Purple */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2;
+  }
+}
