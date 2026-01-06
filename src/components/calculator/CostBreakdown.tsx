@@ -76,54 +76,41 @@ export function CostBreakdown({ quote, loanAmount, payFeeUpfront = false }: Cost
         <div className="space-y-3">
           <h4 className="font-semibold text-sm uppercase text-muted-foreground">Due Before Settlement</h4>
           <div className="space-y-2">
-            {payFeeUpfront && (
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Platform Fee (AssetMX)</span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p className="font-semibold mb-1">Our Flat $800 Fee</p>
-                      <p>
-                        This covers our AI-powered application processing, document verification, and loan
-                        management. Unlike brokers, we don't add margin to your interest rate.
-                      </p>
-                      <p className="mt-2 text-xs italic">Due before settlement is lodged.</p>
-                    </TooltipContent>
-                  </Tooltip>
+            {payFeeUpfront ? (
+              <>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Platform Fee (AssetMX)</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-semibold mb-1">Our Flat $800 Fee</p>
+                        <p>
+                          This covers our AI-powered application processing, document verification, and loan
+                          management. Unlike brokers, we don't add margin to your interest rate.
+                        </p>
+                        <p className="mt-2 text-xs italic">Due before settlement is lodged.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <span className="font-medium">{formatCurrency(quote.platformFee)}</span>
                 </div>
-                <span className="font-medium">{formatCurrency(quote.platformFee)}</span>
+
+                <div className="flex justify-between pt-2 border-t">
+                  <span className="font-semibold">Total Due Upfront</span>
+                  <span className="font-semibold">
+                    {formatCurrency(quote.platformFee)}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">No upfront fees required</span>
+                <span className="font-medium">{formatCurrency(0)}</span>
               </div>
             )}
-
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">PPSR Registration</span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <InfoIcon className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p className="font-semibold mb-1">Government Registry Fee</p>
-                    <p>
-                      The Personal Property Securities Register (PPSR) is a government database that records
-                      the lender's security interest in your asset.
-                    </p>
-                    <p className="mt-2">This is a mandatory government fee.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <span className="font-medium">{formatCurrency(quote.ppsrFee)}</span>
-            </div>
-
-            <div className="flex justify-between pt-2 border-t">
-              <span className="font-semibold">Total Due Upfront</span>
-              <span className="font-semibold">
-                {formatCurrency(payFeeUpfront ? quote.platformFee + quote.ppsrFee : quote.ppsrFee)}
-              </span>
-            </div>
           </div>
         </div>
 

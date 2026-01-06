@@ -180,7 +180,7 @@ export function useChatApplication() {
   }, []);
 
   // Process the current step's messages
-  const processStepMessages = useCallback(async (step: ChatStep, flowData: ChatFlowData) => {
+  const processStepMessages = useCallback(async (step: ChatStep, flowData: ChatFlowData, autoProgressCallback?: (stepId: string, data: ChatFlowData) => Promise<void>) => {
     const messages = typeof step.messages === 'function'
       ? step.messages(flowData)
       : step.messages;
@@ -203,6 +203,60 @@ export function useChatApplication() {
     const options = typeof step.options === 'function'
       ? step.options(flowData)
       : (step.options || []);
+
+    // Auto-progress for steps with actions but no user input required (empty options)
+    if (step.action && options.length === 0 && autoProgressCallback) {
+      // Execute the action
+      let updatedData = { ...flowData };
+
+      switch (step.action) {
+        case 'abn_lookup': {
+          const abn = cleanABN(updatedData.application.business?.abn || '');
+          try {
+            const result = await lookupABN(abn);
+            if (result) {
+              updatedData.abnLookup = {
+                entityName: result.entityName,
+                entityType: result.entityType,
+                abnStatus: result.abnStatus,
+                abnRegisteredDate: result.abnRegisteredDate || '',
+                gstRegistered: result.gstRegistered,
+                gstRegisteredDate: result.gstRegisteredDate,
+                state: result.state,
+                postcode: result.postcode,
+              };
+              // Update application with lookup data
+              updatedData.application = {
+                ...updatedData.application,
+                business: {
+                  ...(updatedData.application.business || {}),
+                  abn: updatedData.application.business?.abn || '',
+                  entityName: result.entityName,
+                  entityType: result.entityType as ApplicationData['business']['entityType'],
+                  gstRegistered: result.gstRegistered,
+                  businessState: result.state || '',
+                  abnRegisteredDate: result.abnRegisteredDate || '',
+                  businessAddress: '',
+                  businessPostcode: result.postcode || '',
+                },
+              };
+            }
+          } catch (error) {
+            console.error('ABN lookup failed:', error);
+          }
+          break;
+        }
+        // Other actions can be added here if needed
+      }
+
+      // Move to next step automatically
+      const nextStepId = typeof step.nextStep === 'function'
+        ? step.nextStep('', updatedData)
+        : step.nextStep;
+
+      await autoProgressCallback(nextStepId, updatedData);
+      return;
+    }
 
     // Update state with input expectations
     setState(prev => ({
@@ -473,15 +527,34 @@ export function useChatApplication() {
       isComplete: stepId.startsWith('end_'),
     }));
 
-    // Process step messages
-    await processStepMessages(step, flowData);
+    // Define auto-progress callback for steps with actions but no input required
+    const autoProgressCallback = async (nextStepId: string, updatedData: ChatFlowData) => {
+      // Update state with the new flow data
+      setState(prev => ({ ...prev, flowData: updatedData }));
+      // Save state
+      saveState({
+        ...state,
+        currentStepId: nextStepId,
+        flowData: updatedData,
+      } as ChatState);
+      // Move to next step
+      await moveToStep(nextStepId, updatedData);
+    };
 
-    // Save state
-    saveState({
-      ...state,
-      currentStepId: stepId,
-      flowData,
-    } as ChatState);
+    // Process step messages (with auto-progress callback for action steps)
+    await processStepMessages(step, flowData, autoProgressCallback);
+
+    // Save state (only if not auto-progressed)
+    const currentOptions = typeof step.options === 'function'
+      ? step.options(flowData)
+      : (step.options || []);
+    if (!step.action || currentOptions.length > 0) {
+      saveState({
+        ...state,
+        currentStepId: stepId,
+        flowData,
+      } as ChatState);
+    }
   }, [processStepMessages, state]);
 
   // Handle user input

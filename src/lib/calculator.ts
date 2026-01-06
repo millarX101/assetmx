@@ -27,7 +27,6 @@ export interface QuoteOutput {
   // Fees
   platformFee: number;
   lenderEstablishmentFee: number;
-  ppsrFee: number;
   totalFeesFinanced: number; // Fees included in the loan
   totalFeesUpfront: number; // Fees paid before settlement
   totalCost: number;
@@ -44,7 +43,6 @@ export interface QuoteOutput {
 
 // Fee constants - TRANSPARENT PRICING
 export const PLATFORM_FEE = 800;
-export const PPSR_FEE = 7.40;
 export const LENDER_ESTABLISHMENT_FEE = 500; // Financed into the loan (per lender quote)
 export const BROKER_MARGIN = 2.00; // What brokers typically add to hide commission (~$2k on $100k vs our $800)
 
@@ -213,7 +211,7 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
 
   // Fees breakdown
   const totalFeesFinanced = LENDER_ESTABLISHMENT_FEE + (financePlatformFee ? PLATFORM_FEE : 0);
-  const totalFeesUpfront = PPSR_FEE + (financePlatformFee ? 0 : PLATFORM_FEE);
+  const totalFeesUpfront = financePlatformFee ? 0 : PLATFORM_FEE;
 
   // Total cost = all repayments + any upfront fees
   const totalCost = totalRepayments + totalFeesUpfront;
@@ -228,7 +226,7 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
     balloonAmount
   );
   const brokerTotalRepayments = (brokerMonthlyRepayment * input.termMonths) + balloonAmount;
-  const brokerTotalCost = brokerTotalRepayments + PPSR_FEE;
+  const brokerTotalCost = brokerTotalRepayments;
 
   // The savings = broker's hidden commission vs our transparent fee
   const estimatedSaving = brokerTotalCost - totalCost;
@@ -250,7 +248,6 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
     // Fees
     platformFee: PLATFORM_FEE,
     lenderEstablishmentFee: LENDER_ESTABLISHMENT_FEE,
-    ppsrFee: PPSR_FEE,
     totalFeesFinanced: round(totalFeesFinanced, 2),
     totalFeesUpfront: round(totalFeesUpfront, 2),
     totalCost: round(totalCost, 2),
