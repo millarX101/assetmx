@@ -65,9 +65,11 @@ export function EquipmentFinance() {
                     Get Your Quote <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
-                  See How We Compare
-                </Button>
+                <a href="#comparison">
+                  <Button size="lg" variant="outline" className="border-white/50 text-white bg-white/10 hover:bg-white/20">
+                    See How We Compare
+                  </Button>
+                </a>
               </div>
             </div>
 
@@ -227,6 +229,52 @@ export function EquipmentFinance() {
               <div className="font-semibold text-slate-900">Trailers</div>
               <div className="text-sm text-slate-500">Plant & equipment</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison Section */}
+      <section id="comparison" className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-display text-center mb-12 text-slate-900">
+            The Difference is Clear
+          </h2>
+          <div className="max-w-4xl mx-auto">
+            <Card className="border-purple-100 shadow-card">
+              <CardContent className="pt-6">
+                <div className="grid md:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="text-xl font-bold mb-4 text-slate-600">Traditional Broker</h3>
+                    <div className="space-y-3 text-sm text-slate-500">
+                      <div>
+                        <strong className="text-slate-700">$120,000 excavator:</strong>
+                        <ul className="ml-4 mt-1 space-y-1">
+                          <li>Base rate: 7.0%</li>
+                          <li>Your rate: 8.5% (hidden markup)</li>
+                          <li>Hidden commission: ~$5,000</li>
+                          <li>Phone calls and paperwork</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-4 text-purple-700">AssetMX</h3>
+                    <div className="space-y-3 text-sm text-slate-500">
+                      <div>
+                        <strong className="text-slate-700">$120,000 excavator:</strong>
+                        <ul className="ml-4 mt-1 space-y-1">
+                          <li>Base rate: 7.0%</li>
+                          <li>Your rate: 7.0% (no markup)</li>
+                          <li>Transparent fee: $800</li>
+                          <li>100% online, same-day approval</li>
+                        </ul>
+                      </div>
+                      <p className="font-medium text-purple-600 pt-2">You save ~$4,200</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
