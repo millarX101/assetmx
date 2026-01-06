@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, ChevronDown } from 'lucide-react';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-purple-900/10 bg-ivory/95 backdrop-blur supports-[backdrop-filter]:bg-ivory/80">
@@ -36,18 +38,36 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            <a
-              href="#calculator"
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50"
-            >
-              Calculator
-            </a>
-            <a
-              href="#how-it-works"
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50"
-            >
-              How It Works
-            </a>
+            {isLandingPage ? (
+              <a
+                href="#calculator"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50"
+              >
+                Calculator
+              </a>
+            ) : (
+              <Link
+                to="/#calculator"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50"
+              >
+                Calculator
+              </Link>
+            )}
+            {isLandingPage ? (
+              <a
+                href="#how-it-works"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50"
+              >
+                How It Works
+              </a>
+            ) : (
+              <Link
+                to="/#how-it-works"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50"
+              >
+                How It Works
+              </Link>
+            )}
             <div className="relative group">
               <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50">
                 Products
@@ -56,39 +76,42 @@ export function Header() {
               {/* Dropdown */}
               <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-purple-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
                 <div className="py-2 px-1">
-                  <a href="#vehicles" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
+                  <Link to="/vehicle-finance" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
                     <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
                       <span className="text-purple-700 text-xs font-bold">V</span>
                     </div>
                     Vehicle Finance
-                  </a>
-                  <a href="#equipment" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
+                  </Link>
+                  <Link to="/equipment-finance" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
                     <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
                       <span className="text-purple-700 text-xs font-bold">E</span>
                     </div>
                     Equipment Finance
-                  </a>
-                  <a href="#trucks" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
+                  </Link>
+                  <Link to="/truck-finance" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
                     <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
                       <span className="text-purple-700 text-xs font-bold">T</span>
                     </div>
                     Truck & Trailer
-                  </a>
-                  <a href="#technology" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
-                    <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                      <span className="text-purple-700 text-xs font-bold">IT</span>
-                    </div>
-                    Technology Finance
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
-            <a
-              href="#about"
-              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50"
-            >
-              About
-            </a>
+            {isLandingPage ? (
+              <a
+                href="#about"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50"
+              >
+                About
+              </a>
+            ) : (
+              <Link
+                to="/#about"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50"
+              >
+                About
+              </Link>
+            )}
           </nav>
 
           {/* CTA Buttons */}
@@ -119,30 +142,83 @@ export function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-purple-100 animate-in slide-in-from-top-2 duration-200">
             <nav className="flex flex-col gap-1">
-              <a
-                href="#calculator"
-                className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
-              >
-                Calculator
-              </a>
-              <a
-                href="#how-it-works"
-                className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
-              >
-                How It Works
-              </a>
-              <a
-                href="#products"
-                className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
-              >
-                Products
-              </a>
-              <a
-                href="#about"
-                className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
-              >
-                About
-              </a>
+              {isLandingPage ? (
+                <a
+                  href="#calculator"
+                  className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Calculator
+                </a>
+              ) : (
+                <Link
+                  to="/#calculator"
+                  className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Calculator
+                </Link>
+              )}
+              {isLandingPage ? (
+                <a
+                  href="#how-it-works"
+                  className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  How It Works
+                </a>
+              ) : (
+                <Link
+                  to="/#how-it-works"
+                  className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  How It Works
+                </Link>
+              )}
+              <div className="px-4 py-2">
+                <div className="text-sm font-medium text-slate-500 mb-2">Products</div>
+                <div className="pl-2 flex flex-col gap-1">
+                  <Link
+                    to="/vehicle-finance"
+                    className="px-3 py-2 text-sm text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Vehicle Finance
+                  </Link>
+                  <Link
+                    to="/equipment-finance"
+                    className="px-3 py-2 text-sm text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Equipment Finance
+                  </Link>
+                  <Link
+                    to="/truck-finance"
+                    className="px-3 py-2 text-sm text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Truck & Trailer
+                  </Link>
+                </div>
+              </div>
+              {isLandingPage ? (
+                <a
+                  href="#about"
+                  className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  About
+                </a>
+              ) : (
+                <Link
+                  to="/#about"
+                  className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  About
+                </Link>
+              )}
               <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-purple-100">
                 <Button
                   variant="outline"

@@ -1141,7 +1141,6 @@ export function mapOptionToValue(option: string, field: string): string | number
     if (option.toLowerCase().includes('construction') || option.toLowerCase().includes('excavator') || option.toLowerCase().includes('loader')) return 'equipment';
     if (option.toLowerCase().includes('mobile equipment')) return 'equipment';
     if (option.toLowerCase().includes('fixed') || option.toLowerCase().includes('installed')) return 'equipment';
-    if (option.toLowerCase().includes('technology')) return 'technology';
   }
 
   // Asset condition mapping

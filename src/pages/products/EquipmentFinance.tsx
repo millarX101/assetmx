@@ -1,0 +1,285 @@
+import { Header } from '@/components/layout/Header';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { CheckCircle, ArrowRight, TrendingDown, Clock, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+export function EquipmentFinance() {
+  return (
+    <div className="min-h-screen bg-ivory">
+      <Header />
+
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-amber-800 to-orange-800" />
+
+        {/* Hero content */}
+        <div className="relative container mx-auto px-4 py-16 md:py-24">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="text-white">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-display mb-6">
+                Equipment Finance
+                <br />
+                <span className="text-amber-300">Built for Builders</span>
+              </h1>
+              <p className="text-xl text-amber-100 mb-8 max-w-lg">
+                Excavators, loaders, earthmoving gear - finance your equipment with
+                transparent pricing. No hidden broker commissions, just honest rates.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Link to="/chat-apply">
+                  <Button size="lg" className="bg-white text-amber-800 hover:bg-amber-50 shadow-lg">
+                    Get Your Quote <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+                  See How We Compare
+                </Button>
+              </div>
+            </div>
+
+            {/* Hero image - Excavator */}
+            <div className="relative">
+              <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
+                <img
+                  src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&h=600&fit=crop"
+                  alt="CAT excavator on construction site"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Floating price card */}
+              <Card className="absolute -bottom-6 -left-6 shadow-xl border-0">
+                <CardContent className="p-4">
+                  <div className="text-sm text-slate-500 mb-1">Example: $120,000 excavator</div>
+                  <div className="text-2xl font-bold text-gradient-brand">~$2,340/mo</div>
+                  <div className="text-xs text-slate-400">5 years @ 6.45%</div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* What We Finance */}
+      <section className="py-16 bg-ivory">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-display text-center mb-4 text-slate-900">
+            Equipment We Finance
+          </h2>
+          <p className="text-center text-slate-600 mb-12 max-w-2xl mx-auto">
+            From mini excavators to road-registered gear - same transparent pricing for all mobile equipment.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {/* Excavators */}
+            <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+              <div className="aspect-[16/10] relative">
+                <img
+                  src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop"
+                  alt="Excavator digging on construction site"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-2 text-slate-900">Excavators</h3>
+                <p className="text-slate-500 mb-4">
+                  CAT, Komatsu, Hitachi, Kubota - from mini excavators to 30+ tonne machines.
+                </p>
+                <ul className="space-y-2 text-sm text-slate-600">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    All sizes & brands
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Attachments included
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Loaders & Skid Steers */}
+            <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+              <div className="aspect-[16/10] relative">
+                <img
+                  src="https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=600&h=400&fit=crop"
+                  alt="Wheel loader moving materials"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-2 text-slate-900">Loaders & Skid Steers</h3>
+                <p className="text-slate-500 mb-4">
+                  Wheel loaders, skid steers, compact track loaders - versatile workhorses for any site.
+                </p>
+                <ul className="space-y-2 text-sm text-slate-600">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    New & used machines
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Quick approval
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* Earthmoving & Graders */}
+            <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+              <div className="aspect-[16/10] relative">
+                <img
+                  src="https://images.unsplash.com/photo-1580901368919-7738efb0f87e?w=600&h=400&fit=crop"
+                  alt="Bulldozer on earthmoving site"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <CardContent className="pt-6">
+                <h3 className="text-xl font-semibold mb-2 text-slate-900">Earthmoving</h3>
+                <p className="text-slate-500 mb-4">
+                  Dozers, graders, rollers, scrapers - the heavy machinery that shapes Australia.
+                </p>
+                <ul className="space-y-2 text-sm text-slate-600">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Major projects welcome
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    Fleet financing
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Additional Equipment Types */}
+      <section className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl md:text-3xl font-display text-center mb-8 text-slate-900">
+            We Also Finance
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-center">
+            <div className="p-4 rounded-xl bg-gradient-light">
+              <div className="font-semibold text-slate-900">Cranes</div>
+              <div className="text-sm text-slate-500">All types</div>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-light">
+              <div className="font-semibold text-slate-900">Forklifts</div>
+              <div className="text-sm text-slate-500">Electric & diesel</div>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-light">
+              <div className="font-semibold text-slate-900">Generators</div>
+              <div className="text-sm text-slate-500">All sizes</div>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-light">
+              <div className="font-semibold text-slate-900">Compressors</div>
+              <div className="text-sm text-slate-500">Industrial</div>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-light">
+              <div className="font-semibold text-slate-900">Concrete Gear</div>
+              <div className="text-sm text-slate-500">Pumps & mixers</div>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-light">
+              <div className="font-semibold text-slate-900">Scaffolding</div>
+              <div className="text-sm text-slate-500">Systems & access</div>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-light">
+              <div className="font-semibold text-slate-900">Welding Gear</div>
+              <div className="text-sm text-slate-500">Industrial</div>
+            </div>
+            <div className="p-4 rounded-xl bg-gradient-light">
+              <div className="font-semibold text-slate-900">Trailers</div>
+              <div className="text-sm text-slate-500">Plant & equipment</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why AssetMX */}
+      <section className="py-16 bg-gradient-light">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-display text-center mb-12 text-slate-900">
+            Why Tradies & Contractors Choose Us
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="text-center">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-brand flex items-center justify-center mx-auto mb-4">
+                <TrendingDown className="h-7 w-7 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">Transparent Savings</h3>
+              <p className="text-slate-500">
+                Equipment finance brokers typically hide $2,000-$5,000 in your rate.
+                We charge a flat $800 fee. Simple.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-brand flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-7 w-7 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">Get Back to Work</h3>
+              <p className="text-slate-500">
+                No endless paperwork. No waiting for broker callbacks.
+                Apply online in 10 minutes, get approved fast.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-brand flex items-center justify-center mx-auto mb-4">
+                <Shield className="h-7 w-7 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">We Get Construction</h3>
+              <p className="text-slate-500">
+                Built by people who understand equipment values, depreciation,
+                and what lenders want to see from construction businesses.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-ivory">
+        <div className="container mx-auto px-4">
+          <Card className="max-w-3xl mx-auto bg-gradient-brand border-0 shadow-2xl shadow-purple-900/30">
+            <CardContent className="pt-8 pb-8 text-center">
+              <h2 className="text-2xl md:text-3xl font-display mb-4 text-white">
+                Ready to Finance Your Equipment?
+              </h2>
+              <p className="text-lg text-purple-100 mb-6">
+                Get your transparent quote in 30 seconds. No credit check required.
+              </p>
+              <Link to="/chat-apply">
+                <Button size="lg" className="text-lg px-8 py-6 bg-white text-purple-800 hover:bg-purple-50 shadow-lg">
+                  Get Started Now
+                </Button>
+              </Link>
+              <p className="text-sm text-purple-200 mt-4">
+                ABN 2+ years | GST registered | Good credit
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-purple-900 py-8">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-xs text-purple-300 max-w-3xl mx-auto">
+            AssetMX is a trading name of Blackrock Leasing Pty Ltd (trading as millarX)
+            <br />
+            ABN 15 681 267 818 | Australian Credit Licence 569484
+          </p>
+          <p className="text-xs text-purple-400 mt-4">
+            © {new Date().getFullYear()} Blackrock Leasing Pty Ltd. All rights reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+}

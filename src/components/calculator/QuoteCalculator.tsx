@@ -31,7 +31,6 @@ const assetTypeLabels = {
   vehicle: 'Vehicle (Car, Ute, Van)',
   truck: 'Truck / Trailer',
   equipment: 'Equipment / Machinery',
-  technology: 'Technology / Medical',
 };
 
 const assetConditionLabels = {

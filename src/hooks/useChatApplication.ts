@@ -35,6 +35,14 @@ export interface ChatState {
 const TYPING_DELAY = 800; // ms between bot messages
 const STORAGE_KEY = 'assetmx_chat_progress';
 
+// Debug logging helper
+const DEBUG = true; // Set to false in production
+const debugLog = (category: string, message: string, data?: unknown) => {
+  if (!DEBUG) return;
+  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+  console.log(`[Chat ${timestamp}] [${category}] ${message}`, data !== undefined ? data : '');
+};
+
 // Helper to set nested value in object
 function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
   const keys = path.split('.');
@@ -181,9 +189,13 @@ export function useChatApplication() {
 
   // Process the current step's messages
   const processStepMessages = useCallback(async (step: ChatStep, flowData: ChatFlowData, autoProgressCallback?: (stepId: string, data: ChatFlowData) => Promise<void>) => {
+    debugLog('STEP', `Processing step: ${step.id}`, { inputType: step.inputType, hasAction: !!step.action });
+
     const messages = typeof step.messages === 'function'
       ? step.messages(flowData)
       : step.messages;
+
+    debugLog('STEP', `Messages to display: ${messages.length}`, messages);
 
     // Display messages with typing delay
     for (const message of messages) {
@@ -204,8 +216,11 @@ export function useChatApplication() {
       ? step.options(flowData)
       : (step.options || []);
 
+    debugLog('STEP', `Options resolved: ${options.length}`, options);
+
     // Auto-progress for steps with actions but no user input required (empty options)
     if (step.action && options.length === 0 && autoProgressCallback) {
+      debugLog('AUTO', `Auto-progressing step ${step.id} with action: ${step.action}`);
       // Execute the action
       let updatedData = { ...flowData };
 
@@ -254,11 +269,13 @@ export function useChatApplication() {
         ? step.nextStep('', updatedData)
         : step.nextStep;
 
+      debugLog('AUTO', `Auto-progressing to next step: ${nextStepId}`);
       await autoProgressCallback(nextStepId, updatedData);
       return;
     }
 
     // Update state with input expectations
+    debugLog('STEP', `Waiting for input`, { inputType: step.inputType, options });
     setState(prev => ({
       ...prev,
       isWaitingForInput: true,
@@ -270,6 +287,7 @@ export function useChatApplication() {
 
   // Execute step action (ABN lookup, quote calculation, etc.)
   const executeAction = useCallback(async (action: string, flowData: ChatFlowData, userInput?: string): Promise<ChatFlowData> => {
+    debugLog('ACTION', `Executing action: ${action}`, { userInput });
     const updatedData = { ...flowData };
 
     switch (action) {
@@ -504,14 +522,17 @@ export function useChatApplication() {
 
   // Move to the next step
   const moveToStep = useCallback(async (stepId: string, flowData: ChatFlowData) => {
+    debugLog('NAV', `Moving to step: ${stepId}`);
     const step = getStep(stepId);
     if (!step) {
+      debugLog('ERROR', `Step not found: ${stepId}`);
       console.error('Step not found:', stepId);
       return;
     }
 
     // Check if step should be skipped
     if (step.skipIf && step.skipIf(flowData)) {
+      debugLog('NAV', `Skipping step ${stepId} (skipIf returned true)`);
       const nextStepId = typeof step.nextStep === 'function'
         ? step.nextStep('', flowData)
         : step.nextStep;
@@ -559,8 +580,12 @@ export function useChatApplication() {
 
   // Handle user input
   const handleUserInput = useCallback(async (input: string) => {
+    debugLog('INPUT', `User input received`, { stepId: state.currentStepId, input });
     const currentStep = getStep(state.currentStepId);
-    if (!currentStep) return;
+    if (!currentStep) {
+      debugLog('ERROR', `No current step found: ${state.currentStepId}`);
+      return;
+    }
 
     // Add user message
     addUserMessage(input);
@@ -572,6 +597,7 @@ export function useChatApplication() {
     if (currentStep.validate) {
       const error = currentStep.validate(input, flowData);
       if (error) {
+        debugLog('VALIDATE', `Validation failed: ${error}`);
         showTyping(true);
         await new Promise(resolve => setTimeout(resolve, TYPING_DELAY));
         showTyping(false);
@@ -662,6 +688,8 @@ export function useChatApplication() {
       ? currentStep.nextStep(input, flowData)
       : currentStep.nextStep;
 
+    debugLog('NAV', `Next step determined: ${nextStepId}`);
+
     // Move to next step
     await moveToStep(nextStepId, flowData);
   }, [state.currentStepId, state.flowData, addUserMessage, addBotMessage, showTyping, executeAction, moveToStep]);
@@ -673,9 +701,11 @@ export function useChatApplication() {
 
   // Start or resume the chat
   const startChat = useCallback(async () => {
+    debugLog('INIT', 'Starting chat...');
     const saved = loadSavedState();
 
     if (saved && saved.currentStepId && !saved.currentStepId.startsWith('end_')) {
+      debugLog('INIT', `Found saved state at step: ${saved.currentStepId}`);
       // Ask if user wants to resume
       addBotMessage("Welcome back! Want to continue where you left off?");
       setState(prev => ({
@@ -687,6 +717,7 @@ export function useChatApplication() {
       }));
     } else {
       // Start fresh
+      debugLog('INIT', 'Starting fresh from greeting');
       const firstStep = getStep('greeting')!;
       await processStepMessages(firstStep, state.flowData);
     }

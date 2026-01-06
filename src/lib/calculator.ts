@@ -2,7 +2,7 @@
 // Transparent pricing with broker comparison
 
 export interface QuoteInput {
-  assetType: 'vehicle' | 'truck' | 'equipment' | 'technology';
+  assetType: 'vehicle' | 'truck' | 'equipment';
   assetCondition: 'new' | 'demo' | 'used_0_3' | 'used_4_7' | 'used_8_plus';
   loanAmount: number;
   termMonths: number;

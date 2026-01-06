@@ -9,7 +9,7 @@ export type ApplicationStatus =
   | 'declined'
   | 'settled';
 
-export type AssetType = 'vehicle' | 'truck' | 'equipment' | 'technology';
+export type AssetType = 'vehicle' | 'truck' | 'equipment';
 
 export type AssetCondition = 'new' | 'demo' | 'used_0_3' | 'used_4_7' | 'used_8_plus';
 
@@ -206,14 +206,6 @@ export const ASSET_CATEGORIES: Record<AssetType, { value: string; label: string 
     { value: 'agricultural', label: 'Agricultural Equipment' },
     { value: 'other_equipment', label: 'Other Equipment' },
   ],
-  technology: [
-    { value: 'it_hardware', label: 'IT Hardware / Servers' },
-    { value: 'medical', label: 'Medical Equipment' },
-    { value: 'dental', label: 'Dental Equipment' },
-    { value: 'pos', label: 'POS / Retail Systems' },
-    { value: 'fitout', label: 'Office Fitout' },
-    { value: 'other_tech', label: 'Other Technology' },
-  ],
 };
 
 // Australian states
@@ -242,7 +234,6 @@ export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
   vehicle: 'Vehicle',
   truck: 'Truck / Trailer',
   equipment: 'Equipment / Machinery',
-  technology: 'Technology / Medical',
 };
 
 // Default empty application

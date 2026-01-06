@@ -6,6 +6,9 @@ import { ChatApply } from '@/pages/ChatApply';
 import { Terms } from '@/pages/legal/Terms';
 import { Privacy } from '@/pages/legal/Privacy';
 import { CreditGuide } from '@/pages/legal/CreditGuide';
+import { VehicleFinance } from '@/pages/products/VehicleFinance';
+import { TruckFinance } from '@/pages/products/TruckFinance';
+import { EquipmentFinance } from '@/pages/products/EquipmentFinance';
 import { AdminLogin } from '@/pages/admin/Login';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { AdminDashboard } from '@/pages/admin/Dashboard';
@@ -52,6 +55,11 @@ function App() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/credit-guide" element={<CreditGuide />} />
+
+        {/* Product pages */}
+        <Route path="/vehicle-finance" element={<VehicleFinance />} />
+        <Route path="/truck-finance" element={<TruckFinance />} />
+        <Route path="/equipment-finance" element={<EquipmentFinance />} />
 
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
