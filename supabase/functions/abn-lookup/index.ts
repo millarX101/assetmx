@@ -68,19 +68,28 @@ function parseABRResponse(xml: string): ABNLookupResult | null {
     const abnStatus = abnStatusMatch ? abnStatusMatch[1] : 'Unknown';
 
     // Extract status from date (this is usually the ABN registration effective date)
-    // Try multiple possible date fields from ABR response
+    // ABR API can return dates in various field names - try all known patterns
     const statusFromDateMatch = xml.match(/<identifierStatusFromDate>([^<]+)<\/identifierStatusFromDate>/);
+    const abnStatusEffectiveFromMatch = xml.match(/<ABNStatusEffectiveFrom>([^<]+)<\/ABNStatusEffectiveFrom>/i);
     const effectiveFromMatch = xml.match(/<effectiveFrom>([^<]+)<\/effectiveFrom>/);
+    const effectiveFromDateMatch = xml.match(/<effectiveFromDate>([^<]+)<\/effectiveFromDate>/);
     const recordLastUpdatedMatch = xml.match(/<recordLastUpdatedDate>([^<]+)<\/recordLastUpdatedDate>/);
 
-    const rawStatusFromDate = statusFromDateMatch ? statusFromDateMatch[1] :
-                              (effectiveFromMatch ? effectiveFromMatch[1] : '');
+    // Try each potential date source in order of preference
+    const rawStatusFromDate = statusFromDateMatch?.[1] ||
+                              abnStatusEffectiveFromMatch?.[1] ||
+                              effectiveFromDateMatch?.[1] ||
+                              effectiveFromMatch?.[1] ||
+                              '';
     const abnStatusFromDate = parseABRDate(rawStatusFromDate);
 
     console.log('Date extraction:', {
-      statusFromDate: statusFromDateMatch?.[1],
+      identifierStatusFromDate: statusFromDateMatch?.[1],
+      ABNStatusEffectiveFrom: abnStatusEffectiveFromMatch?.[1],
+      effectiveFromDate: effectiveFromDateMatch?.[1],
       effectiveFrom: effectiveFromMatch?.[1],
       recordLastUpdated: recordLastUpdatedMatch?.[1],
+      rawUsed: rawStatusFromDate,
       parsed: abnStatusFromDate
     });
 
