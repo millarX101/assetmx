@@ -68,13 +68,17 @@ const formatMoney = (amount: number): string => {
 
 // Helper to format date for display
 const formatDate = (dateStr: string): string => {
+  if (!dateStr) return 'Unknown date';
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return 'Unknown date';
   return date.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
 };
 
 // Calculate years since a date
 const yearsSince = (dateStr: string): number => {
+  if (!dateStr) return 0;
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return 0;
   const now = new Date();
   return Math.floor((now.getTime() - date.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
 };

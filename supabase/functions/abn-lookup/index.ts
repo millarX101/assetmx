@@ -25,9 +25,38 @@ interface ABNLookupResult {
   abnRegisteredDate: string;
 }
 
+// Helper to parse ABR date format (can be YYYY-MM-DD or YYYYMMDD)
+function parseABRDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+
+  // Clean the date string
+  const cleaned = dateStr.trim();
+
+  // Already in YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+    return cleaned;
+  }
+
+  // YYYYMMDD format - convert to YYYY-MM-DD
+  if (/^\d{8}$/.test(cleaned)) {
+    return `${cleaned.slice(0, 4)}-${cleaned.slice(4, 6)}-${cleaned.slice(6, 8)}`;
+  }
+
+  // Try to parse and re-format
+  const date = new Date(cleaned);
+  if (!isNaN(date.getTime())) {
+    return date.toISOString().split('T')[0];
+  }
+
+  return '';
+}
+
 // Parse ABR XML response
 function parseABRResponse(xml: string): ABNLookupResult | null {
   try {
+    // Log the raw XML for debugging (will show in Supabase logs)
+    console.log('ABR XML Response (first 2000 chars):', xml.substring(0, 2000));
+
     // Extract ABN
     const abnMatch = xml.match(/<identifierValue>(\d+)<\/identifierValue>/);
     if (!abnMatch) return null;
@@ -38,9 +67,10 @@ function parseABRResponse(xml: string): ABNLookupResult | null {
     const abnStatusMatch = xml.match(/<identifierStatus>([^<]+)<\/identifierStatus>/);
     const abnStatus = abnStatusMatch ? abnStatusMatch[1] : 'Unknown';
 
-    // Extract status from date
+    // Extract status from date (this is usually the ABN registration effective date)
     const statusFromDateMatch = xml.match(/<identifierStatusFromDate>([^<]+)<\/identifierStatusFromDate>/);
-    const abnStatusFromDate = statusFromDateMatch ? statusFromDateMatch[1] : '';
+    const rawStatusFromDate = statusFromDateMatch ? statusFromDateMatch[1] : '';
+    const abnStatusFromDate = parseABRDate(rawStatusFromDate);
 
     // Extract entity name - try multiple tags
     let entityName = '';
@@ -64,10 +94,34 @@ function parseABRResponse(xml: string): ABNLookupResult | null {
     const entityTypeCodeMatch = xml.match(/<entityTypeCode>([^<]+)<\/entityTypeCode>/);
     const entityTypeCode = entityTypeCodeMatch ? entityTypeCodeMatch[1] : '';
 
-    // Extract GST registration
-    const gstMatch = xml.match(/<GST>.*?<effectiveFrom>([^<]+)<\/effectiveFrom>.*?<\/GST>/s);
-    const gstRegistered = gstMatch !== null;
-    const gstRegisteredDate = gstMatch ? gstMatch[1] : null;
+    // Extract GST registration - check multiple patterns
+    // Pattern 1: <GST><effectiveFrom>date</effectiveFrom>...</GST>
+    // Pattern 2: <goodsAndServicesTax><effectiveFrom>date</effectiveFrom>...</goodsAndServicesTax>
+    let gstRegistered = false;
+    let gstRegisteredDate: string | null = null;
+
+    const gstMatch1 = xml.match(/<GST>.*?<effectiveFrom>([^<]+)<\/effectiveFrom>.*?<\/GST>/s);
+    const gstMatch2 = xml.match(/<goodsAndServicesTax>.*?<effectiveFrom>([^<]+)<\/effectiveFrom>.*?<\/goodsAndServicesTax>/s);
+    const gstMatch3 = xml.match(/<GSTStatus>.*?<effectiveFrom>([^<]+)<\/effectiveFrom>.*?<\/GSTStatus>/s);
+
+    // Also check for the presence of GST tags without effectiveTo (means still registered)
+    const hasActiveGST = xml.includes('<GST>') && !xml.match(/<GST>.*?<effectiveTo>[^<]+<\/effectiveTo>.*?<\/GST>/s);
+    const hasActiveGST2 = xml.includes('<goodsAndServicesTax>') && !xml.match(/<goodsAndServicesTax>.*?<effectiveTo>[^<]+<\/effectiveTo>.*?<\/goodsAndServicesTax>/s);
+
+    if (gstMatch1) {
+      gstRegistered = true;
+      gstRegisteredDate = parseABRDate(gstMatch1[1]);
+    } else if (gstMatch2) {
+      gstRegistered = true;
+      gstRegisteredDate = parseABRDate(gstMatch2[1]);
+    } else if (gstMatch3) {
+      gstRegistered = true;
+      gstRegisteredDate = parseABRDate(gstMatch3[1]);
+    } else if (hasActiveGST || hasActiveGST2) {
+      gstRegistered = true;
+    }
+
+    console.log('GST Detection:', { gstRegistered, gstRegisteredDate, hasActiveGST, hasActiveGST2 });
 
     // Extract address
     const stateMatch = xml.match(/<stateCode>([^<]+)<\/stateCode>/);
@@ -78,6 +132,8 @@ function parseABRResponse(xml: string): ABNLookupResult | null {
 
     // Extract ABN registered date (use status from date as approximation)
     const abnRegisteredDate = abnStatusFromDate;
+
+    console.log('Parsed result:', { abn, abnStatus, abnRegisteredDate, entityName, gstRegistered, gstRegisteredDate });
 
     return {
       abn: abn.replace(/(\d{2})(\d{3})(\d{3})(\d{3})/, '$1 $2 $3 $4'),
