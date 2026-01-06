@@ -12,7 +12,7 @@ const structuredData = {
   "name": "AssetMX",
   "description": "Transparent asset finance for Australian businesses. $800 flat fee, no hidden broker commissions. Vehicle, truck, and equipment finance.",
   "url": "https://assetmx.com.au",
-  "logo": "https://assetmx.com.au/logo.png",
+  "logo": "https://assetmx.com.au/logo.svg",
   "areaServed": "Australia",
   "priceRange": "$800 flat fee",
   "sameAs": [],

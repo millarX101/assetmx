@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60">
+  <defs>
+    <linearGradient id="brand-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+  <!-- Logo Mark -->
+  <rect x="5" y="10" width="40" height="40" rx="10" fill="url(#brand-gradient)"/>
+  <text x="25" y="38" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white" text-anchor="middle">A</text>
+  <circle cx="40" cy="15" r="6" fill="#f472b6"/>
+  <!-- Logo Text -->
+  <text x="55" y="38" font-family="Arial, sans-serif" font-size="28" font-weight="bold">
+    <tspan fill="#0f172a">Asset</tspan><tspan fill="url(#brand-gradient)">MX</tspan>
+  </text>
+  <text x="55" y="52" font-family="Arial, sans-serif" font-size="8" fill="#64748b" letter-spacing="2">TRANSPARENT FINANCE</text>
+</svg>

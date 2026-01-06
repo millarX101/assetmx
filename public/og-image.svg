@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="50%" stop-color="#9333ea"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="brand-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-gradient)"/>
+
+  <!-- Logo Mark -->
+  <rect x="80" y="80" width="80" height="80" rx="20" fill="white" opacity="0.95"/>
+  <text x="120" y="138" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#7c3aed" text-anchor="middle">A</text>
+  <circle cx="150" cy="90" r="12" fill="#f472b6"/>
+
+  <!-- Logo Text -->
+  <text x="180" y="138" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white">
+    <tspan>Asset</tspan><tspan fill="#fce7f3">MX</tspan>
+  </text>
+
+  <!-- Main Headline -->
+  <text x="80" y="280" font-family="Georgia, serif" font-size="72" font-weight="bold" fill="white">$800 flat.</text>
+  <text x="80" y="360" font-family="Georgia, serif" font-size="72" font-weight="bold" fill="#fce7f3">That's it.</text>
+
+  <!-- Subheadline -->
+  <text x="80" y="440" font-family="Arial, sans-serif" font-size="28" fill="white" opacity="0.9">Transparent asset finance for Australian businesses.</text>
+  <text x="80" y="480" font-family="Arial, sans-serif" font-size="28" fill="white" opacity="0.9">No hidden broker commissions. 15-minute approval.</text>
+
+  <!-- URL -->
+  <text x="80" y="570" font-family="Arial, sans-serif" font-size="24" fill="white" opacity="0.7">assetmx.com.au</text>
+
+  <!-- Decorative Elements -->
+  <circle cx="1100" cy="150" r="100" fill="white" opacity="0.1"/>
+  <circle cx="1050" cy="500" r="150" fill="white" opacity="0.05"/>
+</svg>
