@@ -229,7 +229,9 @@ export function useChatApplication() {
           const abn = cleanABN(updatedData.application.business?.abn || '');
           try {
             const result = await lookupABN(abn);
+            debugLog('ABN', 'Lookup result received', result);
             if (result) {
+              debugLog('ABN', 'abnRegisteredDate value:', result.abnRegisteredDate);
               updatedData.abnLookup = {
                 entityName: result.entityName,
                 entityType: result.entityType,
@@ -240,6 +242,7 @@ export function useChatApplication() {
                 state: result.state,
                 postcode: result.postcode,
               };
+              debugLog('ABN', 'Stored abnLookup:', updatedData.abnLookup);
               // Update application with lookup data
               updatedData.application = {
                 ...updatedData.application,
@@ -313,7 +316,9 @@ export function useChatApplication() {
         const abn = cleanABN(flowData.application.business?.abn || '');
         try {
           const result = await lookupABN(abn);
+          debugLog('ABN', 'executeAction lookup result', result);
           if (result) {
+            debugLog('ABN', 'executeAction abnRegisteredDate:', result.abnRegisteredDate);
             updatedData.abnLookup = {
               entityName: result.entityName,
               entityType: result.entityType,
@@ -805,6 +810,7 @@ export function useChatApplication() {
     messages: state.messages,
     isTyping: state.isTyping,
     isComplete: state.isComplete,
+    isLeadCaptured: state.currentStepId === 'end_lead_captured',
     isWaitingForInput: state.isWaitingForInput,
     currentInputType: state.currentInputType,
     currentOptions: state.currentOptions,

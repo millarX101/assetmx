@@ -104,6 +104,14 @@ export async function lookupABN(abn: string): Promise<ABNLookupResult | null> {
       return null;
     }
 
+    // Log the raw response for debugging
+    console.log('[ABN Lookup] Raw edge function response:', {
+      abnRegisteredDate: data.abnRegisteredDate,
+      abnStatusFromDate: data.abnStatusFromDate,
+      gstRegisteredDate: data.gstRegisteredDate,
+      fullData: data,
+    });
+
     // Map the response to our format
     const result: ABNLookupResult = {
       abn: clean,

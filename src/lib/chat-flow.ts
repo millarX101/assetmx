@@ -74,13 +74,45 @@ const formatDate = (dateStr: string): string => {
   return date.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
 };
 
+// Parse date string that might be in various formats
+const parseDate = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
+
+  // Try standard ISO format first (YYYY-MM-DD)
+  let date = new Date(dateStr);
+  if (!isNaN(date.getTime())) return date;
+
+  // Try YYYYMMDD format
+  if (/^\d{8}$/.test(dateStr)) {
+    const year = dateStr.slice(0, 4);
+    const month = dateStr.slice(4, 6);
+    const day = dateStr.slice(6, 8);
+    date = new Date(`${year}-${month}-${day}`);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  // Try DD/MM/YYYY format (common Australian format)
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateStr)) {
+    const [day, month, year] = dateStr.split('/');
+    date = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  console.warn('[Chat] Could not parse date:', dateStr);
+  return null;
+};
+
 // Calculate years since a date
 const yearsSince = (dateStr: string): number => {
-  if (!dateStr) return 0;
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return 0;
+  const date = parseDate(dateStr);
+  if (!date) {
+    console.warn('[Chat] yearsSince: Invalid date string:', dateStr);
+    return 0;
+  }
   const now = new Date();
-  return Math.floor((now.getTime() - date.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+  const years = (now.getTime() - date.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+  console.log('[Chat] yearsSince:', { dateStr, parsedDate: date.toISOString(), years });
+  return Math.floor(years);
 };
 
 // Validation helpers

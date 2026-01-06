@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChatMessage, ChatTypingIndicator } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { ChatQuickReplies } from './ChatQuickReplies';
@@ -10,10 +11,12 @@ import { RotateCcw, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export function ChatApplication() {
+  const navigate = useNavigate();
   const {
     messages,
     isTyping,
     isComplete,
+    isLeadCaptured,
     isWaitingForInput,
     currentInputType,
     currentOptions,
@@ -42,6 +45,17 @@ export function ChatApplication() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  // Auto-redirect to home page after lead capture (non-qualifying applicant)
+  useEffect(() => {
+    if (isLeadCaptured) {
+      // Wait a moment so user can see the final message, then redirect
+      const timeout = setTimeout(() => {
+        navigate('/');
+      }, 3000); // 3 second delay before redirect
+      return () => clearTimeout(timeout);
+    }
+  }, [isLeadCaptured, navigate]);
 
   
   // Get input type for ChatInput
