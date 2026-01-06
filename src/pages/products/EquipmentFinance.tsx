@@ -39,8 +39,8 @@ export function EquipmentFinance() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-900 via-amber-800 to-orange-800" />
+        {/* Background gradient - on brand purple */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-purple-800 to-pink-800" />
 
         {/* Hero content */}
         <div className="relative container mx-auto px-4 py-16 md:py-24">
@@ -49,15 +49,19 @@ export function EquipmentFinance() {
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display mb-6">
                 Equipment Finance
                 <br />
-                <span className="text-amber-300">Built for Builders</span>
+                <span className="text-pink-300">Designed for Business Owners</span>
               </h1>
-              <p className="text-xl text-amber-100 mb-8 max-w-lg">
-                Excavators, loaders, earthmoving gear - finance your equipment with
-                transparent pricing. No hidden broker commissions, just honest rates.
+              <p className="text-lg text-purple-100 mb-4">
+                Plumbers, builders, landscapers, electricians - stop paying inflated hire costs.
+                Own your equipment and benefit from tax deductions and depreciation.
+              </p>
+              <p className="text-sm text-purple-200 mb-8 max-w-lg">
+                We don't provide financial advice - always check with your accountant or advisor
+                about the best option for your situation.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/chat-apply">
-                  <Button size="lg" className="bg-white text-amber-800 hover:bg-amber-50 shadow-lg">
+                  <Button size="lg" className="bg-white text-purple-800 hover:bg-purple-50 shadow-lg">
                     Get Your Quote <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
