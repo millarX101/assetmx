@@ -1,0 +1,539 @@
+import { useState, useCallback, useEffect } from 'react';
+import type { ChatMessageData } from '@/components/chat/ChatMessage';
+import {
+  getStep,
+  mapOptionToValue,
+  parseAmount,
+  getStepProgress,
+  type ChatStep,
+  type ChatFlowData,
+} from '@/lib/chat-flow';
+import { lookupABN, cleanABN, searchABNByName } from '@/lib/abn-lookup';
+import { calculateQuote } from '@/lib/calculator';
+import type { ApplicationData, AssetType, AssetCondition } from '@/types/application';
+import { createEmptyApplication } from '@/types/application';
+
+// Generate a simple UUID without external dependency
+function generateId(): string {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
+export interface ChatState {
+  messages: ChatMessageData[];
+  currentStepId: string;
+  flowData: ChatFlowData;
+  isTyping: boolean;
+  isComplete: boolean;
+  isWaitingForInput: boolean;
+  currentInputType: ChatStep['inputType'];
+  currentOptions: string[];
+  currentPlaceholder: string;
+  progress: { current: number; total: number };
+}
+
+const TYPING_DELAY = 800; // ms between bot messages
+const STORAGE_KEY = 'assetmx_chat_progress';
+
+// Helper to set nested value in object
+function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
+  const keys = path.split('.');
+  const result = { ...obj };
+  let current: Record<string, unknown> = result;
+
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    // Handle array indices
+    if (!isNaN(Number(keys[i + 1]))) {
+      current[key] = current[key] ? [...(current[key] as unknown[])] : [];
+    } else {
+      current[key] = current[key] ? { ...(current[key] as Record<string, unknown>) } : {};
+    }
+    current = current[key] as Record<string, unknown>;
+  }
+
+  const lastKey = keys[keys.length - 1];
+  current[lastKey] = value;
+
+  return result;
+}
+
+// Load saved state from localStorage
+function loadSavedState(): Partial<ChatState> | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch {
+    // Ignore errors
+  }
+  return null;
+}
+
+// Save state to localStorage
+function saveState(state: ChatState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      messages: state.messages,
+      currentStepId: state.currentStepId,
+      flowData: state.flowData,
+    }));
+  } catch {
+    // Ignore errors
+  }
+}
+
+// Clear saved state
+function clearSavedState() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Ignore errors
+  }
+}
+
+export function useChatApplication() {
+  const [state, setState] = useState<ChatState>(() => {
+    const saved = loadSavedState();
+    const initialStep = getStep('greeting')!;
+
+    if (saved && saved.currentStepId && saved.flowData) {
+      const step = getStep(saved.currentStepId);
+      const stepOptions = step?.options;
+      // Resolve options - can be static array or function
+      const resolvedOptions = typeof stepOptions === 'function'
+        ? stepOptions(saved.flowData as ChatFlowData)
+        : (stepOptions || []);
+
+      return {
+        messages: saved.messages || [],
+        currentStepId: saved.currentStepId,
+        flowData: saved.flowData,
+        isTyping: false,
+        isComplete: saved.currentStepId.startsWith('end_'),
+        isWaitingForInput: true,
+        currentInputType: step?.inputType || 'text',
+        currentOptions: resolvedOptions,
+        currentPlaceholder: step?.placeholder || '',
+        progress: getStepProgress(saved.currentStepId),
+      };
+    }
+
+    // Resolve initial options
+    const initialOptions = typeof initialStep.options === 'function'
+      ? initialStep.options({ application: createEmptyApplication(), currentDirectorIndex: 0 })
+      : (initialStep.options || []);
+
+    return {
+      messages: [],
+      currentStepId: 'greeting',
+      flowData: {
+        application: createEmptyApplication(),
+        currentDirectorIndex: 0,
+      },
+      isTyping: false,
+      isComplete: false,
+      isWaitingForInput: false,
+      currentInputType: initialStep.inputType,
+      currentOptions: initialOptions,
+      currentPlaceholder: initialStep.placeholder || '',
+      progress: getStepProgress('greeting'),
+    };
+  });
+
+  // Add a bot message
+  const addBotMessage = useCallback((content: string) => {
+    setState(prev => ({
+      ...prev,
+      messages: [
+        ...prev.messages,
+        {
+          id: generateId(),
+          type: 'bot',
+          content,
+          timestamp: new Date(),
+        },
+      ],
+    }));
+  }, []);
+
+  // Add a user message
+  const addUserMessage = useCallback((content: string) => {
+    setState(prev => ({
+      ...prev,
+      messages: [
+        ...prev.messages,
+        {
+          id: generateId(),
+          type: 'user',
+          content,
+          timestamp: new Date(),
+        },
+      ],
+    }));
+  }, []);
+
+  // Show typing indicator
+  const showTyping = useCallback((show: boolean) => {
+    setState(prev => ({ ...prev, isTyping: show }));
+  }, []);
+
+  // Process the current step's messages
+  const processStepMessages = useCallback(async (step: ChatStep, flowData: ChatFlowData) => {
+    const messages = typeof step.messages === 'function'
+      ? step.messages(flowData)
+      : step.messages;
+
+    // Display messages with typing delay
+    for (const message of messages) {
+      if (message === '📋 SUMMARY_CARD') {
+        // Special case - summary card will be handled separately
+        addBotMessage(message);
+        continue;
+      }
+
+      showTyping(true);
+      await new Promise(resolve => setTimeout(resolve, TYPING_DELAY));
+      showTyping(false);
+      addBotMessage(message);
+    }
+
+    // Get options - can be static array or dynamic function
+    const options = typeof step.options === 'function'
+      ? step.options(flowData)
+      : (step.options || []);
+
+    // Update state with input expectations
+    setState(prev => ({
+      ...prev,
+      isWaitingForInput: true,
+      currentInputType: step.inputType,
+      currentOptions: options,
+      currentPlaceholder: step.placeholder || '',
+    }));
+  }, [addBotMessage, showTyping]);
+
+  // Execute step action (ABN lookup, quote calculation, etc.)
+  const executeAction = useCallback(async (action: string, flowData: ChatFlowData, userInput?: string): Promise<ChatFlowData> => {
+    const updatedData = { ...flowData };
+
+    switch (action) {
+      case 'abn_search': {
+        // Search for businesses by name
+        const businessName = flowData.application.business?.businessName || userInput || '';
+        if (businessName && businessName.trim().length >= 2) {
+          try {
+            const results = await searchABNByName(businessName, 3);
+            updatedData.abnSearchResults = results;
+            updatedData.businessNameSearch = businessName;
+          } catch (error) {
+            console.error('ABN search failed:', error);
+            updatedData.abnSearchResults = [];
+          }
+        } else {
+          updatedData.abnSearchResults = [];
+        }
+        break;
+      }
+
+      case 'abn_lookup': {
+        const abn = cleanABN(flowData.application.business?.abn || '');
+        try {
+          const result = await lookupABN(abn);
+          if (result) {
+            updatedData.abnLookup = {
+              entityName: result.entityName,
+              entityType: result.entityType,
+              abnStatus: result.abnStatus,
+              abnRegisteredDate: result.abnRegisteredDate || '',
+              gstRegistered: result.gstRegistered,
+              gstRegisteredDate: result.gstRegisteredDate,
+              state: result.state,
+              postcode: result.postcode,
+            };
+            // Update application with lookup data
+            updatedData.application = {
+              ...updatedData.application,
+              business: {
+                ...(updatedData.application.business || {}),
+                abn: updatedData.application.business?.abn || '',
+                entityName: result.entityName,
+                entityType: result.entityType as ApplicationData['business']['entityType'],
+                gstRegistered: result.gstRegistered,
+                businessState: result.state || '',
+                abnRegisteredDate: result.abnRegisteredDate || '',
+                businessAddress: '',
+                businessPostcode: result.postcode || '',
+              },
+            };
+          }
+        } catch (error) {
+          console.error('ABN lookup failed:', error);
+        }
+        break;
+      }
+
+      case 'calculate_quote': {
+        const asset = flowData.application.asset;
+        const loan = flowData.application.loan;
+        if (asset?.assetPriceIncGst) {
+          try {
+            const quote = calculateQuote({
+              assetType: (asset.assetType as AssetType) || 'vehicle',
+              assetCondition: (asset.assetCondition as AssetCondition) || 'new',
+              loanAmount: asset.assetPriceIncGst - (loan?.depositAmount || 0),
+              termMonths: loan?.termMonths || 60,
+              balloonPercentage: loan?.balloonPercentage || 0,
+            });
+            updatedData.quote = {
+              monthlyRepayment: quote.monthlyRepayment,
+              weeklyRepayment: quote.weeklyRepayment,
+              indicativeRate: quote.indicativeRate,
+            };
+          } catch (error) {
+            console.error('Quote calculation failed:', error);
+          }
+        }
+        break;
+      }
+    }
+
+    return updatedData;
+  }, []);
+
+  // Move to the next step
+  const moveToStep = useCallback(async (stepId: string, flowData: ChatFlowData) => {
+    const step = getStep(stepId);
+    if (!step) {
+      console.error('Step not found:', stepId);
+      return;
+    }
+
+    // Check if step should be skipped
+    if (step.skipIf && step.skipIf(flowData)) {
+      const nextStepId = typeof step.nextStep === 'function'
+        ? step.nextStep('', flowData)
+        : step.nextStep;
+      await moveToStep(nextStepId, flowData);
+      return;
+    }
+
+    // Update progress
+    setState(prev => ({
+      ...prev,
+      currentStepId: stepId,
+      progress: getStepProgress(stepId),
+      isComplete: stepId.startsWith('end_'),
+    }));
+
+    // Process step messages
+    await processStepMessages(step, flowData);
+
+    // Save state
+    saveState({
+      ...state,
+      currentStepId: stepId,
+      flowData,
+    } as ChatState);
+  }, [processStepMessages, state]);
+
+  // Handle user input
+  const handleUserInput = useCallback(async (input: string) => {
+    const currentStep = getStep(state.currentStepId);
+    if (!currentStep) return;
+
+    // Add user message
+    addUserMessage(input);
+    setState(prev => ({ ...prev, isWaitingForInput: false }));
+
+    let flowData = { ...state.flowData };
+
+    // Validate input if needed
+    if (currentStep.validate) {
+      const error = currentStep.validate(input, flowData);
+      if (error) {
+        showTyping(true);
+        await new Promise(resolve => setTimeout(resolve, TYPING_DELAY));
+        showTyping(false);
+        addBotMessage(error);
+        setState(prev => ({ ...prev, isWaitingForInput: true }));
+        return;
+      }
+    }
+
+    // Store the value if field is specified
+    if (currentStep.field) {
+      let value: unknown = input;
+
+      // Map select options to proper values
+      if (currentStep.inputType === 'select') {
+        value = mapOptionToValue(input, currentStep.field);
+      }
+
+      // Parse amounts
+      if (currentStep.inputType === 'number' || currentStep.field.includes('Price') || currentStep.field.includes('deposit')) {
+        value = parseAmount(input);
+      }
+
+      // Parse term months
+      if (currentStep.field === 'loan.termMonths') {
+        value = mapOptionToValue(input, currentStep.field);
+      }
+
+      flowData.application = setNestedValue(
+        flowData.application as Record<string, unknown>,
+        currentStep.field,
+        value
+      ) as Partial<ApplicationData>;
+    }
+
+    // Handle ABN selection from search results - extract ABN and store it
+    if (currentStep.inputType === 'abn_select' && input.includes('ABN:')) {
+      const abnMatch = input.match(/ABN:\s*([\d\s]+)/);
+      if (abnMatch) {
+        const selectedAbn = cleanABN(abnMatch[1]);
+        flowData.application = setNestedValue(
+          flowData.application as Record<string, unknown>,
+          'business.abn',
+          selectedAbn
+        ) as Partial<ApplicationData>;
+      }
+    }
+
+    // Execute action if needed
+    if (currentStep.action) {
+      flowData = await executeAction(currentStep.action, flowData, input);
+    }
+
+    // Update flowData state
+    setState(prev => ({ ...prev, flowData }));
+
+    // Determine next step
+    const nextStepId = typeof currentStep.nextStep === 'function'
+      ? currentStep.nextStep(input, flowData)
+      : currentStep.nextStep;
+
+    // Move to next step
+    await moveToStep(nextStepId, flowData);
+  }, [state.currentStepId, state.flowData, addUserMessage, addBotMessage, showTyping, executeAction, moveToStep]);
+
+  // Handle quick reply selection
+  const handleSelectOption = useCallback((option: string) => {
+    handleUserInput(option);
+  }, [handleUserInput]);
+
+  // Start or resume the chat
+  const startChat = useCallback(async () => {
+    const saved = loadSavedState();
+
+    if (saved && saved.currentStepId && !saved.currentStepId.startsWith('end_')) {
+      // Ask if user wants to resume
+      addBotMessage("Welcome back! Want to continue where you left off?");
+      setState(prev => ({
+        ...prev,
+        isWaitingForInput: true,
+        currentInputType: 'select',
+        currentOptions: ["Yes, continue", "No, start fresh"],
+        currentStepId: 'resume_choice',
+      }));
+    } else {
+      // Start fresh
+      const firstStep = getStep('greeting')!;
+      await processStepMessages(firstStep, state.flowData);
+    }
+  }, [addBotMessage, processStepMessages, state.flowData]);
+
+  // Handle resume choice
+  useEffect(() => {
+    if (state.currentStepId === 'resume_choice') {
+      // This is handled in handleUserInput
+    }
+  }, [state.currentStepId]);
+
+  // Special handling for resume choice
+  const handleResumeChoice = useCallback(async (choice: string) => {
+    if (choice.toLowerCase().includes('yes') || choice.toLowerCase().includes('continue')) {
+      // Resume from saved step
+      const saved = loadSavedState();
+      if (saved?.currentStepId && saved?.flowData) {
+        addUserMessage(choice);
+        await moveToStep(saved.currentStepId, saved.flowData as ChatFlowData);
+      }
+    } else {
+      // Start fresh
+      clearSavedState();
+      addUserMessage(choice);
+      setState(prev => ({
+        ...prev,
+        messages: prev.messages.slice(-1), // Keep only the user's choice
+        currentStepId: 'greeting',
+        flowData: {
+          application: createEmptyApplication(),
+          currentDirectorIndex: 0,
+        },
+      }));
+      const firstStep = getStep('greeting')!;
+      await processStepMessages(firstStep, {
+        application: createEmptyApplication(),
+        currentDirectorIndex: 0,
+      });
+    }
+  }, [addUserMessage, moveToStep, processStepMessages]);
+
+  // Modified handleUserInput to handle resume choice
+  const handleInput = useCallback(async (input: string) => {
+    if (state.currentStepId === 'resume_choice') {
+      await handleResumeChoice(input);
+    } else {
+      await handleUserInput(input);
+    }
+  }, [state.currentStepId, handleResumeChoice, handleUserInput]);
+
+  // Reset the chat
+  const resetChat = useCallback(() => {
+    clearSavedState();
+    setState({
+      messages: [],
+      currentStepId: 'greeting',
+      flowData: {
+        application: createEmptyApplication(),
+        currentDirectorIndex: 0,
+      },
+      isTyping: false,
+      isComplete: false,
+      isWaitingForInput: false,
+      currentInputType: 'text',
+      currentOptions: [],
+      currentPlaceholder: '',
+      progress: getStepProgress('greeting'),
+    });
+  }, []);
+
+  // Get the application data for summary
+  const getApplicationSummary = useCallback(() => {
+    return {
+      business: state.flowData.application.business,
+      abnLookup: state.flowData.abnLookup,
+      asset: state.flowData.application.asset,
+      loan: state.flowData.application.loan,
+      directors: state.flowData.application.directors,
+      quote: state.flowData.quote,
+    };
+  }, [state.flowData]);
+
+  return {
+    messages: state.messages,
+    isTyping: state.isTyping,
+    isComplete: state.isComplete,
+    isWaitingForInput: state.isWaitingForInput,
+    currentInputType: state.currentInputType,
+    currentOptions: state.currentOptions,
+    currentPlaceholder: state.currentPlaceholder,
+    progress: state.progress,
+    sendMessage: handleInput,
+    selectOption: handleSelectOption,
+    startChat,
+    resetChat,
+    getApplicationSummary,
+  };
+}

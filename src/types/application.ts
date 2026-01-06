@@ -60,6 +60,7 @@ export interface EligibilityResult {
 export interface BusinessDetailsData {
   abn: string;
   abnLookup?: ABNLookupResult;
+  businessName?: string; // Used for search before ABN is known
   entityName: string;
   entityType: EntityType;
   tradingName?: string;

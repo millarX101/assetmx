@@ -4,6 +4,7 @@ import {
   calculateQuote,
   formatCurrency,
   formatPercentage,
+  getMaxBalloon,
   type QuoteInput,
 } from '@/lib/calculator';
 import { Button } from '@/components/ui/button';
@@ -62,10 +63,16 @@ export function QuoteCalculator() {
     balloonPercentage: 20,
   });
 
+  // Get max balloon for current term
+  const maxBalloon = getMaxBalloon(formData.termMonths);
+
+  // Adjust balloon if it exceeds max for new term
+  const effectiveBalloon = Math.min(formData.balloonPercentage, maxBalloon);
+
   // Live calculation as user adjusts inputs
   const liveQuote = (() => {
     try {
-      return calculateQuote(formData);
+      return calculateQuote({ ...formData, balloonPercentage: effectiveBalloon });
     } catch {
       return null;
     }
@@ -196,27 +203,27 @@ export function QuoteCalculator() {
                       <TooltipContent className="max-w-xs">
                         <p>
                           A balloon payment reduces your monthly repayments but leaves a lump sum due at
-                          the end of the loan.
+                          the end of the loan. Max {maxBalloon}% for {Math.ceil(formData.termMonths / 12)} year term.
                         </p>
                       </TooltipContent>
                     </Tooltip>
                   </div>
                   <span className="text-lg font-semibold text-slate-900">
-                    {formData.balloonPercentage}% (
-                    {formatCurrency((formData.loanAmount * formData.balloonPercentage) / 100)})
+                    {effectiveBalloon}% (
+                    {formatCurrency((formData.loanAmount * effectiveBalloon) / 100)})
                   </span>
                 </div>
                 <Slider
-                  value={[formData.balloonPercentage]}
+                  value={[effectiveBalloon]}
                   onValueChange={([value]) => setFormData({ ...formData, balloonPercentage: value })}
                   min={0}
-                  max={50}
+                  max={maxBalloon}
                   step={5}
                   className="w-full [&_[role=slider]]:bg-gradient-brand [&_[role=slider]]:border-purple-600 [&_.bg-primary]:bg-gradient-brand"
                 />
                 <div className="flex justify-between text-sm text-slate-500">
                   <span>0%</span>
-                  <span>50%</span>
+                  <span>{maxBalloon}% max</span>
                 </div>
               </div>
 
@@ -288,7 +295,7 @@ export function QuoteCalculator() {
                     size="lg"
                     onClick={() => {
                       initFromCalculator(formData);
-                      navigate('/apply');
+                      navigate('/chat-apply');
                     }}
                     className="bg-gradient-brand hover:opacity-90 text-white shadow-lg shadow-purple-900/20 w-full md:w-auto"
                   >
@@ -299,9 +306,9 @@ export function QuoteCalculator() {
             </Card>
 
             <p className="text-xs text-slate-500 text-center max-w-2xl mx-auto">
-              *Rate subject to credit assessment. Shown rate is for established businesses with 2+ years
-              trading history and good credit. Rates are lender base rates with no markup. Our $800
-              fee is shown separately for full transparency.
+              *Rate subject to credit assessment. Rates from 6.45% p.a. for 1-5 year terms, 7.15% p.a. for longer terms.
+              For established businesses with 2+ years trading history and good credit. Rates are lender base rates
+              with no markup. Our $800 fee is shown separately for full transparency.
             </p>
           </div>
         )}

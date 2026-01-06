@@ -33,36 +33,66 @@ export const PPSR_FEE = 7.40;
 export const LENDER_ESTABLISHMENT_FEE = 495;
 export const BROKER_MARGIN = 2.00; // What brokers typically add to hide commission (~$2k on $100k vs our $800)
 
-// Base rates by asset type and condition (from lender rate sheets)
+// Base rates by term (from lender rate sheets)
+// 1-5 years: 6.45%, 5+ years: 7.15%
 // These are the ACTUAL lender rates - no markup
+export const BASE_RATE_SHORT = 6.45; // 1-5 years (12-60 months)
+export const BASE_RATE_LONG = 7.15;  // 5+ years (61-84 months)
+
+// Get base rate based on term
+export function getBaseRate(termMonths: number): number {
+  return termMonths <= 60 ? BASE_RATE_SHORT : BASE_RATE_LONG;
+}
+
+// Maximum balloon percentages by term (years)
+// 1 year: 65%, 2 years: 60%, 3 years: 50%, 4 years: 40%, 5+ years: 30%
+export const MAX_BALLOON_BY_TERM: Record<number, number> = {
+  12: 65,  // 1 year
+  24: 60,  // 2 years
+  36: 50,  // 3 years
+  48: 40,  // 4 years
+  60: 30,  // 5 years
+  72: 30,  // 6 years
+  84: 30,  // 7 years
+};
+
+// Get maximum balloon for a given term
+export function getMaxBalloon(termMonths: number): number {
+  // Find the closest term (round up to nearest 12 months)
+  const termYears = Math.ceil(termMonths / 12);
+  const termKey = termYears * 12;
+  return MAX_BALLOON_BY_TERM[termKey] || 30;
+}
+
+// Legacy BASE_RATES kept for backwards compatibility but now unused
 export const BASE_RATES: Record<string, Record<string, number>> = {
   vehicle: {
-    new: 6.29,
-    demo: 6.29,
-    used_0_3: 6.49,
-    used_4_7: 6.99,
-    used_8_plus: 7.49
+    new: 6.45,
+    demo: 6.45,
+    used_0_3: 6.45,
+    used_4_7: 6.45,
+    used_8_plus: 6.45
   },
   truck: {
-    new: 6.49,
-    demo: 6.49,
-    used_0_3: 6.79,
-    used_4_7: 7.29,
-    used_8_plus: 7.99
+    new: 6.45,
+    demo: 6.45,
+    used_0_3: 6.45,
+    used_4_7: 6.45,
+    used_8_plus: 6.45
   },
   equipment: {
-    new: 6.49,
-    demo: 6.79,
-    used_0_3: 6.99,
-    used_4_7: 7.49,
-    used_8_plus: 8.29
+    new: 6.45,
+    demo: 6.45,
+    used_0_3: 6.45,
+    used_4_7: 6.45,
+    used_8_plus: 6.45
   },
   technology: {
-    new: 7.49,
-    demo: 7.99,
-    used_0_3: 8.29,
-    used_4_7: 9.49,
-    used_8_plus: 10.99
+    new: 6.45,
+    demo: 6.45,
+    used_0_3: 6.45,
+    used_4_7: 6.45,
+    used_8_plus: 6.45
   },
 };
 
@@ -112,18 +142,16 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
   if (input.termMonths < 12 || input.termMonths > 84) {
     throw new Error('Loan term must be between 12 and 84 months');
   }
-  if (input.balloonPercentage < 0 || input.balloonPercentage > 50) {
-    throw new Error('Balloon percentage must be between 0% and 50%');
+
+  // Validate balloon against maximum for this term
+  const maxBalloon = getMaxBalloon(input.termMonths);
+  if (input.balloonPercentage < 0 || input.balloonPercentage > maxBalloon) {
+    throw new Error(`Balloon percentage must be between 0% and ${maxBalloon}% for a ${Math.ceil(input.termMonths / 12)} year term`);
   }
 
-  // Get base rate from lender rate sheet
-  const baseRate = BASE_RATES[input.assetType]?.[input.assetCondition];
-  if (!baseRate) {
-    throw new Error('Invalid asset type or condition');
-  }
-
-  // Our indicative rate IS the base rate - no markup
-  const indicativeRate = baseRate;
+  // Get base rate based on term length
+  // 1-5 years: 6.45%, 5+ years: 7.15%
+  const indicativeRate = getBaseRate(input.termMonths);
   const balloonAmount = input.loanAmount * (input.balloonPercentage / 100);
 
   // Calculate repayments at base rate

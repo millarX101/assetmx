@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X, ChevronDown } from 'lucide-react';
 
@@ -98,9 +99,11 @@ export function Header() {
             >
               Login
             </Button>
-            <Button className="bg-gradient-brand hover:opacity-90 text-white shadow-lg shadow-purple-900/25 border-0">
-              Get Started
-            </Button>
+            <Link to="/chat-apply">
+              <Button className="bg-gradient-brand hover:opacity-90 text-white shadow-lg shadow-purple-900/25 border-0">
+                Get Started
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -147,9 +150,11 @@ export function Header() {
                 >
                   Login
                 </Button>
-                <Button className="w-full justify-center bg-gradient-brand hover:opacity-90 text-white shadow-lg shadow-purple-900/25">
-                  Get Started
-                </Button>
+                <Link to="/chat-apply" className="w-full">
+                  <Button className="w-full justify-center bg-gradient-brand hover:opacity-90 text-white shadow-lg shadow-purple-900/25">
+                    Get Started
+                  </Button>
+                </Link>
               </div>
             </nav>
           </div>

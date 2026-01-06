@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, TrendingDown, Zap, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Landing() {
   return (
@@ -68,29 +69,30 @@ export function Landing() {
               <div className="bg-gradient-brand text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg shadow-purple-900/20">
                 1
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-slate-900">Get Your Quote</h3>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">Quick Chat</h3>
               <p className="text-slate-500">
-                Use our calculator above. See the lender's real base rate (no markup) + our transparent $800
-                fee.
+                Answer a few simple questions - just like texting a mate. We'll check your ABN instantly and
+                give you a real quote in under 2 minutes.
               </p>
             </div>
             <div className="text-center">
               <div className="bg-gradient-brand text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg shadow-purple-900/20">
                 2
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-slate-900">Apply Online</h3>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">Review & Confirm</h3>
               <p className="text-slate-500">
-                10-minute application. Upload your documents and our system extracts and verifies the details.
-                Conditional approval in 15 minutes, subject to verification of your information.
+                We'll show you a summary of everything. Check it looks right, make any changes, then upload
+                your ID and financials. That's it - no paperwork.
               </p>
             </div>
             <div className="text-center">
               <div className="bg-gradient-brand text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg shadow-purple-900/20">
                 3
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-slate-900">Settle Fast</h3>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">Get Approved</h3>
               <p className="text-slate-500">
-                E-sign contracts. Funds sent same day. Drive away with your asset and $4,000+ saved.
+                Conditional approval in 15 minutes. E-sign your contracts and we'll settle same day.
+                You're done - with $4,000+ saved.
               </p>
             </div>
           </div>
@@ -226,9 +228,11 @@ export function Landing() {
               <p className="text-lg text-purple-100 mb-6">
                 Get your transparent quote above, then apply online in 10 minutes.
               </p>
-              <Button size="lg" className="text-lg px-8 py-6 bg-white text-purple-800 hover:bg-purple-50 shadow-lg">
-                Start Your Application
-              </Button>
+              <Link to="/chat-apply">
+                <Button size="lg" className="text-lg px-8 py-6 bg-white text-purple-800 hover:bg-purple-50 shadow-lg">
+                  Start Your Application
+                </Button>
+              </Link>
               <p className="text-sm text-purple-200 mt-4">
                 No credit check until you submit. No obligation.
               </p>

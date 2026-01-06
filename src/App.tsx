@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Landing } from '@/pages/Landing';
 import { Application } from '@/pages/Application';
+import { ChatApply } from '@/pages/ChatApply';
 import { Terms } from '@/pages/legal/Terms';
 import { Privacy } from '@/pages/legal/Privacy';
 import { CreditGuide } from '@/pages/legal/CreditGuide';
@@ -44,6 +45,7 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/apply" element={<Application />} />
+        <Route path="/chat-apply" element={<ChatApply />} />
 
         {/* Legal pages */}
         <Route path="/terms" element={<Terms />} />
