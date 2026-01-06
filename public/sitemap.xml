@@ -44,6 +44,14 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- Contact -->
+  <url>
+    <loc>https://assetmx.com.au/contact</loc>
+    <lastmod>2025-01-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
   <!-- Legal Pages -->
   <url>
     <loc>https://assetmx.com.au/terms</loc>

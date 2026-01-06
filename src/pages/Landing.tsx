@@ -406,7 +406,7 @@ export function Landing() {
               <a href="/privacy" className="hover:text-pink-400 transition-colors">Privacy Policy</a>
               <a href="/terms" className="hover:text-pink-400 transition-colors">Terms of Service</a>
               <a href="/credit-guide" className="hover:text-pink-400 transition-colors">Credit Guide</a>
-              <a href="mailto:info@assetmx.com.au" className="hover:text-pink-400 transition-colors">Contact</a>
+              <a href="/contact" className="hover:text-pink-400 transition-colors">Contact</a>
             </div>
           </div>
 

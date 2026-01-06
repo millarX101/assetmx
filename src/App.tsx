@@ -10,6 +10,7 @@ import { VehicleFinance } from '@/pages/products/VehicleFinance';
 import { TruckFinance } from '@/pages/products/TruckFinance';
 import { EquipmentFinance } from '@/pages/products/EquipmentFinance';
 import { HowWeCompare } from '@/pages/HowWeCompare';
+import { Contact } from '@/pages/Contact';
 import { AdminLogin } from '@/pages/admin/Login';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { AdminDashboard } from '@/pages/admin/Dashboard';
@@ -62,6 +63,7 @@ function App() {
         <Route path="/truck-finance" element={<TruckFinance />} />
         <Route path="/equipment-finance" element={<EquipmentFinance />} />
         <Route path="/how-we-compare" element={<HowWeCompare />} />
+        <Route path="/contact" element={<Contact />} />
 
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

@@ -112,6 +112,12 @@ export function Header() {
                 About
               </Link>
             )}
+            <Link
+              to="/contact"
+              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50"
+            >
+              Contact
+            </Link>
           </nav>
 
           {/* CTA Buttons */}
@@ -219,6 +225,13 @@ export function Header() {
                   About
                 </Link>
               )}
+              <Link
+                to="/contact"
+                className="px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Contact
+              </Link>
               <div className="flex flex-col gap-2 pt-4 mt-2 border-t border-purple-100">
                 <Button
                   variant="outline"
