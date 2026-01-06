@@ -138,6 +138,7 @@ export async function lookupABN(abn: string): Promise<ABNLookupResult | null> {
  * Mock ABN lookup for development/fallback
  */
 function getMockABNResult(clean: string): ABNLookupResult {
+  console.log('[ABN Lookup] Using MOCK data for ABN:', clean);
   // Generate deterministic mock data based on ABN
   const seed = parseInt(clean.slice(0, 4), 10);
 

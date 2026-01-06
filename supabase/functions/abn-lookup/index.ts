@@ -68,9 +68,21 @@ function parseABRResponse(xml: string): ABNLookupResult | null {
     const abnStatus = abnStatusMatch ? abnStatusMatch[1] : 'Unknown';
 
     // Extract status from date (this is usually the ABN registration effective date)
+    // Try multiple possible date fields from ABR response
     const statusFromDateMatch = xml.match(/<identifierStatusFromDate>([^<]+)<\/identifierStatusFromDate>/);
-    const rawStatusFromDate = statusFromDateMatch ? statusFromDateMatch[1] : '';
+    const effectiveFromMatch = xml.match(/<effectiveFrom>([^<]+)<\/effectiveFrom>/);
+    const recordLastUpdatedMatch = xml.match(/<recordLastUpdatedDate>([^<]+)<\/recordLastUpdatedDate>/);
+
+    const rawStatusFromDate = statusFromDateMatch ? statusFromDateMatch[1] :
+                              (effectiveFromMatch ? effectiveFromMatch[1] : '');
     const abnStatusFromDate = parseABRDate(rawStatusFromDate);
+
+    console.log('Date extraction:', {
+      statusFromDate: statusFromDateMatch?.[1],
+      effectiveFrom: effectiveFromMatch?.[1],
+      recordLastUpdated: recordLastUpdatedMatch?.[1],
+      parsed: abnStatusFromDate
+    });
 
     // Extract entity name - try multiple tags
     let entityName = '';

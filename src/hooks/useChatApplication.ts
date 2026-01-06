@@ -219,7 +219,11 @@ export function useChatApplication() {
     debugLog('STEP', `Options resolved: ${options.length}`, options);
 
     // Auto-progress for steps with actions but no user input required (empty options)
-    if (step.action && options.length === 0 && autoProgressCallback) {
+    // Don't auto-progress if step requires text input (user needs to enter data first)
+    const requiresTextInput = step.inputType === 'text' || step.inputType === 'number' ||
+                              step.inputType === 'email' || step.inputType === 'phone' ||
+                              step.inputType === 'date';
+    if (step.action && options.length === 0 && !requiresTextInput && autoProgressCallback) {
       debugLog('AUTO', `Auto-progressing step ${step.id} with action: ${step.action}`);
       // Execute the action
       let updatedData = { ...flowData };
