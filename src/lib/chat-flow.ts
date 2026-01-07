@@ -14,7 +14,7 @@ export interface ChatStep {
   field?: string;  // Dot notation path e.g. 'business.abn', 'directors.0.firstName'
   placeholder?: string;
   validate?: (value: string, data: ChatFlowData) => string | null;  // Returns error message or null
-  action?: 'abn_lookup' | 'abn_search' | 'calculate_quote' | 'check_eligibility' | 'submit_application' | 'save_lead';
+  action?: 'abn_lookup' | 'abn_search' | 'calculate_quote' | 'check_eligibility' | 'submit_application' | 'save_lead' | 'save_novated_lead';
   nextStep: string | ((answer: string, data: ChatFlowData) => string);
   skipIf?: (data: ChatFlowData) => boolean;
 }
