@@ -177,11 +177,11 @@ export function EquipmentFinance() {
                 <ul className="space-y-2 text-sm text-slate-600">
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    Major projects welcome
+                    Small operators welcome
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    Fleet financing
+                    Sole traders & tradies
                   </li>
                 </ul>
               </CardContent>

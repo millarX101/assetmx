@@ -9,6 +9,7 @@ import { CreditGuide } from '@/pages/legal/CreditGuide';
 import { VehicleFinance } from '@/pages/products/VehicleFinance';
 import { TruckFinance } from '@/pages/products/TruckFinance';
 import { EquipmentFinance } from '@/pages/products/EquipmentFinance';
+import { EVLeasing } from '@/pages/products/EVLeasing';
 import { HowWeCompare } from '@/pages/HowWeCompare';
 import { Contact } from '@/pages/Contact';
 import { AdminLogin } from '@/pages/admin/Login';
@@ -62,6 +63,7 @@ function App() {
         <Route path="/vehicle-finance" element={<VehicleFinance />} />
         <Route path="/truck-finance" element={<TruckFinance />} />
         <Route path="/equipment-finance" element={<EquipmentFinance />} />
+        <Route path="/ev-leasing" element={<EVLeasing />} />
         <Route path="/how-we-compare" element={<HowWeCompare />} />
         <Route path="/contact" element={<Contact />} />
 
