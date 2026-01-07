@@ -88,7 +88,7 @@ export function EVLeasing() {
               <Card className="absolute -bottom-6 -left-6 shadow-xl border-0">
                 <CardContent className="p-4">
                   <div className="text-sm text-slate-500 mb-1">Green Discount</div>
-                  <div className="text-2xl font-bold text-green-600">Up to 0.5% off</div>
+                  <div className="text-2xl font-bold text-green-600">Up to 0.30% off</div>
                   <div className="text-xs text-slate-400">passed on in full</div>
                 </CardContent>
               </Card>
