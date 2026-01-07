@@ -14,6 +14,7 @@ interface AuthState {
   // Actions
   initialize: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithMagicLink: (email: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   checkAdminStatus: (userId: string) => Promise<boolean>;
@@ -93,6 +94,29 @@ export const useAuthStore = create<AuthState>()(
               return { error: 'Access denied. You are not an admin user.' };
             }
             set({ user: data.user, isAdmin: true });
+          }
+
+          return { error: null };
+        } catch (error) {
+          return { error: 'An unexpected error occurred' };
+        }
+      },
+
+      signInWithMagicLink: async (email: string) => {
+        if (!isSupabaseConfigured()) {
+          return { error: 'Supabase not configured. Please add credentials to .env.local' };
+        }
+
+        try {
+          const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/admin`,
+            },
+          });
+
+          if (error) {
+            return { error: error.message };
           }
 
           return { error: null };
