@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChatMessage, ChatTypingIndicator } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { ChatQuickReplies } from './ChatQuickReplies';
+import { ChatFileUpload } from './ChatFileUpload';
 import { ChatProgress } from './ChatProgress';
 import { ChatSummaryCard } from './ChatSummaryCard';
 import { useChatApplication } from '@/hooks/useChatApplication';
@@ -145,8 +146,26 @@ export function ChatApplication() {
         />
       )}
 
-      {/* Input Area */}
-      {!isComplete && (
+      {/* File Upload - show for file_upload input type */}
+      {isWaitingForInput && currentInputType === 'file_upload' && (
+        <ChatFileUpload
+          requiredDocs={[
+            { id: 'drivers_licence', label: "Driver's Licence (front)", description: "Clear photo of your licence" },
+            { id: 'financials', label: "Latest Tax Return or Financials", description: "Most recent ATO assessment or accountant-prepared financials" },
+          ]}
+          onComplete={(files) => {
+            // Mark files as uploaded and proceed
+            selectOption(`Uploaded ${files.length} documents`);
+          }}
+          onSkip={() => {
+            selectOption('Skip for now');
+          }}
+          disabled={isTyping}
+        />
+      )}
+
+      {/* Input Area - hide when file upload is active */}
+      {!isComplete && currentInputType !== 'file_upload' && (
         <ChatInput
           onSend={sendMessage}
           disabled={isTyping || !isWaitingForInput || currentInputType === 'select' || currentInputType === 'abn_select' || (currentInputType === 'confirm' && currentOptions.length > 0)}

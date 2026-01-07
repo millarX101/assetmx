@@ -4,7 +4,7 @@
 import { validateABN, cleanABN, type ABNSearchResult } from './abn-lookup';
 import type { ApplicationData } from '@/types/application';
 
-export type InputType = 'text' | 'select' | 'number' | 'date' | 'email' | 'phone' | 'confirm' | 'abn_select';
+export type InputType = 'text' | 'select' | 'number' | 'date' | 'email' | 'phone' | 'confirm' | 'abn_select' | 'file_upload';
 
 export interface ChatStep {
   id: string;
@@ -1233,12 +1233,10 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'document_upload',
     messages: [
       "Final step: document verification.",
-      "Upload:",
-      "• Driver's licence (front)",
-      "• Latest tax return or financials"
+      "Please upload your documents below."
     ],
-    inputType: 'confirm',
-    options: ["Upload documents"],
+    inputType: 'file_upload',
+    options: [], // Document requirements handled by the file upload component
     nextStep: 'submission_complete',
   },
 
