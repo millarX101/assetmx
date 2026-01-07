@@ -528,16 +528,19 @@ export function useChatApplication() {
 
             // Directors as JSONB (includes personal financial position)
             directors: directors.map(d => {
-              // Calculate totals
+              // Calculate totals - individual assets
               const propertyValue = Number(d.propertyValue) || 0;
+              const investmentPropertyValue = Number(d.investmentPropertyValue) || 0;
               const vehiclesValue = Number(d.vehiclesValue) || 0;
-              const savingsValue = Number(d.savingsValue) || 0;
+
+              // Individual liabilities
               const mortgageBalance = Number(d.mortgageBalance) || 0;
-              const otherLoansBalance = Number(d.otherLoansBalance) || 0;
+              const investmentMortgageBalance = Number(d.investmentMortgageBalance) || 0;
+              const vehicleLoanBalance = Number(d.vehicleLoanBalance) || 0;
               const creditCardLimit = Number(d.creditCardLimit) || 0;
 
-              const totalAssets = propertyValue + vehiclesValue + savingsValue;
-              const totalLiabilities = mortgageBalance + otherLoansBalance + creditCardLimit;
+              const totalAssets = propertyValue + investmentPropertyValue + vehiclesValue;
+              const totalLiabilities = mortgageBalance + investmentMortgageBalance + vehicleLoanBalance + creditCardLimit;
 
               return {
                 firstName: d.firstName,
@@ -548,13 +551,15 @@ export function useChatApplication() {
                 address: d.residentialAddress || d.address,
                 licenceNumber: d.licenceNumber,
                 licenceState: d.licenceState,
-                // Personal financial position
+                // Personal financial position - individual assets
                 propertyValue,
                 mortgageBalance,
+                investmentPropertyValue,
+                investmentMortgageBalance,
                 vehiclesValue,
-                savingsValue,
-                otherLoansBalance,
+                vehicleLoanBalance,
                 creditCardLimit,
+                // Calculated totals
                 totalAssets,
                 totalLiabilities,
                 netPosition: totalAssets - totalLiabilities,

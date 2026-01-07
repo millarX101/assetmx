@@ -48,13 +48,19 @@ export interface Director {
   residentialAddress?: string; // Full address string from chat
   licenceNumber?: string;
   licenceState?: string;
-  // Personal financial position - simplified for chat flow
+  // Personal financial position - individual assets
+  ownsProperty?: boolean;
   propertyValue?: number;
   mortgageBalance?: number;
+  hasInvestmentProperty?: boolean;
+  investmentPropertyValue?: number;
+  investmentMortgageBalance?: number;
   vehiclesValue?: number;
+  vehicleLoanBalance?: number;
+  creditCardLimit?: number;
+  // Legacy fields (kept for backwards compatibility)
   savingsValue?: number;
   otherLoansBalance?: number;
-  creditCardLimit?: number;
   // Calculated totals
   totalAssets?: number;
   totalLiabilities?: number;

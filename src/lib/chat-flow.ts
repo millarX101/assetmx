@@ -836,41 +836,152 @@ export const CHAT_FLOW: ChatStep[] = [
     nextStep: 'director_assets',
   },
 
-  // Basic A&L - Total Assets
+  // ========== INDIVIDUAL ASSET/LIABILITY COLLECTION ==========
+  // Assets intro
   {
     id: 'director_assets',
     messages: [
-      "Financial snapshot required.",
-      "Total assets? (property, vehicles, savings, super - everything)"
+      "Financial position check.",
+      "I'll ask about your assets and any loans against them."
     ],
-    inputType: 'number',
-    field: 'directors.0.totalAssets',
-    placeholder: "e.g. 500000",
-    nextStep: 'director_liabilities',
+    inputType: 'select',
+    options: ["Continue"],
+    nextStep: 'asset_property',
   },
 
-  // Basic A&L - Total Liabilities
+  // 1. Primary residence
   {
-    id: 'director_liabilities',
-    messages: ["Total liabilities? (mortgage, loans, credit cards, HECS)"],
+    id: 'asset_property',
+    messages: ["Do you own your home?"],
+    inputType: 'select',
+    options: ["Yes", "No"],
+    field: 'directors.0.ownsProperty',
+    nextStep: (answer) => {
+      if (answer.toLowerCase() === 'yes') {
+        return 'asset_property_value';
+      }
+      return 'asset_investment_property';
+    },
+  },
+
+  {
+    id: 'asset_property_value',
+    messages: ["Estimated home value?"],
     inputType: 'number',
-    field: 'directors.0.totalLiabilities',
-    placeholder: "e.g. 300000",
+    field: 'directors.0.propertyValue',
+    placeholder: "e.g. 800000",
+    nextStep: 'asset_property_mortgage',
+  },
+
+  {
+    id: 'asset_property_mortgage',
+    messages: ["Outstanding mortgage balance?"],
+    inputType: 'number',
+    field: 'directors.0.mortgageBalance',
+    placeholder: "e.g. 400000 (enter 0 if paid off)",
+    nextStep: 'asset_investment_property',
+  },
+
+  // 2. Investment property
+  {
+    id: 'asset_investment_property',
+    messages: ["Any investment properties?"],
+    inputType: 'select',
+    options: ["Yes", "No"],
+    field: 'directors.0.hasInvestmentProperty',
+    nextStep: (answer) => {
+      if (answer.toLowerCase() === 'yes') {
+        return 'asset_investment_value';
+      }
+      return 'asset_vehicles';
+    },
+  },
+
+  {
+    id: 'asset_investment_value',
+    messages: ["Total investment property value?"],
+    inputType: 'number',
+    field: 'directors.0.investmentPropertyValue',
+    placeholder: "e.g. 600000",
+    nextStep: 'asset_investment_mortgage',
+  },
+
+  {
+    id: 'asset_investment_mortgage',
+    messages: ["Outstanding investment mortgage balance?"],
+    inputType: 'number',
+    field: 'directors.0.investmentMortgageBalance',
+    placeholder: "e.g. 450000 (enter 0 if paid off)",
+    nextStep: 'asset_vehicles',
+  },
+
+  // 3. Vehicles
+  {
+    id: 'asset_vehicles',
+    messages: ["Total value of vehicles you own?"],
+    inputType: 'number',
+    field: 'directors.0.vehiclesValue',
+    placeholder: "e.g. 45000 (enter 0 if none)",
+    nextStep: (answer) => {
+      const value = Number(answer) || 0;
+      if (value > 0) {
+        return 'asset_vehicles_loan';
+      }
+      return 'liability_credit_cards';
+    },
+  },
+
+  {
+    id: 'asset_vehicles_loan',
+    messages: ["Outstanding car loan balance?"],
+    inputType: 'number',
+    field: 'directors.0.vehicleLoanBalance',
+    placeholder: "e.g. 20000 (enter 0 if paid off)",
+    nextStep: 'liability_credit_cards',
+  },
+
+  // 4. Credit cards (liability only)
+  {
+    id: 'liability_credit_cards',
+    messages: ["Total credit card limit? (all cards combined)"],
+    inputType: 'number',
+    field: 'directors.0.creditCardLimit',
+    placeholder: "e.g. 15000 (enter 0 if none)",
     nextStep: 'director_net_position',
   },
 
+  // Net position summary
   {
     id: 'director_net_position',
     messages: (data) => {
-      const directors = data.application.directors as unknown as Array<{totalAssets?: number; totalLiabilities?: number}>;
-      const director = directors?.[0];
-      const assets = Number(director?.totalAssets) || 0;
-      const liabilities = Number(director?.totalLiabilities) || 0;
-      const netPosition = assets - liabilities;
+      const directors = data.application.directors as unknown as Array<{
+        propertyValue?: number;
+        mortgageBalance?: number;
+        investmentPropertyValue?: number;
+        investmentMortgageBalance?: number;
+        vehiclesValue?: number;
+        vehicleLoanBalance?: number;
+        creditCardLimit?: number;
+      }>;
+      const d = directors?.[0];
+
+      const totalAssets =
+        (Number(d?.propertyValue) || 0) +
+        (Number(d?.investmentPropertyValue) || 0) +
+        (Number(d?.vehiclesValue) || 0);
+
+      const totalLiabilities =
+        (Number(d?.mortgageBalance) || 0) +
+        (Number(d?.investmentMortgageBalance) || 0) +
+        (Number(d?.vehicleLoanBalance) || 0) +
+        (Number(d?.creditCardLimit) || 0);
+
+      const netPosition = totalAssets - totalLiabilities;
 
       return [
-        `Net position: ${formatMoney(netPosition)}`,
-        "Financial snapshot complete."
+        `Assets: ${formatMoney(totalAssets)}`,
+        `Liabilities: ${formatMoney(totalLiabilities)}`,
+        `Net position: ${formatMoney(netPosition)}`
       ];
     },
     inputType: 'select',
@@ -923,21 +1034,69 @@ export const CHAT_FLOW: ChatStep[] = [
     nextStep: 'additional_director_assets',
   },
 
+  // Additional director asset/liability collection
   {
     id: 'additional_director_assets',
-    messages: ["Their total assets?"],
-    inputType: 'number',
-    field: 'directors.1.totalAssets',
-    placeholder: "e.g. 300000",
-    nextStep: 'additional_director_liabilities',
+    messages: ["Do they own their home?"],
+    inputType: 'select',
+    options: ["Yes", "No"],
+    field: 'directors.1.ownsProperty',
+    nextStep: (answer) => {
+      if (answer.toLowerCase() === 'yes') {
+        return 'additional_director_property_value';
+      }
+      return 'additional_director_vehicles';
+    },
   },
 
   {
-    id: 'additional_director_liabilities',
-    messages: ["Their total liabilities?"],
+    id: 'additional_director_property_value',
+    messages: ["Their home value?"],
     inputType: 'number',
-    field: 'directors.1.totalLiabilities',
-    placeholder: "e.g. 150000",
+    field: 'directors.1.propertyValue',
+    placeholder: "e.g. 600000",
+    nextStep: 'additional_director_mortgage',
+  },
+
+  {
+    id: 'additional_director_mortgage',
+    messages: ["Their mortgage balance?"],
+    inputType: 'number',
+    field: 'directors.1.mortgageBalance',
+    placeholder: "e.g. 300000 (enter 0 if paid off)",
+    nextStep: 'additional_director_vehicles',
+  },
+
+  {
+    id: 'additional_director_vehicles',
+    messages: ["Their vehicle value?"],
+    inputType: 'number',
+    field: 'directors.1.vehiclesValue',
+    placeholder: "e.g. 30000 (enter 0 if none)",
+    nextStep: (answer) => {
+      const value = Number(answer) || 0;
+      if (value > 0) {
+        return 'additional_director_vehicle_loan';
+      }
+      return 'additional_director_credit_cards';
+    },
+  },
+
+  {
+    id: 'additional_director_vehicle_loan',
+    messages: ["Their car loan balance?"],
+    inputType: 'number',
+    field: 'directors.1.vehicleLoanBalance',
+    placeholder: "e.g. 15000 (enter 0 if paid off)",
+    nextStep: 'additional_director_credit_cards',
+  },
+
+  {
+    id: 'additional_director_credit_cards',
+    messages: ["Their total credit card limit?"],
+    inputType: 'number',
+    field: 'directors.1.creditCardLimit',
+    placeholder: "e.g. 10000 (enter 0 if none)",
     nextStep: 'loan_term',
   },
 
@@ -967,7 +1126,7 @@ export const CHAT_FLOW: ChatStep[] = [
       ];
     },
     inputType: 'select',
-    options: ["No balloon - own it outright", "20% balloon", "30% balloon", "What's a balloon?"],
+    options: ["No balloon - own it outright", "20% balloon", "30% balloon", "40% balloon", "What's a balloon?"],
     field: 'loan.balloonPercentage',
     nextStep: (answer) => {
       if (answer.toLowerCase().includes("what's")) {
@@ -1162,6 +1321,7 @@ export function mapOptionToValue(option: string, field: string): string | number
     if (option.toLowerCase().includes('no balloon') || option.toLowerCase().includes('own it')) return 0;
     if (option.includes('20')) return 20;
     if (option.includes('30')) return 30;
+    if (option.includes('40')) return 40;
     if (option.toLowerCase().includes('lower payments')) return 20;
   }
 
@@ -1211,12 +1371,24 @@ export function getStepProgress(stepId: string): { current: number; total: numbe
     'director_intro': 11,
     'director_phone': 12,
     'director_assets': 13,
-    'director_liabilities': 14,
+    'asset_property': 13,
+    'asset_property_value': 13,
+    'asset_property_mortgage': 13,
+    'asset_investment_property': 14,
+    'asset_investment_value': 14,
+    'asset_investment_mortgage': 14,
+    'asset_vehicles': 14,
+    'asset_vehicles_loan': 14,
+    'liability_credit_cards': 15,
     'director_net_position': 15,
     'more_directors': 15,
     'additional_director_email': 16,
     'additional_director_assets': 16,
-    'additional_director_liabilities': 17,
+    'additional_director_property_value': 16,
+    'additional_director_mortgage': 16,
+    'additional_director_vehicles': 17,
+    'additional_director_vehicle_loan': 17,
+    'additional_director_credit_cards': 17,
     // Loan setup
     'loan_term': 18,
     'balloon_preference': 19,
