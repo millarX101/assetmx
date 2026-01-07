@@ -128,7 +128,7 @@ export function Landing() {
             Same $800 flat fee across all asset types. No hidden commissions, no matter what you're financing.
           </p>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {/* Vehicles */}
             <Link to="/vehicle-finance" className="group">
               <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
@@ -190,6 +190,28 @@ export function Landing() {
                       <p className="text-sm text-slate-500">Excavators, loaders & machinery</p>
                     </div>
                     <ArrowRight className="h-5 w-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* EV Leasing */}
+            <Link to="/ev-leasing" className="group">
+              <Card className="border-green-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+                <div className="aspect-[16/10] relative overflow-hidden">
+                  <img
+                    src={getImageUrl('hero-ev.jpg')}
+                    alt="Electric vehicle leasing"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-900">EV Leasing</h3>
+                      <p className="text-sm text-slate-500">Electric vehicles & novated</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-green-600 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </CardContent>
               </Card>

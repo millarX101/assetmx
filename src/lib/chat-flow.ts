@@ -119,7 +119,7 @@ const yearsSince = (dateStr: string): number => {
 const validateEmail = (email: string): string | null => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return "Hmm, that email doesn't look quite right. Can you check it?";
+    return "Invalid email format. Please re-enter.";
   }
   return null;
 };
@@ -127,7 +127,7 @@ const validateEmail = (email: string): string | null => {
 const validatePhone = (phone: string): string | null => {
   const cleaned = phone.replace(/\D/g, '');
   if (cleaned.length < 10) {
-    return "That phone number looks a bit short. Australian numbers are usually 10 digits.";
+    return "Phone number must be 10 digits.";
   }
   return null;
 };
@@ -135,13 +135,13 @@ const validatePhone = (phone: string): string | null => {
 const validateAmount = (value: string): string | null => {
   const amount = parseFloat(value.replace(/[,$]/g, ''));
   if (isNaN(amount) || amount <= 0) {
-    return "I need a number there - just the amount is fine, like '75000' or '75k'.";
+    return "Enter amount as a number (e.g. 75000).";
   }
   if (amount < 5000) {
-    return "We finance from $5,000 upwards. Is the amount right?";
+    return "Minimum finance amount: $5,000.";
   }
   if (amount > 500000) {
-    return "For amounts over $500k, we'd need to chat directly. Call us on 1300 XXX XXX.";
+    return "For amounts over $500k, contact us directly.";
   }
   return null;
 };
@@ -166,9 +166,10 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'greeting',
     messages: [
-      "G'day! I'm here to help you get finance sorted.",
-      "Quick and easy, no paperwork headaches.",
-      "First up - what's your business name?"
+      "I'm the AssetMX Express Assistant.",
+      "I'll check your eligibility and guide you through the application.",
+      "Because I handle the heavy lifting, we can offer faster approvals and lower fees.",
+      "Let's start - what's your business name?"
     ],
     inputType: 'text',
     field: 'business.businessName',
@@ -328,15 +329,15 @@ export const CHAT_FLOW: ChatStep[] = [
       const years = data.abnLookup ? yearsSince(data.abnLookup.abnRegisteredDate) : 0;
       const months = Math.round(years * 12);
       return [
-        `Ah, looks like your ABN has only been active for about ${months} months.`,
-        "For a quick approval, we need 2+ years trading history.",
-        "Our team can still help though - can I grab your details?"
+        `Your ABN is ${months} months old.`,
+        "AssetMX Express requires 2+ years ABN registration.",
+        "You don't qualify for this product, but our team may have other options. Leave your details?"
       ];
     },
     inputType: 'select',
-    options: ["Sure, take my details", "I'll come back later"],
+    options: ["Yes, take my details", "No thanks"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('later')) {
+      if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
       return 'lead_capture_name';
@@ -349,15 +350,15 @@ export const CHAT_FLOW: ChatStep[] = [
       const gstYears = data.abnLookup?.gstRegisteredDate ? yearsSince(data.abnLookup.gstRegisteredDate) : 0;
       const gstMonths = Math.round(gstYears * 12);
       return [
-        `Your GST registration is only ${gstMonths} months old.`,
-        "For the quick approval path, we need 2+ years GST registration.",
-        "No worries though - our team can look at other options. Can I grab your details?"
+        `GST registration: ${gstMonths} months.`,
+        "AssetMX Express requires 2+ years GST registration.",
+        "You don't qualify for this product. Leave details for manual review?"
       ];
     },
     inputType: 'select',
-    options: ["Sure, take my details", "I'll come back later"],
+    options: ["Yes, take my details", "No thanks"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('later')) {
+      if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
       return 'lead_capture_name';
@@ -367,28 +368,29 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'no_gst_warning',
     messages: [
-      "I noticed you're not GST registered.",
-      "That's usually a requirement for our lenders, but let's keep going and see how we can help.",
-      "Ready to continue?"
+      "GST registration not found.",
+      "AssetMX Express requires GST registration.",
+      "If this is incorrect, re-enter your ABN. Otherwise, leave details for manual review."
     ],
     inputType: 'select',
-    options: ["Yeah, let's continue", "Actually, I am GST registered"],
+    options: ["Re-enter ABN", "I'm not GST registered"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('am gst') || answer.toLowerCase().includes('actually')) {
+      if (answer.toLowerCase().includes('re-enter') || answer.toLowerCase().includes('abn')) {
         return 'abn_retry';
       }
-      return 'eligibility_pass';
+      return 'lead_capture_name';
     },
   },
 
   {
     id: 'eligibility_pass',
     messages: [
-      "Awesome! Your business is looking good.",
-      "Just a few quick questions to make sure we can help you today..."
+      "✓ ABN check: Passed",
+      "✓ GST check: Passed",
+      "You meet AssetMX Express business requirements. Now let's check the asset."
     ],
     inputType: 'confirm',
-    options: ["Let's do it"],
+    options: ["Continue"],
     nextStep: 'eligibility_asset_type',
   },
 
@@ -417,13 +419,13 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_fixed_asset',
     messages: [
-      "For fixed or installed equipment, we need to do a bit more work to find the right lender.",
-      "Our team can help with this - can I grab your details?"
+      "Fixed/installed equipment doesn't qualify for AssetMX Express.",
+      "This requires manual assessment. Leave your details?"
     ],
     inputType: 'select',
-    options: ["Sure, take my details", "I'll come back later"],
+    options: ["Yes, take my details", "No thanks"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('later')) {
+      if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
       return 'lead_capture_name';
@@ -432,7 +434,10 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'eligibility_asset_age',
-    messages: ["Is the asset you're looking at less than 3 years old?"],
+    messages: [
+      "AssetMX Express finances assets up to 3 years old only.",
+      "Is your asset under 3 years old?"
+    ],
     inputType: 'select',
     options: ["Yes, under 3 years", "No, it's older"],
     nextStep: (answer) => {
@@ -446,13 +451,13 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_older_asset',
     messages: [
-      "For older assets we need to do a bit more work to find the right lender.",
-      "One of our team can help with this - can I grab your details?"
+      "Assets over 3 years old don't qualify for AssetMX Express.",
+      "Leave your details for manual review?"
     ],
     inputType: 'select',
-    options: ["Sure, take my details", "I'll come back later"],
+    options: ["Yes, take my details", "No thanks"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('later')) {
+      if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
       return 'lead_capture_name';
@@ -461,7 +466,12 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'eligibility_property',
-    messages: ["Do you own any property? (home, investment property, or land)"],
+    messages: [
+      "AssetMX Express has two tracks:",
+      "• Property owners: No deposit required",
+      "• Non-property owners: 20% deposit required",
+      "Do you own property in Australia?"
+    ],
     inputType: 'select',
     options: ["Yes, I own property", "No property"],
     field: 'eligibility.ownsProperty',
@@ -475,7 +485,10 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'eligibility_deposit',
-    messages: ["No worries! Can you put down at least 20% deposit on the asset?"],
+    messages: [
+      "Without property, AssetMX Express requires 20% deposit.",
+      "Can you provide 20% deposit?"
+    ],
     inputType: 'select',
     options: ["Yes, 20% or more", "Less than 20%"],
     field: 'eligibility.canDeposit20',
@@ -490,13 +503,13 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_no_security',
     messages: [
-      "Without property or a larger deposit, we'd need to look at different options for you.",
-      "Our team can chat through what might work - can I grab your details?"
+      "AssetMX Express requires either property ownership OR 20% deposit.",
+      "You don't meet these requirements. Leave details for other options?"
     ],
     inputType: 'select',
-    options: ["Sure, take my details", "I'll come back later"],
+    options: ["Yes, take my details", "No thanks"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('later')) {
+      if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
       return 'lead_capture_name';
@@ -505,9 +518,12 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'eligibility_loan_amount',
-    messages: ["Roughly, how much are you looking to borrow?"],
+    messages: [
+      "AssetMX Express covers loans from $10,000 to $150,000.",
+      "What's your loan amount?"
+    ],
     inputType: 'select',
-    options: ["Under $100k", "$100k - $150k", "Over $150k"],
+    options: ["$10k - $50k", "$50k - $100k", "$100k - $150k", "Over $150k"],
     nextStep: (answer) => {
       if (answer.toLowerCase().includes('over')) {
         return 'eligibility_over_150k';
@@ -519,13 +535,13 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_over_150k',
     messages: [
-      "For loans over $150k, we need a bit more info to find the best deal.",
-      "One of our team will reach out to chat through your options - can I grab your details?"
+      "Loans over $150,000 don't qualify for AssetMX Express.",
+      "Leave details for manual assessment?"
     ],
     inputType: 'select',
-    options: ["Sure, take my details", "I'll come back later"],
+    options: ["Yes, take my details", "No thanks"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('later')) {
+      if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
       return 'lead_capture_name';
@@ -535,11 +551,11 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_credit_check',
     messages: [
-      "Last one - any credit issues we should know about?",
-      "(bankruptcies, defaults, or outstanding judgments)"
+      "AssetMX Express requires clear credit.",
+      "Any bankruptcies, defaults, or judgments in the last 5 years?"
     ],
     inputType: 'select',
-    options: ["No, all clean", "Yes, there's something"],
+    options: ["No, all clear", "Yes, there's something"],
     nextStep: (answer) => {
       if (answer.toLowerCase().includes('yes') || answer.toLowerCase().includes('something')) {
         return 'eligibility_credit_issues';
@@ -551,14 +567,13 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_credit_issues',
     messages: [
-      "No judgement here - credit issues happen!",
-      "We work with lenders who specialise in these situations. One of our team can help find the right fit.",
-      "Can I grab your details?"
+      "Credit issues exclude you from AssetMX Express.",
+      "Leave details for specialist options?"
     ],
     inputType: 'select',
-    options: ["Sure, take my details", "I'll come back later"],
+    options: ["Yes, take my details", "No thanks"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('later')) {
+      if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
       return 'lead_capture_name';
@@ -568,12 +583,11 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_qualified',
     messages: [
-      "Brilliant! You're ticking all the boxes.",
-      "Based on what you've told me, you've got a 95% chance of approval.",
-      "Let's get your application sorted - it'll only take a few more minutes."
+      "✓ All eligibility checks passed.",
+      "You qualify for AssetMX Express. Proceeding to application."
     ],
     inputType: 'confirm',
-    options: ["Let's go!"],
+    options: ["Continue"],
     nextStep: 'asset_type_confirmed',
   },
 
@@ -610,11 +624,10 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'lead_capture_consent',
     messages: [
-      "One last thing - we may share your details with a trusted partner broker who can help with your specific situation.",
-      "Is that okay with you?"
+      "Can we share your details with a partner who handles cases outside AssetMX Express?"
     ],
     inputType: 'select',
-    options: ["Yes, that's fine", "No, don't share my details"],
+    options: ["Yes", "No, contact me directly"],
     field: 'lead.consentToShare',
     nextStep: 'lead_capture_complete',
   },
@@ -625,15 +638,11 @@ export const CHAT_FLOW: ChatStep[] = [
       const consented = data.lead?.consentToShare;
       if (consented) {
         return [
-          "Thanks! One of our team (or a trusted partner) will be in touch within 24 hours.",
-          "We'll find the best option for your situation.",
-          "Chat soon!"
+          "Details saved. Our team or a partner will contact you within 24 hours."
         ];
       }
       return [
-        "No worries! One of our team will be in touch within 24 hours.",
-        "We'll do our best to help you directly.",
-        "Chat soon!"
+        "Details saved. Our team will contact you within 24 hours."
       ];
     },
     inputType: 'confirm',
@@ -655,9 +664,9 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'asset_type_confirmed',
     messages: (data) => {
       const assetType = data.application.asset?.assetType || 'vehicle';
-      const typeLabel = assetType === 'vehicle' ? 'vehicle' :
-                       assetType === 'truck' ? 'truck' : 'asset';
-      return [`Great! So we're looking at a ${typeLabel}. New or used?`];
+      const typeLabel = assetType === 'vehicle' ? 'Vehicle' :
+                       assetType === 'truck' ? 'Truck' : 'Asset';
+      return [`${typeLabel} selected. New or used?`];
     },
     inputType: 'select',
     options: ["Brand new", "Demo", "Used (0-3 years)"],
@@ -683,7 +692,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'asset_price',
-    messages: ["What's the rough price you're looking at?", "(Don't worry if you're not 100% sure yet)"],
+    messages: ["Asset price (approximate)?"],
     inputType: 'number',
     field: 'asset.assetPriceIncGst',
     placeholder: "e.g. 75000 or 75k",
@@ -698,21 +707,21 @@ export const CHAT_FLOW: ChatStep[] = [
       const quote = data.quote;
       if (!quote) {
         return [
-          `Got it - around ${formatMoney(price)}.`,
-          "Let me work out a quick estimate..."
+          `Price: ${formatMoney(price)}`,
+          "Calculating estimate..."
         ];
       }
       return [
-        `Got it - around ${formatMoney(price)}.`,
-        `Based on what you've told me, here's a quick estimate:\n\n📊 ~${formatMoney(quote.monthlyRepayment)}/month over 5 years\n   (~${formatMoney(quote.weeklyRepayment)}/week)\n   at ${quote.indicativeRate.toFixed(2)}% p.a.`,
-        "Want me to continue with the full application? Takes about 5 more minutes."
+        `Price: ${formatMoney(price)}`,
+        `Indicative repayment: ~${formatMoney(quote.monthlyRepayment)}/month over 5 years (~${formatMoney(quote.weeklyRepayment)}/week) at ${quote.indicativeRate.toFixed(2)}% p.a.`,
+        "Continue to full application?"
       ];
     },
     inputType: 'select',
-    options: ["Yeah let's do it", "I'll come back later"],
+    options: ["Continue", "Save for later"],
     action: 'calculate_quote',
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('later') || answer.toLowerCase().includes('come back')) {
+      if (answer.toLowerCase().includes('later') || answer.toLowerCase().includes('save')) {
         return 'save_for_later';
       }
       return 'director_intro';
@@ -722,11 +731,10 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'save_for_later',
     messages: [
-      "No worries at all! Your progress is saved.",
-      "Come back anytime and we'll pick up where you left off. 👋"
+      "Progress saved. Return anytime to continue."
     ],
     inputType: 'confirm',
-    options: ["Thanks!"],
+    options: ["Done"],
     nextStep: 'end_saved',
   },
 
@@ -735,8 +743,8 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'director_intro',
     messages: [
-      "Sweet! Just need your contact details and a quick financial snapshot.",
-      "What's the best email to reach you?"
+      "Asset confirmed. Next: your details.",
+      "Email address?"
     ],
     inputType: 'email',
     field: 'directors.0.email',
@@ -747,7 +755,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'director_phone',
-    messages: ["And your mobile number?"],
+    messages: ["Mobile number?"],
     inputType: 'phone',
     field: 'directors.0.phone',
     placeholder: "04XX XXX XXX",
@@ -759,8 +767,8 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'director_assets',
     messages: [
-      "Lenders need a quick snapshot of your finances.",
-      "What's your total assets worth? (property, vehicles, savings, super - everything)"
+      "Financial snapshot required.",
+      "Total assets? (property, vehicles, savings, super - everything)"
     ],
     inputType: 'number',
     field: 'directors.0.totalAssets',
@@ -771,7 +779,7 @@ export const CHAT_FLOW: ChatStep[] = [
   // Basic A&L - Total Liabilities
   {
     id: 'director_liabilities',
-    messages: ["And total liabilities? (mortgage, car loans, credit cards, HECS - everything you owe)"],
+    messages: ["Total liabilities? (mortgage, loans, credit cards, HECS)"],
     inputType: 'number',
     field: 'directors.0.totalLiabilities',
     placeholder: "e.g. 300000",
@@ -789,12 +797,17 @@ export const CHAT_FLOW: ChatStep[] = [
 
       return [
         `Net position: ${formatMoney(netPosition)}`,
-        netPosition >= 0 ? "Looking healthy!" : "No worries - we work with all situations."
+        "Financial snapshot complete."
       ];
     },
-    inputType: 'confirm',
-    options: ["Continue"],
-    nextStep: 'more_directors',
+    inputType: 'select',
+    options: ["Continue now", "Save and return later"],
+    nextStep: (answer) => {
+      if (answer.toLowerCase().includes('later') || answer.toLowerCase().includes('save')) {
+        return 'save_for_later';
+      }
+      return 'more_directors';
+    },
   },
 
   {
@@ -802,17 +815,23 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: (data) => {
       const entityType = data.abnLookup?.entityType?.toLowerCase() || '';
       if (entityType.includes('sole trader') || entityType.includes('individual')) {
-        return ["Great! Since you're a sole trader, that's all I need."];
+        return ["Sole trader - no additional directors required."];
       }
-      return ["Any other directors or guarantors?"];
+      return ["Additional directors or guarantors?"];
     },
     inputType: 'select',
-    options: ["Just me", "Add another"],
-    skipIf: (data) => {
+    options: (data) => {
       const entityType = data.abnLookup?.entityType?.toLowerCase() || '';
-      return entityType.includes('sole trader') || entityType.includes('individual');
+      if (entityType.includes('sole trader') || entityType.includes('individual')) {
+        return ["Continue"];
+      }
+      return ["Just me", "Add another"];
     },
-    nextStep: (answer) => {
+    nextStep: (answer, data) => {
+      const entityType = data.abnLookup?.entityType?.toLowerCase() || '';
+      if (entityType.includes('sole trader') || entityType.includes('individual')) {
+        return 'loan_term';
+      }
       if (answer.toLowerCase().includes('another') || answer.toLowerCase().includes('add')) {
         return 'additional_director_email';
       }
@@ -823,7 +842,7 @@ export const CHAT_FLOW: ChatStep[] = [
   // Additional director - email + basic A&L
   {
     id: 'additional_director_email',
-    messages: ["What's their email?"],
+    messages: ["Additional director email?"],
     inputType: 'email',
     field: 'directors.1.email',
     placeholder: "their@email.com",
@@ -833,7 +852,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'additional_director_assets',
-    messages: ["What's their total assets worth? (rough estimate is fine)"],
+    messages: ["Their total assets?"],
     inputType: 'number',
     field: 'directors.1.totalAssets',
     placeholder: "e.g. 300000",
@@ -842,7 +861,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'additional_director_liabilities',
-    messages: ["And their total liabilities?"],
+    messages: ["Their total liabilities?"],
     inputType: 'number',
     field: 'directors.1.totalLiabilities',
     placeholder: "e.g. 150000",
@@ -853,8 +872,8 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'loan_term',
     messages: [
-      "Nearly there!",
-      "How long would you like to spread the payments over?"
+      "Details collected. Final step: loan structure.",
+      "Loan term?"
     ],
     inputType: 'select',
     options: ["3 years", "4 years", "5 years"],
@@ -931,15 +950,15 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'final_review',
     messages: [
-      "Alright, here's everything I've got. Have a quick look:",
+      "Application summary:",
       "📋 SUMMARY_CARD",  // Special token that triggers summary card render
-      "All good?"
+      "Review and confirm."
     ],
     inputType: 'select',
-    options: ["Looks good, submit!", "Need to change something"],
+    options: ["Confirm and submit", "Edit details"],
     action: 'calculate_quote',
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('change') || answer.toLowerCase().includes('edit')) {
+      if (answer.toLowerCase().includes('edit')) {
         return 'edit_choice';
       }
       return 'privacy_consent';
@@ -948,9 +967,9 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'edit_choice',
-    messages: ["No worries! What would you like to change?"],
+    messages: ["Select section to edit:"],
     inputType: 'select',
-    options: ["Business details", "Asset details", "My personal details", "Loan setup"],
+    options: ["Business details", "Asset details", "Personal details", "Loan setup"],
     nextStep: (answer) => {
       if (answer.toLowerCase().includes('business')) return 'greeting';
       if (answer.toLowerCase().includes('asset')) return 'asset_condition';
@@ -963,16 +982,15 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'privacy_consent',
     messages: [
-      "Brilliant! Before I can submit your application, there's one important step.",
-      "When we submit to our lending panel, you'll need to sign a Privacy Consent form electronically.",
-      "This authorises us to:\n• Check your credit file\n• Verify your identity\n• Share your application with our lending partners",
-      "It's a legal requirement before we can lodge with the lender. We'll send it to your email for you to sign.",
+      "Before submitting, you'll sign a privacy consent form.",
+      "This authorises:\n• Credit check\n• Identity verification",
+      "The form will be sent to your email.",
       "Ready to proceed?"
     ],
     inputType: 'select',
-    options: ["Yes, I understand - proceed", "I need more time to think"],
+    options: ["Proceed", "Save for later"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('more time') || answer.toLowerCase().includes('think')) {
+      if (answer.toLowerCase().includes('later') || answer.toLowerCase().includes('save')) {
         return 'save_for_later';
       }
       return 'document_upload';
@@ -982,11 +1000,10 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'document_upload',
     messages: [
-      "Great! Last step - I just need to verify a couple of things.",
-      "Please upload:",
-      "📄 Your driver's licence (front)",
-      "📄 Your latest tax return or financials",
-      "This helps us fast-track your approval."
+      "Final step: document verification.",
+      "Upload:",
+      "• Driver's licence (front)",
+      "• Latest tax return or financials"
     ],
     inputType: 'confirm',
     options: ["Upload documents"],
@@ -996,13 +1013,12 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'submission_complete',
     messages: [
-      "🎉 You're all done!",
-      "Here's what happens next:",
-      "1️⃣ We'll send you the Privacy Consent form to sign (check your email)",
-      "2️⃣ Once signed, we'll submit to our lending panel",
-      "3️⃣ You'll hear back within 15 minutes during business hours",
-      "We'll send updates to your email and SMS.",
-      "Thanks for choosing AssetMX! 💜"
+      "Application submitted.",
+      "Next steps:",
+      "1. Privacy consent form sent to your email",
+      "2. Sign and return",
+      "3. Response within 15 minutes (business hours)",
+      "Updates via email and SMS."
     ],
     inputType: 'confirm',
     options: ["Done"],

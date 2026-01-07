@@ -94,21 +94,21 @@ export function CreditGuide() {
           <li>Added to your loan amount at settlement (not paid upfront)</li>
         </ul>
 
-        <h3>4.2 Lender Commissions</h3>
+        <h3>4.2 Other Payments We May Receive</h3>
         <p>
-          In addition to our platform fee, we may receive commission from lenders when
-          finance settles. This commission is typically calculated as a percentage of the
-          loan amount and varies by lender.
+          We do not receive commissions from lenders. Our only fee is the $800 platform fee
+          disclosed above.
         </p>
         <p>
-          Commission structures may include:
+          From time to time, we may receive:
         </p>
         <ul>
-          <li>Upfront commission: 0% to 2% of the loan amount</li>
-          <li>Trail commission: 0% to 0.5% per annum on the outstanding balance</li>
+          <li>Referral fees from partner businesses</li>
+          <li>Bonuses from dealers or equipment suppliers</li>
         </ul>
         <p>
-          We will disclose the actual commission amount before you accept a finance offer.
+          If any such payments apply to your transaction, we will fully disclose them to you
+          before you accept a finance offer.
         </p>
 
         <h3>4.3 Example</h3>
@@ -117,12 +117,11 @@ export function CreditGuide() {
         </p>
         <ul>
           <li>Platform fee: $800</li>
-          <li>Lender upfront commission (if applicable): $500 - $2,000</li>
-          <li>Trail commission (if applicable): $200 - $500 per year</li>
+          <li>That's it - no hidden commissions or trail payments</li>
         </ul>
         <p>
-          Note: Commission does not increase the interest rate you pay. Our platform fee
-          is shown separately so you can see exactly what you're paying for our services.
+          Our flat fee model means we're incentivised to get you the best deal, not to
+          steer you toward lenders who pay us more.
         </p>
       </section>
 
