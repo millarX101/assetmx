@@ -328,7 +328,7 @@ export function Contact() {
       <footer className="bg-purple-900 py-8">
         <div className="container mx-auto px-4 text-center">
           <p className="text-xs text-purple-300 max-w-3xl mx-auto">
-            AssetMX is a trading name of Blackrock Leasing Pty Ltd (trading as millarX)
+            AssetMX is a trading name of Blackrock Leasing Pty Ltd
             <br />
             ABN 15 681 267 818 | Australian Credit Licence 569484
           </p>

@@ -12,7 +12,7 @@ export function Privacy() {
       <section>
         <h2>1. Introduction</h2>
         <p>
-          Blackrock Leasing Pty Ltd (trading as millarX and AssetMX) ABN 15 681 267 818,
+          Blackrock Leasing Pty Ltd (trading as AssetMX) ABN 15 681 267 818,
           Australian Credit Licence 569484 ("we", "us", "our") is committed to protecting
           your privacy and complying with the Australian Privacy Principles (APPs) under
           the Privacy Act 1988 (Cth).

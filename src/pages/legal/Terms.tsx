@@ -13,7 +13,7 @@ export function Terms() {
         <h2>1. Introduction</h2>
         <p>
           Welcome to AssetMX. These Terms of Service ("Terms") govern your use of the AssetMX
-          website and services operated by Blackrock Leasing Pty Ltd (trading as millarX)
+          website and services operated by Blackrock Leasing Pty Ltd (trading as AssetMX)
           ABN 15 681 267 818, Australian Credit Licence 569484 ("we", "us", "our").
         </p>
         <p>
@@ -171,7 +171,7 @@ export function Terms() {
         <h2>13. Contact Us</h2>
         <p>If you have any questions about these Terms, please contact us:</p>
         <p>
-          Blackrock Leasing Pty Ltd (trading as millarX)
+          Blackrock Leasing Pty Ltd (trading as AssetMX)
           <br />
           Email: <a href="mailto:info@assetmx.com.au">info@assetmx.com.au</a>
           <br />

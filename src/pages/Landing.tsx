@@ -413,7 +413,7 @@ export function Landing() {
           {/* Regulatory Information */}
           <div className="border-t border-purple-800 pt-6 text-center">
             <p className="text-xs text-purple-300 max-w-3xl mx-auto mb-4">
-              AssetMX is a trading name of Blackrock Leasing Pty Ltd (trading as millarX)
+              AssetMX is a trading name of Blackrock Leasing Pty Ltd
               <br className="hidden sm:block" />
               ABN 15 681 267 818 | Australian Credit Licence 569484
             </p>

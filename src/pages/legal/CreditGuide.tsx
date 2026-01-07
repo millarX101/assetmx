@@ -19,7 +19,7 @@ export function CreditGuide() {
       <section>
         <h2>1. About Us</h2>
         <p>
-          AssetMX is a trading name of Blackrock Leasing Pty Ltd (trading as millarX).
+          AssetMX is a trading name of Blackrock Leasing Pty Ltd.
         </p>
         <table className="w-full text-sm my-4">
           <tbody>
@@ -29,7 +29,7 @@ export function CreditGuide() {
             </tr>
             <tr className="border-b">
               <td className="py-2 font-medium">Trading As:</td>
-              <td className="py-2">millarX and AssetMX</td>
+              <td className="py-2">AssetMX</td>
             </tr>
             <tr className="border-b">
               <td className="py-2 font-medium">ABN:</td>
