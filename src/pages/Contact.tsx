@@ -47,15 +47,16 @@ export function Contact() {
 
     try {
       // Store in Supabase contact_submissions table
-      const { error: submitError } = await supabase
-        .from('contact_submissions')
+      // Using type assertion as table may not be in generated types yet
+      const { error: submitError } = await (supabase
+        .from('contact_submissions') as ReturnType<typeof supabase.from>)
         .insert({
           name: formData.name,
           email: formData.email,
           phone: formData.phone || null,
           subject: formData.subject,
           message: formData.message
-        });
+        } as Record<string, unknown>);
 
       if (submitError) {
         // If table doesn't exist, fall back to email link

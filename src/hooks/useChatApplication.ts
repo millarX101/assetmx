@@ -43,25 +43,45 @@ const debugLog = (category: string, message: string, data?: unknown) => {
   console.log(`[Chat ${timestamp}] [${category}] ${message}`, data !== undefined ? data : '');
 };
 
-// Helper to set nested value in object
+// Helper to set nested value in object (supports array indices like 'directors.0.firstName')
 function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): Record<string, unknown> {
   const keys = path.split('.');
-  const result = { ...obj };
+  const result = JSON.parse(JSON.stringify(obj)); // Deep clone to avoid mutation issues
   let current: Record<string, unknown> = result;
 
   for (let i = 0; i < keys.length - 1; i++) {
     const key = keys[i];
-    // Handle array indices
-    if (!isNaN(Number(keys[i + 1]))) {
-      current[key] = current[key] ? [...(current[key] as unknown[])] : [];
+    const nextKey = keys[i + 1];
+    const isNextKeyNumeric = !isNaN(Number(nextKey));
+    const isCurrentKeyNumeric = !isNaN(Number(key));
+
+    if (isCurrentKeyNumeric) {
+      // Current key is an array index
+      const index = Number(key);
+      const arr = current as unknown as unknown[];
+      if (!arr[index]) {
+        // Next key determines if we need an array or object
+        arr[index] = isNextKeyNumeric ? [] : {};
+      }
+      current = arr[index] as Record<string, unknown>;
     } else {
-      current[key] = current[key] ? { ...(current[key] as Record<string, unknown>) } : {};
+      // Current key is an object property
+      if (!current[key]) {
+        // Next key determines if we need an array or object
+        current[key] = isNextKeyNumeric ? [] : {};
+      }
+      current = current[key] as Record<string, unknown>;
     }
-    current = current[key] as Record<string, unknown>;
   }
 
+  // Set the final value
   const lastKey = keys[keys.length - 1];
-  current[lastKey] = value;
+  const isLastKeyNumeric = !isNaN(Number(lastKey));
+  if (isLastKeyNumeric) {
+    (current as unknown as unknown[])[Number(lastKey)] = value;
+  } else {
+    current[lastKey] = value;
+  }
 
   return result;
 }

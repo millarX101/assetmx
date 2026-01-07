@@ -746,31 +746,13 @@ export const CHAT_FLOW: ChatStep[] = [
   },
 
   // ========== PHASE 3: DIRECTOR DETAILS ==========
+  // Name, DOB, address come from driver's licence - we just need contact + A&L
   {
     id: 'director_intro',
     messages: [
-      "Sweet! Just need a few details about you as the director.",
-      "What's your full name?"
+      "Sweet! Just need your contact details and a quick financial snapshot.",
+      "What's the best email to reach you?"
     ],
-    inputType: 'text',
-    field: 'directors.0.firstName',
-    placeholder: "Your full name",
-    nextStep: 'director_dob',
-  },
-
-  {
-    id: 'director_dob',
-    messages: ["And your date of birth?"],
-    inputType: 'date',
-    field: 'directors.0.dateOfBirth',
-    placeholder: "DD/MM/YYYY",
-    validate: validateDate,
-    nextStep: 'director_email',
-  },
-
-  {
-    id: 'director_email',
-    messages: ["What's the best email to reach you?"],
     inputType: 'email',
     field: 'directors.0.email',
     placeholder: "your@email.com",
@@ -785,161 +767,44 @@ export const CHAT_FLOW: ChatStep[] = [
     field: 'directors.0.phone',
     placeholder: "04XX XXX XXX",
     validate: validatePhone,
-    nextStep: 'director_address',
+    nextStep: 'director_assets',
   },
 
+  // Basic A&L - Total Assets
   {
-    id: 'director_address',
-    messages: ["What's your residential address?"],
-    inputType: 'text',
-    field: 'directors.0.residentialAddress',
-    placeholder: "Street address, suburb, state, postcode",
-    nextStep: 'director_assets_intro',
-  },
-
-  // ========== PERSONAL ASSETS & LIABILITIES ==========
-  {
-    id: 'director_assets_intro',
+    id: 'director_assets',
     messages: [
-      "Nearly there! Lenders need a quick snapshot of your personal financial position.",
-      "This helps them assess the application. Just rough figures are fine!"
+      "Lenders need a quick snapshot of your finances.",
+      "What's your total assets worth? (property, vehicles, savings, super - everything)"
     ],
-    inputType: 'confirm',
-    options: ["Got it, let's go"],
-    nextStep: 'director_property',
-  },
-
-  {
-    id: 'director_property',
-    messages: ["Do you own any property (home, investment, land)?"],
-    inputType: 'select',
-    options: ["Yes, I own property", "No, I don't own property"],
-    nextStep: (answer) => {
-      if (answer.toLowerCase().includes('yes')) {
-        return 'director_property_value';
-      }
-      return 'director_vehicles';
-    },
-  },
-
-  {
-    id: 'director_property_value',
-    messages: ["What's the approximate total value of your property/properties?"],
     inputType: 'number',
-    field: 'directors.0.propertyValue',
-    placeholder: "$500,000",
-    nextStep: 'director_property_owing',
+    field: 'directors.0.totalAssets',
+    placeholder: "e.g. 500000",
+    nextStep: 'director_liabilities',
   },
 
+  // Basic A&L - Total Liabilities
   {
-    id: 'director_property_owing',
-    messages: ["And how much do you owe on it? (mortgage balance)"],
+    id: 'director_liabilities',
+    messages: ["And total liabilities? (mortgage, car loans, credit cards, HECS - everything you owe)"],
     inputType: 'number',
-    field: 'directors.0.mortgageBalance',
-    placeholder: "$300,000",
-    nextStep: 'director_vehicles',
+    field: 'directors.0.totalLiabilities',
+    placeholder: "e.g. 300000",
+    nextStep: 'director_net_position',
   },
 
   {
-    id: 'director_vehicles',
-    messages: ["Do you own any vehicles (cars, boats, bikes)?"],
-    inputType: 'select',
-    options: ["Yes", "No"],
-    nextStep: (answer) => {
-      if (answer.toLowerCase().includes('yes')) {
-        return 'director_vehicles_value';
-      }
-      return 'director_savings';
-    },
-  },
-
-  {
-    id: 'director_vehicles_value',
-    messages: ["What's the approximate total value of your vehicles?"],
-    inputType: 'number',
-    field: 'directors.0.vehiclesValue',
-    placeholder: "$30,000",
-    nextStep: 'director_savings',
-  },
-
-  {
-    id: 'director_savings',
-    messages: ["Roughly, how much do you have in savings, shares, or super combined?"],
-    inputType: 'number',
-    field: 'directors.0.savingsValue',
-    placeholder: "$50,000",
-    nextStep: 'director_other_loans',
-  },
-
-  {
-    id: 'director_other_loans',
-    messages: ["Do you have any other loans? (car loan, personal loan, credit cards, HECS)"],
-    inputType: 'select',
-    options: ["Yes, I have other loans", "No other loans"],
-    nextStep: (answer) => {
-      if (answer.toLowerCase().includes('yes')) {
-        return 'director_other_loans_amount';
-      }
-      return 'director_credit_cards';
-    },
-  },
-
-  {
-    id: 'director_other_loans_amount',
-    messages: ["What's the total balance owing on other loans? (excluding mortgage)"],
-    inputType: 'number',
-    field: 'directors.0.otherLoansBalance',
-    placeholder: "$10,000",
-    nextStep: 'director_credit_cards',
-  },
-
-  {
-    id: 'director_credit_cards',
-    messages: ["Do you have any credit cards?"],
-    inputType: 'select',
-    options: ["Yes", "No"],
-    nextStep: (answer) => {
-      if (answer.toLowerCase().includes('yes')) {
-        return 'director_credit_cards_limit';
-      }
-      return 'director_financial_summary';
-    },
-  },
-
-  {
-    id: 'director_credit_cards_limit',
-    messages: ["What's the total credit limit across all your cards?"],
-    inputType: 'number',
-    field: 'directors.0.creditCardLimit',
-    placeholder: "$10,000",
-    nextStep: 'director_financial_summary',
-  },
-
-  {
-    id: 'director_financial_summary',
+    id: 'director_net_position',
     messages: (data) => {
-      const director = data.application.directors?.directors?.[0];
-      const propertyValue = Number(director?.propertyValue) || 0;
-      const vehiclesValue = Number(director?.vehiclesValue) || 0;
-      const savingsValue = Number(director?.savingsValue) || 0;
-      const mortgageBalance = Number(director?.mortgageBalance) || 0;
-      const otherLoans = Number(director?.otherLoansBalance) || 0;
-      const creditCards = Number(director?.creditCardLimit) || 0;
-
-      const totalAssets = propertyValue + vehiclesValue + savingsValue;
-      const totalLiabilities = mortgageBalance + otherLoans + creditCards;
-      const netPosition = totalAssets - totalLiabilities;
-
-      const formatMoney = (amt: number) => new Intl.NumberFormat('en-AU', {
-        style: 'currency', currency: 'AUD', minimumFractionDigits: 0
-      }).format(amt);
+      const directors = data.application.directors as unknown as Array<{totalAssets?: number; totalLiabilities?: number}>;
+      const director = directors?.[0];
+      const assets = Number(director?.totalAssets) || 0;
+      const liabilities = Number(director?.totalLiabilities) || 0;
+      const netPosition = assets - liabilities;
 
       return [
-        "Here's your financial snapshot:",
-        `📊 Total Assets: ${formatMoney(totalAssets)}`,
-        `📊 Total Liabilities: ${formatMoney(totalLiabilities)}`,
-        `📊 Net Position: ${formatMoney(netPosition)}`,
-        "This looks good! Let's continue."
+        `Net position: ${formatMoney(netPosition)}`,
+        netPosition >= 0 ? "Looking healthy!" : "No worries - we work with all situations."
       ];
     },
     inputType: 'confirm',
@@ -952,41 +817,50 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: (data) => {
       const entityType = data.abnLookup?.entityType?.toLowerCase() || '';
       if (entityType.includes('sole trader') || entityType.includes('individual')) {
-        return ["Great! Since you're a sole trader, that's all I need about you."];
+        return ["Great! Since you're a sole trader, that's all I need."];
       }
-      return ["Are there any other directors or guarantors we need to include?"];
+      return ["Any other directors or guarantors?"];
     },
     inputType: 'select',
-    options: ["Just me", "Add another director"],
+    options: ["Just me", "Add another"],
     skipIf: (data) => {
       const entityType = data.abnLookup?.entityType?.toLowerCase() || '';
       return entityType.includes('sole trader') || entityType.includes('individual');
     },
     nextStep: (answer) => {
       if (answer.toLowerCase().includes('another') || answer.toLowerCase().includes('add')) {
-        return 'additional_director_name';
+        return 'additional_director_email';
       }
       return 'loan_term';
     },
   },
 
-  // Additional director loop (simplified - can be expanded)
-  {
-    id: 'additional_director_name',
-    messages: ["What's their full name?"],
-    inputType: 'text',
-    field: 'directors.1.firstName',
-    placeholder: "Director's full name",
-    nextStep: 'additional_director_email',
-  },
-
+  // Additional director - email + basic A&L
   {
     id: 'additional_director_email',
-    messages: ["And their email?"],
+    messages: ["What's their email?"],
     inputType: 'email',
     field: 'directors.1.email',
     placeholder: "their@email.com",
     validate: validateEmail,
+    nextStep: 'additional_director_assets',
+  },
+
+  {
+    id: 'additional_director_assets',
+    messages: ["What's their total assets worth? (rough estimate is fine)"],
+    inputType: 'number',
+    field: 'directors.1.totalAssets',
+    placeholder: "e.g. 300000",
+    nextStep: 'additional_director_liabilities',
+  },
+
+  {
+    id: 'additional_director_liabilities',
+    messages: ["And their total liabilities?"],
+    inputType: 'number',
+    field: 'directors.1.totalLiabilities',
+    placeholder: "e.g. 150000",
     nextStep: 'loan_term',
   },
 
@@ -1223,6 +1097,7 @@ export function mapOptionToValue(option: string, field: string): string | number
 // Get step number for progress (rough estimate)
 export function getStepProgress(stepId: string): { current: number; total: number } {
   const progressMap: Record<string, number> = {
+    // Business lookup
     'greeting': 1,
     'abn_search_results': 2,
     'abn_confirm_lookup': 2,
@@ -1254,43 +1129,35 @@ export function getStepProgress(stepId: string): { current: number; total: numbe
     'lead_capture_complete': 4,
     'end_lead_captured': 4,
     // Asset details
-    'asset_type_confirmed': 7,
+    'asset_type_confirmed': 8,
     'asset_condition': 8,
     'asset_price': 9,
     'show_estimate': 10,
+    // Director details (simplified - name/DOB/address from licence)
     'director_intro': 11,
-    'director_dob': 12,
-    'director_email': 13,
-    'director_phone': 14,
-    'director_address': 15,
-    'director_assets_intro': 16,
-    'director_property': 16,
-    'director_property_value': 16,
-    'director_property_owing': 17,
-    'director_vehicles': 17,
-    'director_vehicles_value': 17,
-    'director_savings': 18,
-    'director_other_loans': 18,
-    'director_other_loans_amount': 18,
-    'director_credit_cards': 19,
-    'director_credit_cards_limit': 19,
-    'director_financial_summary': 19,
-    'more_directors': 20,
-    'additional_director_name': 21,
-    'additional_director_email': 22,
-    'loan_term': 23,
-    'balloon_preference': 24,
-    'balloon_explain': 24,
-    'deposit_question': 25,
-    'deposit_amount': 26,
-    'final_review': 27,
-    'privacy_consent': 28,
-    'document_upload': 29,
-    'submission_complete': 30,
+    'director_phone': 12,
+    'director_assets': 13,
+    'director_liabilities': 14,
+    'director_net_position': 15,
+    'more_directors': 15,
+    'additional_director_email': 16,
+    'additional_director_assets': 16,
+    'additional_director_liabilities': 17,
+    // Loan setup
+    'loan_term': 18,
+    'balloon_preference': 19,
+    'balloon_explain': 19,
+    'deposit_question': 20,
+    'deposit_amount': 20,
+    // Final
+    'final_review': 21,
+    'privacy_consent': 22,
+    'document_upload': 23,
+    'submission_complete': 24,
   };
 
   return {
     current: progressMap[stepId] || 1,
-    total: 30,
+    total: 24,
   };
 }
