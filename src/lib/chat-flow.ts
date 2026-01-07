@@ -132,21 +132,6 @@ const validatePhone = (phone: string): string | null => {
   return null;
 };
 
-const validateDate = (dateStr: string): string | null => {
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) {
-    return "That date doesn't look right. Try DD/MM/YYYY format.";
-  }
-  const age = yearsSince(dateStr);
-  if (age < 18) {
-    return "You need to be at least 18 to apply for finance.";
-  }
-  if (age > 100) {
-    return "Hmm, that date seems a bit off. Can you double-check it?";
-  }
-  return null;
-};
-
 const validateAmount = (value: string): string | null => {
   const amount = parseFloat(value.replace(/[,$]/g, ''));
   if (isNaN(amount) || amount <= 0) {
