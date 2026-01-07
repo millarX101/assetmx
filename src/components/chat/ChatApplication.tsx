@@ -75,9 +75,9 @@ export function ChatApplication() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50">
+    <div className="flex flex-col h-[100dvh] bg-slate-50">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+      <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <Link to="/" className="text-slate-400 hover:text-slate-600 transition-colors">
             <ArrowLeft className="h-5 w-5" />
@@ -135,8 +135,8 @@ export function ChatApplication() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Replies */}
-      {isWaitingForInput && (currentInputType === 'select' || currentInputType === 'abn_select') && currentOptions.length > 0 && (
+      {/* Quick Replies - show for select, abn_select, and confirm types with options */}
+      {isWaitingForInput && (currentInputType === 'select' || currentInputType === 'abn_select' || currentInputType === 'confirm') && currentOptions.length > 0 && (
         <ChatQuickReplies
           options={currentOptions}
           onSelect={selectOption}
@@ -149,14 +149,14 @@ export function ChatApplication() {
       {!isComplete && (
         <ChatInput
           onSend={sendMessage}
-          disabled={isTyping || !isWaitingForInput || currentInputType === 'select' || currentInputType === 'abn_select'}
+          disabled={isTyping || !isWaitingForInput || currentInputType === 'select' || currentInputType === 'abn_select' || (currentInputType === 'confirm' && currentOptions.length > 0)}
           placeholder={
-            currentInputType === 'select' || currentInputType === 'abn_select'
+            currentInputType === 'select' || currentInputType === 'abn_select' || (currentInputType === 'confirm' && currentOptions.length > 0)
               ? 'Tap an option above...'
               : currentPlaceholder || 'Type a message...'
           }
           inputType={getInputType()}
-          autoFocus={currentInputType !== 'select' && currentInputType !== 'abn_select'}
+          autoFocus={currentInputType !== 'select' && currentInputType !== 'abn_select' && !(currentInputType === 'confirm' && currentOptions.length > 0)}
         />
       )}
 

@@ -21,7 +21,7 @@ export function ChatQuickReplies({ options, onSelect, disabled = false, vertical
   // Vertical layout for ABN selection (business cards)
   if (vertical) {
     return (
-      <div className="flex flex-col gap-2 px-4 py-3 animate-in fade-in slide-in-from-bottom-2 duration-300 max-h-80 overflow-y-auto">
+      <div className="flex flex-col gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom-2 duration-300 max-h-80 overflow-y-auto bg-white border-t border-slate-200 flex-shrink-0">
         {normalizedOptions.map((option) => {
           // Check if this is a business result (contains ABN:)
           const isBusinessOption = option.value.includes('ABN:');
@@ -83,7 +83,7 @@ export function ChatQuickReplies({ options, onSelect, disabled = false, vertical
 
   // Horizontal layout (default)
   return (
-    <div className="flex flex-wrap gap-2 px-4 py-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+    <div className="flex flex-wrap gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom-2 duration-300 bg-white border-t border-slate-200 flex-shrink-0">
       {normalizedOptions.map((option) => (
         <button
           key={option.value}

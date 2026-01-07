@@ -73,7 +73,7 @@ export function ChatInput({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2 p-4 bg-white border-t border-slate-200">
+    <form onSubmit={handleSubmit} className="flex items-center gap-2 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t border-slate-200 flex-shrink-0">
       <input
         ref={inputRef}
         type={getInputType()}

@@ -11,7 +11,7 @@ const structuredData = {
   "@context": "https://schema.org",
   "@type": "FinancialService",
   "name": "AssetMX",
-  "description": "Transparent asset finance for Australian businesses. $800 flat fee, no hidden broker commissions. Vehicle, truck, and equipment finance.",
+  "description": "Transparent asset finance for Australian businesses. $800 flat fee, no hidden broker commissions. Vehicle, truck, equipment and EV finance.",
   "url": "https://assetmx.com.au",
   "logo": "https://assetmx.com.au/logo.svg",
   "areaServed": "Australia",
@@ -53,6 +53,14 @@ const structuredData = {
           "name": "Equipment Finance",
           "description": "Finance for excavators, loaders and construction equipment"
         }
+      },
+      {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "FinancialProduct",
+          "name": "Electric Vehicle Finance",
+          "description": "Finance and novated lease options for electric vehicles including Tesla, BYD and European EVs"
+        }
       }
     ]
   }
@@ -63,8 +71,8 @@ export function Landing() {
     <div className="min-h-screen bg-ivory">
       <SEO
         title="AssetMX | Asset Finance Australia | $800 Flat Fee | No Hidden Broker Fees"
-        description="Transparent asset finance for Australian businesses. No hidden broker commissions - just $800 flat fee. Vehicle, truck, and equipment finance. 15-minute approval, 100% online."
-        keywords="asset finance Australia, business finance, equipment finance, vehicle finance, truck finance, no broker fees, transparent finance, chattel mortgage, commercial loan, ABN finance"
+        description="Transparent asset finance for Australian businesses. No hidden broker commissions - just $800 flat fee. Vehicle, truck, equipment and EV finance. 15-minute approval, 100% online."
+        keywords="asset finance Australia, business finance, equipment finance, vehicle finance, truck finance, EV finance, electric vehicle finance, novated lease, no broker fees, transparent finance, chattel mortgage, commercial loan, ABN finance"
         canonicalUrl="https://assetmx.com.au"
         structuredData={structuredData}
       />
@@ -195,23 +203,23 @@ export function Landing() {
               </Card>
             </Link>
 
-            {/* EV Leasing */}
+            {/* Electric Vehicles */}
             <Link to="/ev-leasing" className="group">
-              <Card className="border-green-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+              <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
                 <div className="aspect-[16/10] relative overflow-hidden">
                   <img
                     src={getImageUrl('hero-ev.jpg')}
-                    alt="Electric vehicle leasing"
+                    alt="Electric vehicle finance"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-900">EV Leasing</h3>
-                      <p className="text-sm text-slate-500">Electric vehicles & novated</p>
+                      <h3 className="text-lg font-semibold text-slate-900">Electric Vehicles</h3>
+                      <p className="text-sm text-slate-500">Tesla, BYD & European EVs</p>
                     </div>
-                    <ArrowRight className="h-5 w-5 text-green-600 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="h-5 w-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </CardContent>
               </Card>

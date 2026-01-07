@@ -9,8 +9,8 @@ import { getImageUrl } from '@/lib/supabase';
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "FinancialProduct",
-  "name": "Electric Vehicle Leasing",
-  "description": "EV leasing and novated lease options for electric vehicles in Australia",
+  "name": "Electric Vehicle Finance",
+  "description": "Business EV finance and novated lease options for electric vehicles in Australia",
   "provider": {
     "@type": "FinancialService",
     "name": "AssetMX",
@@ -20,7 +20,7 @@ const structuredData = {
   "offers": {
     "@type": "Offer",
     "priceCurrency": "AUD",
-    "description": "BYO finance or full novated leasing through millarX"
+    "description": "Business asset finance or novated leasing through millarX"
   }
 };
 
@@ -28,9 +28,9 @@ export function EVLeasing() {
   return (
     <div className="min-h-screen bg-ivory">
       <SEO
-        title="Electric Vehicle Leasing Australia | EV Finance & Novated Lease | AssetMX"
-        description="Finance your electric vehicle with flexible options. BYO finance for your existing salary package or full novated leasing through our sister company millarX. Tesla, BYD, BMW iX and more."
-        keywords="EV leasing Australia, electric vehicle finance, novated lease EV, Tesla finance, BYD finance, electric car lease, salary sacrifice EV, FBT exempt electric vehicle"
+        title="Electric Vehicle Finance Australia | Business EV & Novated Lease | AssetMX"
+        description="Finance your electric vehicle for business or personal use. Business asset finance with green discounts, or novated leasing through millarX. Tesla, BYD, BMW iX and more."
+        keywords="EV finance Australia, electric vehicle finance, novated lease EV, Tesla finance, BYD finance, business EV finance, green discount, FBT exempt electric vehicle"
         canonicalUrl="https://assetmx.com.au/ev-leasing"
         structuredData={structuredData}
       />
@@ -38,38 +38,38 @@ export function EVLeasing() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        {/* Background gradient - green tint for EV */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-800" />
+        {/* Background gradient - purple brand */}
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-purple-800 to-violet-800" />
 
         {/* Hero content */}
         <div className="relative container mx-auto px-4 py-16 md:py-24">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-white">
               <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-4 py-2 mb-6">
-                <Zap className="h-4 w-4 text-yellow-300" />
-                <span className="text-sm text-emerald-100">FBT Exempt until 2027</span>
+                <Leaf className="h-4 w-4 text-green-300" />
+                <span className="text-sm text-purple-100">Green Discounts Available</span>
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display mb-6">
                 Electric Vehicle
                 <br />
-                <span className="text-emerald-300">Leasing</span>
+                <span className="text-purple-300">Finance</span>
               </h1>
-              <p className="text-xl text-emerald-100 mb-4 max-w-lg">
-                Go electric and save on tax. Whether you've got an existing salary package
-                or want the full novated lease experience - we've got options.
+              <p className="text-xl text-purple-100 mb-4 max-w-lg">
+                Finance your EV for business use, or go personal with a novated lease.
+                Two clear paths - you choose what works for you.
               </p>
-              <p className="text-sm text-emerald-200 mb-8 max-w-lg">
-                BYO finance for your existing package, or full novated leasing through our sister company millarX.
+              <p className="text-sm text-purple-200 mb-8 max-w-lg">
+                Some lenders offer green discounts on EV finance - we pass these on to you in full.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/chat-apply">
-                  <Button size="lg" className="bg-white text-emerald-800 hover:bg-emerald-50 shadow-lg">
-                    Get Your Quote <ArrowRight className="ml-2 h-5 w-5" />
+                  <Button size="lg" className="bg-white text-purple-800 hover:bg-purple-50 shadow-lg">
+                    Business EV Finance <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
                 <a href="#options">
                   <Button size="lg" variant="outline" className="border-white/50 text-white bg-white/10 hover:bg-white/20">
-                    See Your Options
+                    See All Options
                   </Button>
                 </a>
               </div>
@@ -87,9 +87,9 @@ export function EVLeasing() {
               {/* Floating savings card */}
               <Card className="absolute -bottom-6 -left-6 shadow-xl border-0">
                 <CardContent className="p-4">
-                  <div className="text-sm text-slate-500 mb-1">Example: $65,000 EV</div>
-                  <div className="text-2xl font-bold text-emerald-600">Save $15k+ in tax</div>
-                  <div className="text-xs text-slate-400">via novated lease</div>
+                  <div className="text-sm text-slate-500 mb-1">Green Discount</div>
+                  <div className="text-2xl font-bold text-green-600">Up to 0.5% off</div>
+                  <div className="text-xs text-slate-400">passed on in full</div>
                 </CardContent>
               </Card>
             </div>
@@ -101,89 +101,110 @@ export function EVLeasing() {
       <section id="options" className="py-16 bg-ivory">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-display text-center mb-4 text-slate-900">
-            Two Ways to Finance Your EV
+            Two Paths to Your Electric Vehicle
           </h2>
           <p className="text-center text-slate-600 mb-12 max-w-2xl mx-auto">
-            Already have a salary packaging arrangement? Or want the full novated lease experience? We've got you covered either way.
+            Business use? We finance it like any other asset. Personal use with salary sacrifice? That's novated leasing through millarX.
           </p>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* BYO Finance Option */}
+            {/* Business EV Finance Option */}
             <Card className="border-purple-200 shadow-card hover:shadow-lg transition-all overflow-hidden">
               <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-6 text-white">
-                <h3 className="text-2xl font-display mb-2">BYO Finance</h3>
-                <p className="text-purple-100">For existing salary packages</p>
+                <h3 className="text-2xl font-display mb-2">Business EV Finance</h3>
+                <p className="text-purple-100">Same as any business asset</p>
               </div>
               <CardContent className="pt-6">
                 <p className="text-slate-600 mb-6">
-                  Already have a novated lease arrangement with your employer? We can provide just the finance component - you keep your existing salary packaging provider.
+                  Financing an EV for your business? We treat it exactly like any other business asset - chattel mortgage, commercial hire purchase, or lease. Simple.
                 </p>
                 <ul className="space-y-3 text-sm text-slate-600 mb-6">
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span>Competitive rates with our transparent $800 flat fee</span>
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span>Transparent $800 flat fee - no hidden commissions</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span>Works with any salary packaging provider</span>
+                    <span><strong className="text-green-600">Green discounts</strong> from select lenders - passed on in full</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span>Quick approval - we just handle the finance</span>
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span>15-minute approval via AssetMX Express</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                    <span>No hidden broker commissions</span>
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span>GST claimable, depreciation benefits</span>
                   </li>
                 </ul>
                 <Link to="/chat-apply">
                   <Button className="w-full bg-gradient-brand hover:opacity-90">
-                    Get BYO Finance Quote
+                    Get Business EV Quote
                   </Button>
                 </Link>
               </CardContent>
             </Card>
 
-            {/* Full Novated Lease Option */}
-            <Card className="border-emerald-200 shadow-card hover:shadow-lg transition-all overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
+            {/* Novated Lease Option */}
+            <Card className="border-purple-200 shadow-card hover:shadow-lg transition-all overflow-hidden">
+              <div className="bg-gradient-to-r from-violet-600 to-purple-600 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-2xl font-display mb-2">Full Novated Lease</h3>
-                    <p className="text-emerald-100">Through millarX</p>
+                    <h3 className="text-2xl font-display mb-2">Novated Leasing</h3>
+                    <p className="text-purple-100">Personal use via salary sacrifice</p>
                   </div>
                   <div className="bg-white/20 rounded-lg px-3 py-1 text-sm">
-                    Sister Company
+                    via millarX
                   </div>
                 </div>
               </div>
               <CardContent className="pt-6">
                 <p className="text-slate-600 mb-6">
-                  Want the complete package? Our sister company millarX handles everything - from salary packaging setup with your employer to ongoing management.
+                  Want to salary sacrifice your personal EV? Our sister company millarX handles everything - employer setup, salary packaging, running costs, the lot.
                 </p>
                 <ul className="space-y-3 text-sm text-slate-600 mb-6">
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span>Full salary packaging setup and management</span>
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span>Full salary packaging setup with your employer</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span>Running costs included (fuel, rego, insurance, servicing)</span>
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span>Running costs bundled (charging, rego, insurance, servicing)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span>FBT exempt for eligible EVs (huge tax savings)</span>
+                    <Zap className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                    <span><strong className="text-yellow-600">FBT exempt</strong> for eligible EVs until 2027</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                    <span>Employer setup support included</span>
+                    <CheckCircle className="h-5 w-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                    <span>Save $10k-$20k+ in tax over the lease term</span>
                   </li>
                 </ul>
-                <a href="https://millarx.com.au" target="_blank" rel="noopener noreferrer">
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
-                    Visit millarX <ArrowRight className="ml-2 h-4 w-4" />
+                <Link to="/chat-apply">
+                  <Button className="w-full bg-gradient-brand hover:opacity-90">
+                    Enquire About Novated Lease
                   </Button>
-                </a>
+                </Link>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Green Discount Callout */}
+          <div className="mt-12 max-w-3xl mx-auto">
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <Leaf className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-green-800 mb-2">Green Discounts Passed On In Full</h3>
+                    <p className="text-sm text-green-700">
+                      Some of our lending partners offer reduced rates for electric vehicles as part of their sustainability initiatives.
+                      Unlike brokers who might pocket the difference, we pass these green discounts directly to you -
+                      it's part of our transparent pricing commitment.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -202,7 +223,7 @@ export function EVLeasing() {
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Tesla */}
-            <Card className="border-slate-200 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+            <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
                   src={getImageUrl('ev-tesla.jpg')}
@@ -217,11 +238,11 @@ export function EVLeasing() {
                 </p>
                 <ul className="space-y-2 text-sm text-slate-600">
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-purple-500" />
                     FBT exempt models
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-purple-500" />
                     Fast approval
                   </li>
                 </ul>
@@ -229,7 +250,7 @@ export function EVLeasing() {
             </Card>
 
             {/* BYD & Chinese */}
-            <Card className="border-slate-200 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+            <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
                   src={getImageUrl('ev-byd.jpg')}
@@ -244,11 +265,11 @@ export function EVLeasing() {
                 </p>
                 <ul className="space-y-2 text-sm text-slate-600">
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-purple-500" />
                     Affordable entry point
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-purple-500" />
                     All brands welcome
                   </li>
                 </ul>
@@ -256,7 +277,7 @@ export function EVLeasing() {
             </Card>
 
             {/* European EVs */}
-            <Card className="border-slate-200 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
+            <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
               <div className="aspect-[16/10] relative">
                 <img
                   src={getImageUrl('ev-european.jpg')}
@@ -271,11 +292,11 @@ export function EVLeasing() {
                 </p>
                 <ul className="space-y-2 text-sm text-slate-600">
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-purple-500" />
                     Luxury EV specialists
                   </li>
                   <li className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-purple-500" />
                     Competitive rates
                   </li>
                 </ul>
@@ -286,13 +307,13 @@ export function EVLeasing() {
       </section>
 
       {/* FBT Exemption Explainer */}
-      <section className="py-16 bg-emerald-50">
+      <section className="py-16 bg-purple-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 bg-emerald-100 rounded-full px-4 py-2 mb-4">
-                <Leaf className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm text-emerald-700 font-medium">Tax Savings</span>
+              <div className="inline-flex items-center gap-2 bg-purple-100 rounded-full px-4 py-2 mb-4">
+                <Leaf className="h-4 w-4 text-purple-600" />
+                <span className="text-sm text-purple-700 font-medium">Tax Savings</span>
               </div>
               <h2 className="text-3xl md:text-4xl font-display mb-4 text-slate-900">
                 The EV FBT Exemption Explained
@@ -303,7 +324,7 @@ export function EVLeasing() {
               </p>
             </div>
 
-            <Card className="border-emerald-200 shadow-card">
+            <Card className="border-purple-200 shadow-card">
               <CardContent className="pt-6">
                 <div className="grid md:grid-cols-2 gap-8">
                   <div>
@@ -320,7 +341,7 @@ export function EVLeasing() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold mb-4 text-emerald-700">With FBT Exemption (EV)</h3>
+                    <h3 className="text-xl font-bold mb-4 text-purple-700">With FBT Exemption (EV)</h3>
                     <div className="space-y-3 text-sm text-slate-500">
                       <div>
                         <strong className="text-slate-700">$65,000 electric vehicle:</strong>
@@ -330,7 +351,7 @@ export function EVLeasing() {
                           <li>Maximum tax savings</li>
                         </ul>
                       </div>
-                      <p className="font-medium text-emerald-600 pt-2">Save $15,000+ per year in tax</p>
+                      <p className="font-medium text-purple-600 pt-2">Save $15,000+ per year in tax</p>
                     </div>
                   </div>
                 </div>
@@ -353,7 +374,7 @@ export function EVLeasing() {
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="text-center">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-4">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-brand flex items-center justify-center mx-auto mb-4">
                 <Calculator className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-slate-900">Transparent Pricing</h3>
@@ -363,7 +384,7 @@ export function EVLeasing() {
             </div>
 
             <div className="text-center">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-4">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-brand flex items-center justify-center mx-auto mb-4">
                 <Zap className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-slate-900">EV Specialists</h3>
@@ -373,7 +394,7 @@ export function EVLeasing() {
             </div>
 
             <div className="text-center">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-4">
+              <div className="h-14 w-14 rounded-2xl bg-gradient-brand flex items-center justify-center mx-auto mb-4">
                 <Users className="h-7 w-7 text-white" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-slate-900">Full Service via millarX</h3>
@@ -388,25 +409,20 @@ export function EVLeasing() {
       {/* CTA Section */}
       <section className="py-16 bg-ivory">
         <div className="container mx-auto px-4">
-          <Card className="max-w-3xl mx-auto bg-gradient-to-br from-emerald-600 to-teal-700 border-0 shadow-2xl shadow-emerald-900/30">
+          <Card className="max-w-3xl mx-auto bg-gradient-to-br from-purple-600 to-violet-700 border-0 shadow-2xl shadow-purple-900/30">
             <CardContent className="pt-8 pb-8 text-center">
               <h2 className="text-2xl md:text-3xl font-display mb-4 text-white">
                 Ready to Go Electric?
               </h2>
-              <p className="text-lg text-emerald-100 mb-6">
-                Get a quote for BYO finance, or chat to millarX about full novated leasing.
+              <p className="text-lg text-purple-100 mb-6">
+                Business EV or novated lease - start your application and we'll guide you to the right path.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link to="/chat-apply">
-                  <Button size="lg" className="text-lg px-8 py-6 bg-white text-emerald-800 hover:bg-emerald-50 shadow-lg">
-                    Get BYO Finance Quote
+                  <Button size="lg" className="text-lg px-8 py-6 bg-white text-purple-800 hover:bg-purple-50 shadow-lg">
+                    Start Your EV Application
                   </Button>
                 </Link>
-                <a href="https://millarx.com.au" target="_blank" rel="noopener noreferrer">
-                  <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-white/50 text-white bg-white/10 hover:bg-white/20">
-                    Full Novated via millarX
-                  </Button>
-                </a>
               </div>
             </CardContent>
           </Card>
@@ -414,14 +430,14 @@ export function EVLeasing() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-emerald-900 py-8">
+      <footer className="bg-purple-900 py-8">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-emerald-300 max-w-3xl mx-auto">
+          <p className="text-xs text-purple-300 max-w-3xl mx-auto">
             AssetMX is a trading name of Blackrock Leasing Pty Ltd
             <br />
             ABN 15 681 267 818 | Australian Credit Licence 569484
           </p>
-          <p className="text-xs text-emerald-400 mt-4">
+          <p className="text-xs text-purple-400 mt-4">
             © {new Date().getFullYear()} Blackrock Leasing Pty Ltd. All rights reserved.
           </p>
         </div>

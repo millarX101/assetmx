@@ -94,6 +94,12 @@ export function Header() {
                     </div>
                     Truck & Van
                   </Link>
+                  <Link to="/ev-leasing" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
+                    <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                      <span className="text-purple-700 text-xs font-bold">EV</span>
+                    </div>
+                    Electric Vehicles
+                  </Link>
                 </div>
               </div>
             </div>
@@ -205,6 +211,13 @@ export function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Truck & Van
+                  </Link>
+                  <Link
+                    to="/ev-leasing"
+                    className="px-3 py-2 text-sm text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Electric Vehicles
                   </Link>
                 </div>
               </div>

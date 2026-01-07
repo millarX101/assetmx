@@ -436,6 +436,41 @@ export function useChatApplication() {
         break;
       }
 
+      case 'save_novated_lead': {
+        // Save novated lease enquiry to millarX lead bucket
+        if (!isSupabaseConfigured()) {
+          console.log('Supabase not configured - skipping novated lead save');
+          break;
+        }
+
+        const novatedLead = flowData.lead;
+
+        try {
+          const { error: insertError } = await supabase.from('leads').insert({
+            name: novatedLead?.name || '',
+            email: novatedLead?.email || '',
+            phone: novatedLead?.phone || '',
+            business_name: '',
+            abn: '',
+            asset_type: 'Electric Vehicle (EV)',
+            reason: 'Novated lease enquiry - route to millarX',
+            source: 'chat_application_novated',
+            status: 'new',
+            consent_to_share: true, // Automatically consented to share with millarX
+          } as never);
+
+          if (insertError) {
+            console.error('Failed to save novated lead:', insertError);
+          } else {
+            console.log('Novated lease lead saved for millarX');
+            clearSavedState();
+          }
+        } catch (error) {
+          console.error('Novated lead save error:', error);
+        }
+        break;
+      }
+
       case 'submit_application': {
         // Submit the complete application to Supabase
         if (!isSupabaseConfigured()) {

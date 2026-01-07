@@ -401,6 +401,7 @@ export const CHAT_FLOW: ChatStep[] = [
     inputType: 'select',
     options: [
       "Vehicle (ute, van, car)",
+      "Electric Vehicle (EV)",
       "Truck or trailer",
       "Construction equipment (excavator, loader, etc.)",
       "Other mobile equipment",
@@ -408,12 +409,84 @@ export const CHAT_FLOW: ChatStep[] = [
     ],
     field: 'asset.assetType',
     nextStep: (answer) => {
-      // Fixed/installed assets go to lead bucket - everything else passes through
+      // Fixed/installed assets go to lead bucket
       if (answer.toLowerCase().includes('fixed') || answer.toLowerCase().includes('installed')) {
         return 'eligibility_fixed_asset';
       }
+      // EVs need to check if business or novated
+      if (answer.toLowerCase().includes('electric') || answer.toLowerCase().includes('ev')) {
+        return 'ev_use_type';
+      }
       return 'eligibility_asset_age';
     },
+  },
+
+  // EV-specific routing - business vs novated lease
+  {
+    id: 'ev_use_type',
+    messages: [
+      "All the hype around EVs is novated leasing - but did you know switching to an EV for your business vehicle has huge benefits too?",
+      "• Business use: Green discounts, GST credits, depreciation - same $800 flat fee",
+      "• Personal use: Novated leasing through millarX (FBT exempt until 2027)",
+      "Which applies to you?"
+    ],
+    inputType: 'select',
+    options: ["Business use (company vehicle)", "Novated lease (personal/salary sacrifice)"],
+    field: 'asset.evUseType',
+    nextStep: (answer) => {
+      if (answer.toLowerCase().includes('novated') || answer.toLowerCase().includes('personal') || answer.toLowerCase().includes('salary')) {
+        return 'ev_novated_capture';
+      }
+      // Business EV continues through normal flow
+      return 'eligibility_asset_age';
+    },
+  },
+
+  // Novated lease enquiries go to millarX lead bucket
+  {
+    id: 'ev_novated_capture',
+    messages: [
+      "Novated leasing is handled by millarX, our sister company.",
+      "They handle everything - employer setup, salary packaging, running costs, FBT exemptions.",
+      "I'll pass your details to the millarX team. What's your name?"
+    ],
+    inputType: 'text',
+    field: 'lead.name',
+    placeholder: "Your name",
+    nextStep: 'ev_novated_phone',
+  },
+
+  {
+    id: 'ev_novated_phone',
+    messages: ["Best phone number?"],
+    inputType: 'phone',
+    field: 'lead.phone',
+    placeholder: "04XX XXX XXX",
+    validate: validatePhone,
+    nextStep: 'ev_novated_email',
+  },
+
+  {
+    id: 'ev_novated_email',
+    messages: ["And your email?"],
+    inputType: 'email',
+    field: 'lead.email',
+    placeholder: "your@email.com",
+    validate: validateEmail,
+    nextStep: 'ev_novated_complete',
+  },
+
+  {
+    id: 'ev_novated_complete',
+    messages: [
+      "Details captured.",
+      "The millarX team will be in touch within 24 hours to discuss your novated lease options.",
+      "They'll explain FBT exemptions, salary packaging setup, and running cost bundles."
+    ],
+    inputType: 'confirm',
+    options: ["Done"],
+    action: 'save_novated_lead',
+    nextStep: 'end_lead_captured',
   },
 
   {
