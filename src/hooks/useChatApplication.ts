@@ -12,7 +12,7 @@ import { lookupABN, cleanABN, searchABNByName } from '@/lib/abn-lookup';
 import { calculateQuote } from '@/lib/calculator';
 import type { ApplicationData, AssetType, AssetCondition } from '@/types/application';
 import { createEmptyApplication } from '@/types/application';
-import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured, getSupabaseUrl, getSupabaseAnonKey } from '@/lib/supabase';
 
 // Generate a simple UUID without external dependency
 function generateId(): string {
@@ -599,15 +599,26 @@ export function useChatApplication() {
               documentsUploaded: flowData.documentsUploaded || false,
             };
 
-            // Call the edge function to send emails
+            // Call the edge function to send emails (direct fetch to bypass auth token issues)
             try {
-              const emailResponse = await supabase.functions.invoke('send-application-emails', {
-                body: emailData,
-              });
-              if (emailResponse.error) {
-                console.error('Failed to send confirmation emails:', emailResponse.error);
-              } else {
-                console.log('Confirmation emails sent successfully');
+              const supabaseUrl = getSupabaseUrl();
+              const anonKey = getSupabaseAnonKey();
+
+              if (supabaseUrl && anonKey) {
+                const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-application-emails`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': anonKey,
+                  },
+                  body: JSON.stringify(emailData),
+                });
+
+                if (!emailResponse.ok) {
+                  console.error('Failed to send confirmation emails:', emailResponse.status);
+                } else {
+                  console.log('Confirmation emails sent successfully');
+                }
               }
             } catch (emailError) {
               console.error('Email sending error:', emailError);
