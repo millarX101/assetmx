@@ -18,6 +18,7 @@ import { AdminDashboard } from '@/pages/admin/Dashboard';
 import { AdminApplications } from '@/pages/admin/Applications';
 import { AdminLeads } from '@/pages/admin/Leads';
 import { AdminRates } from '@/pages/admin/Rates';
+import { AdminAnalytics } from '@/pages/admin/Analytics';
 import { useAuthStore } from '@/stores/authStore';
 
 // Protected route wrapper for admin pages
@@ -79,7 +80,9 @@ function App() {
         >
           <Route index element={<AdminDashboard />} />
           <Route path="applications" element={<AdminApplications />} />
+          <Route path="applications/:id" element={<AdminApplications />} />
           <Route path="leads" element={<AdminLeads />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="rates" element={<AdminRates />} />
         </Route>
 
