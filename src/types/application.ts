@@ -46,6 +46,17 @@ export interface Director {
   state: string;
   postcode: string;
   residentialAddress?: string; // Full address string from chat
+  // Address duration tracking
+  addressYearsMonths?: string; // e.g. "2 years" or "6 months"
+  addressMonths?: number; // Total months at current address
+  // Previous address (if less than 2 years at current)
+  previousAddress?: string;
+  previousSuburb?: string;
+  previousState?: string;
+  previousPostcode?: string;
+  previousAddressYearsMonths?: string;
+  previousAddressMonths?: number;
+  // Licence details
   licenceNumber?: string;
   licenceState?: string;
   // Personal financial position - individual assets

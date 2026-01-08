@@ -1505,6 +1505,48 @@ export const CHAT_FLOW: ChatStep[] = [
     ],
     inputType: 'file_upload',
     options: [], // Document requirements handled by the file upload component
+    nextStep: 'address_duration',
+  },
+
+  // Address duration - need to know how long at current address
+  {
+    id: 'address_duration',
+    messages: ["How long at your current address?"],
+    inputType: 'select',
+    options: ["Less than 6 months", "6-12 months", "1-2 years", "2+ years"],
+    field: 'directors.0.addressYearsMonths',
+    nextStep: (answer, data) => {
+      // Map answer to months and store
+      let months = 24; // default to 2+ years
+      if (answer.toLowerCase().includes('less than 6')) {
+        months = 3;
+      } else if (answer.toLowerCase().includes('6-12')) {
+        months = 9;
+      } else if (answer.toLowerCase().includes('1-2')) {
+        months = 18;
+      }
+
+      // Store the months value
+      const directors = data.application.directors as unknown as { directors?: Array<{ addressMonths?: number }> };
+      if (directors?.directors?.[0]) {
+        directors.directors[0].addressMonths = months;
+      }
+
+      // If less than 2 years, need previous address
+      if (months < 24) {
+        return 'previous_address';
+      }
+      return 'affordability_notice';
+    },
+  },
+
+  // Previous address (required if less than 2 years at current)
+  {
+    id: 'previous_address',
+    messages: ["Previous address? (full address)"],
+    inputType: 'text',
+    field: 'directors.0.previousAddress',
+    placeholder: "e.g. 123 Smith St, Richmond VIC 3121",
     nextStep: 'affordability_notice',
   },
 
@@ -1706,11 +1748,14 @@ export function getStepProgress(stepId: string): { current: number; total: numbe
     'final_review': 21,
     'privacy_consent': 22,
     'document_upload': 23,
-    'submission_complete': 24,
+    'address_duration': 24,
+    'previous_address': 24,
+    'affordability_notice': 25,
+    'submission_complete': 26,
   };
 
   return {
     current: progressMap[stepId] || 1,
-    total: 24,
+    total: 26,
   };
 }

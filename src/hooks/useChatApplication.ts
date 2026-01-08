@@ -650,6 +650,10 @@ export function useChatApplication() {
                 address: d.residentialAddress || d.address,
                 licenceNumber: d.licenceNumber,
                 licenceState: d.licenceState,
+                // Address duration
+                addressYearsMonths: d.addressYearsMonths,
+                addressMonths: d.addressMonths,
+                previousAddress: d.previousAddress,
                 // Personal financial position - individual assets
                 propertyValue,
                 mortgageBalance,
