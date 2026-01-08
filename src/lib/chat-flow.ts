@@ -54,6 +54,14 @@ export interface ChatFlowData {
     ownsProperty?: boolean;
     canDeposit20?: boolean;
   };
+  // Document upload tracking
+  documentsUploaded?: boolean;
+  uploadedDocuments?: {
+    id: string;
+    name: string;
+    type: string;
+    url: string;
+  }[];
 }
 
 // Helper to format currency

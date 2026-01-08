@@ -578,6 +578,40 @@ export function useChatApplication() {
             console.log('Application submitted successfully');
             // Clear saved progress after successful submission
             clearSavedState();
+
+            // Send confirmation emails via Edge Function
+            const primaryDirector = directors[0];
+            const emailData = {
+              id: 'temp-' + Date.now(), // Will be replaced with actual ID from insert
+              entityName: business?.entityName || abnLookup?.entityName || '',
+              abn: business?.abn || '',
+              contactName: `${primaryDirector?.firstName || ''} ${primaryDirector?.lastName || ''}`.trim(),
+              contactEmail: primaryDirector?.email || '',
+              contactPhone: primaryDirector?.phone || '',
+              assetType: asset?.assetType || 'vehicle',
+              assetDescription: asset?.assetDescription || '',
+              loanAmount: loan?.loanAmount || 0,
+              termMonths: loan?.termMonths || 60,
+              balloonPercentage: loan?.balloonPercentage || 0,
+              depositAmount: loan?.depositAmount || 0,
+              monthlyRepayment: quote?.monthlyRepayment || 0,
+              indicativeRate: quote?.indicativeRate || 0,
+              documentsUploaded: flowData.documentsUploaded || false,
+            };
+
+            // Call the edge function to send emails
+            try {
+              const emailResponse = await supabase.functions.invoke('send-application-emails', {
+                body: emailData,
+              });
+              if (emailResponse.error) {
+                console.error('Failed to send confirmation emails:', emailResponse.error);
+              } else {
+                console.log('Confirmation emails sent successfully');
+              }
+            } catch (emailError) {
+              console.error('Email sending error:', emailError);
+            }
           }
         } catch (error) {
           console.error('Application submission error:', error);

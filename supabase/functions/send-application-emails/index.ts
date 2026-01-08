@@ -1,0 +1,434 @@
+// Supabase Edge Function: Send Application Emails
+// Sends confirmation email to client and notification to admin
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "info@assetmx.com.au";
+const FROM_EMAIL = "AssetMX <noreply@assetmx.com.au>";
+
+interface ApplicationData {
+  id: string;
+  entityName: string;
+  abn: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  assetType: string;
+  assetDescription?: string;
+  loanAmount: number;
+  termMonths: number;
+  balloonPercentage: number;
+  depositAmount: number;
+  monthlyRepayment?: number;
+  indicativeRate?: number;
+  documentsUploaded: boolean;
+}
+
+// Format currency
+const formatMoney = (amount: number): string => {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
+
+// Client confirmation email template
+const getClientEmailHtml = (data: ApplicationData): string => {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Received - AssetMX</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 40px 40px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <div style="display: inline-block; background: white; border-radius: 12px; padding: 12px 16px;">
+                      <span style="font-size: 24px; font-weight: bold; color: #1e293b;">Asset</span><span style="font-size: 24px; font-weight: bold; color: #7c3aed;">MX</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding-top: 24px;">
+                    <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 600;">Application Received</h1>
+                    <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">Thanks ${data.contactName.split(" ")[0]}, we're on it!</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Application Summary -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 20px; color: #1e293b; font-size: 18px; font-weight: 600;">Your Application Summary</h2>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: #f8fafc; border-radius: 12px; overflow: hidden;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Business</td>
+                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${data.entityName}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">ABN</td>
+                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${data.abn}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Asset</td>
+                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${data.assetDescription || data.assetType}</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="padding: 12px 0 0;">
+                          <div style="border-top: 1px solid #e2e8f0;"></div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 12px 0 8px; color: #64748b; font-size: 14px;">Finance Amount</td>
+                        <td style="padding: 12px 0 8px; color: #7c3aed; font-size: 20px; font-weight: 700; text-align: right;">${formatMoney(data.loanAmount)}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Term</td>
+                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${data.termMonths} months</td>
+                      </tr>
+                      ${data.balloonPercentage > 0 ? `
+                      <tr>
+                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Balloon</td>
+                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${data.balloonPercentage}%</td>
+                      </tr>` : ""}
+                      ${data.depositAmount > 0 ? `
+                      <tr>
+                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Deposit</td>
+                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${formatMoney(data.depositAmount)}</td>
+                      </tr>` : ""}
+                      ${data.monthlyRepayment ? `
+                      <tr>
+                        <td colspan="2" style="padding: 12px 0 0;">
+                          <div style="border-top: 1px solid #e2e8f0;"></div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 12px 0 8px; color: #64748b; font-size: 14px;">Est. Monthly Repayment</td>
+                        <td style="padding: 12px 0 8px; color: #16a34a; font-size: 18px; font-weight: 700; text-align: right;">${formatMoney(data.monthlyRepayment)}/mo</td>
+                      </tr>` : ""}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- What Happens Next -->
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <h2 style="margin: 0 0 20px; color: #1e293b; font-size: 18px; font-weight: 600;">What Happens Next</h2>
+
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding: 16px 0; border-bottom: 1px solid #f1f5f9;">
+                    <table cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="width: 40px; vertical-align: top;">
+                          <div style="width: 32px; height: 32px; background: #f0fdf4; border-radius: 50%; text-align: center; line-height: 32px; color: #16a34a; font-weight: 600;">1</div>
+                        </td>
+                        <td style="vertical-align: top; padding-left: 12px;">
+                          <div style="color: #1e293b; font-weight: 600; font-size: 15px;">Privacy Consent</div>
+                          <div style="color: #64748b; font-size: 14px; margin-top: 4px;">You'll receive the Westpac Online Privacy form to complete and return.</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 16px 0; border-bottom: 1px solid #f1f5f9;">
+                    <table cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="width: 40px; vertical-align: top;">
+                          <div style="width: 32px; height: 32px; background: #f0fdf4; border-radius: 50%; text-align: center; line-height: 32px; color: #16a34a; font-weight: 600;">2</div>
+                        </td>
+                        <td style="vertical-align: top; padding-left: 12px;">
+                          <div style="color: #1e293b; font-weight: 600; font-size: 15px;">Dealer/Supplier Contact</div>
+                          <div style="color: #64748b; font-size: 14px; margin-top: 4px;">We'll contact your dealer for the tax invoice. If this is a private sale, we'll be in touch directly.</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 16px 0;">
+                    <table cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="width: 40px; vertical-align: top;">
+                          <div style="width: 32px; height: 32px; background: #f0fdf4; border-radius: 50%; text-align: center; line-height: 32px; color: #16a34a; font-weight: 600;">3</div>
+                        </td>
+                        <td style="vertical-align: top; padding-left: 12px;">
+                          <div style="color: #1e293b; font-weight: 600; font-size: 15px;">E-Sign Documents</div>
+                          <div style="color: #64748b; font-size: 14px; margin-top: 4px;">Once approved, loan documents will be sent via e-signature for quick, paperless signing.</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Timeline -->
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 20px;">
+                <table cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="vertical-align: top; width: 24px;">
+                      <span style="font-size: 20px;">⏱️</span>
+                    </td>
+                    <td style="padding-left: 12px;">
+                      <div style="color: #92400e; font-weight: 600; font-size: 15px;">Expected Timeline</div>
+                      <div style="color: #a16207; font-size: 14px; margin-top: 4px;">Most applications are assessed within 15 minutes during business hours (Mon-Fri 9am-5pm AEST).</div>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Contact -->
+          <tr>
+            <td style="padding: 0 40px 40px;">
+              <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                Questions? Reply to this email or call us on <a href="tel:1300000000" style="color: #7c3aed; text-decoration: none; font-weight: 500;">1300 000 000</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background: #f8fafc; padding: 30px 40px; border-top: 1px solid #e2e8f0;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 8px; color: #1e293b; font-size: 14px; font-weight: 600;">AssetMX</p>
+                    <p style="margin: 0; color: #64748b; font-size: 12px;">Transparent Finance</p>
+                  </td>
+                  <td style="text-align: right;">
+                    <a href="https://assetmx.com.au" style="color: #7c3aed; text-decoration: none; font-size: 12px;">assetmx.com.au</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin: 20px 0 0; color: #94a3b8; font-size: 11px; line-height: 1.5;">
+                Blackrock Leasing Pty Ltd | ABN XX XXX XXX XXX | Australian Credit Licence XXXXXX<br>
+                This email contains confidential information intended for the addressee only.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+};
+
+// Admin notification email template
+const getAdminEmailHtml = (data: ApplicationData): string => {
+  const adminUrl = `https://assetmx.com.au/admin/applications/${data.id}`;
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+
+    <!-- Header -->
+    <tr>
+      <td style="background: #7c3aed; padding: 20px 24px;">
+        <h1 style="margin: 0; color: white; font-size: 18px; font-weight: 600;">
+          🚀 New Application Submitted
+        </h1>
+      </td>
+    </tr>
+
+    <!-- Content -->
+    <tr>
+      <td style="padding: 24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background: #f8fafc; border-radius: 8px; padding: 16px;">
+          <tr>
+            <td style="padding: 8px 16px;">
+              <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Business</strong><br>
+              <span style="color: #1e293b; font-size: 16px; font-weight: 600;">${data.entityName}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 16px;">
+              <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Contact</strong><br>
+              <span style="color: #1e293b; font-size: 14px;">${data.contactName} | ${data.contactEmail} | ${data.contactPhone}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 16px;">
+              <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Asset</strong><br>
+              <span style="color: #1e293b; font-size: 14px;">${data.assetDescription || data.assetType}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 16px;">
+              <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Finance</strong><br>
+              <span style="color: #7c3aed; font-size: 20px; font-weight: 700;">${formatMoney(data.loanAmount)}</span>
+              <span style="color: #64748b; font-size: 14px;"> over ${data.termMonths} months${data.balloonPercentage > 0 ? ` (${data.balloonPercentage}% balloon)` : ""}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 16px;">
+              <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Documents</strong><br>
+              <span style="color: ${data.documentsUploaded ? '#16a34a' : '#f59e0b'}; font-size: 14px; font-weight: 500;">
+                ${data.documentsUploaded ? '✅ Uploaded' : '⏳ Pending'}
+              </span>
+            </td>
+          </tr>
+        </table>
+
+        <div style="margin-top: 24px; text-align: center;">
+          <a href="${adminUrl}" style="display: inline-block; background: #7c3aed; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+            View Application →
+          </a>
+        </div>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+        <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+          Application ID: ${data.id}<br>
+          Submitted: ${new Date().toLocaleString("en-AU", { timeZone: "Australia/Sydney" })}
+        </p>
+      </td>
+    </tr>
+
+  </table>
+</body>
+</html>
+`;
+};
+
+// Send email via Resend
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!RESEND_API_KEY) {
+    console.log("Resend API key not configured - email would be sent to:", to);
+    return { success: true }; // Return success for development
+  }
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [to],
+        subject,
+        html,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { success: false, error: errorData.message || "Failed to send email" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+serve(async (req) => {
+  // Handle CORS
+  if (req.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      },
+    });
+  }
+
+  try {
+    const data: ApplicationData = await req.json();
+
+    // Validate required fields
+    if (!data.contactEmail || !data.entityName) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Send client confirmation email
+    const clientResult = await sendEmail(
+      data.contactEmail,
+      `Application Received - ${data.entityName}`,
+      getClientEmailHtml(data)
+    );
+
+    // Send admin notification email
+    const adminResult = await sendEmail(
+      ADMIN_EMAIL,
+      `🚀 New Application: ${data.entityName} - ${formatMoney(data.loanAmount)}`,
+      getAdminEmailHtml(data)
+    );
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        clientEmail: clientResult,
+        adminEmail: adminResult,
+      }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
+  }
+});
