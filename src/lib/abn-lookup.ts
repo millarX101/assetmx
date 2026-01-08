@@ -2,7 +2,42 @@
 // Uses Australian Business Register (ABR) API via Supabase Edge Function
 
 import type { ABNLookupResult, EntityType } from '@/types/application';
-import { supabase } from './supabase';
+import { getSupabaseUrl, getSupabaseAnonKey } from './supabase';
+
+/**
+ * Call an edge function directly via fetch (bypasses Supabase client auth token)
+ * This is needed because the Supabase client includes auth tokens that can cause 401s
+ * when the user is logged in but the edge function doesn't require auth.
+ */
+async function callEdgeFunction(functionName: string, body: Record<string, unknown>): Promise<{ data: Record<string, unknown> | null; error: Error | null }> {
+  const supabaseUrl = getSupabaseUrl();
+  const anonKey = getSupabaseAnonKey();
+
+  if (!supabaseUrl || !anonKey) {
+    return { data: null, error: new Error('Supabase not configured') };
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': anonKey,
+        // Explicitly NOT including Authorization header to avoid auth token issues
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      return { data: null, error: new Error(`Edge function returned ${response.status}`) };
+    }
+
+    const data = await response.json();
+    return { data, error: null };
+  } catch (err) {
+    return { data: null, error: err instanceof Error ? err : new Error('Unknown error') };
+  }
+}
 
 /**
  * Clean ABN string (remove spaces and non-digits)
@@ -89,16 +124,10 @@ export async function lookupABN(abn: string): Promise<ABNLookupResult | null> {
   }
 
   try {
-    // Try the Supabase Edge Function first
-    // Note: Edge functions require authorization header even for public functions
-    const { data, error } = await supabase.functions.invoke('abn-lookup', {
-      body: { abn: clean },
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // Call edge function directly via fetch to bypass Supabase client auth token
+    const { data, error } = await callEdgeFunction('abn-lookup', { abn: clean });
 
-    if (error) {
+    if (error || !data) {
       console.warn('ABN lookup edge function error, falling back to mock:', error);
       return getMockABNResult(clean);
     }
@@ -119,16 +148,16 @@ export async function lookupABN(abn: string): Promise<ABNLookupResult | null> {
     // Map the response to our format
     const result: ABNLookupResult = {
       abn: clean,
-      abnStatus: data.abnStatus || 'Active',
-      abnRegisteredDate: data.abnRegisteredDate || data.abnStatusFromDate,
-      entityName: data.entityName,
-      entityType: mapEntityType(data.entityType),
-      gstRegistered: data.gstRegistered,
-      gstRegisteredDate: data.gstRegisteredDate || undefined,
+      abnStatus: (data.abnStatus as 'Active' | 'Cancelled') || 'Active',
+      abnRegisteredDate: (data.abnRegisteredDate || data.abnStatusFromDate) as string,
+      entityName: data.entityName as string,
+      entityType: mapEntityType(data.entityType as string),
+      gstRegistered: data.gstRegistered as boolean,
+      gstRegisteredDate: (data.gstRegisteredDate as string) || undefined,
       tradingName: undefined, // ABR basic lookup doesn't include trading names
-      businessAddress: data.businessAddress || '',
-      state: data.state,
-      postcode: data.postcode,
+      businessAddress: (data.businessAddress as string) || '',
+      state: data.state as string,
+      postcode: data.postcode as string,
     };
 
     return result;
@@ -245,16 +274,10 @@ export async function searchABNByName(name: string, maxResults = 5): Promise<ABN
   }
 
   try {
-    // Try the Supabase Edge Function
-    // Note: Edge functions require authorization header even for public functions
-    const { data, error } = await supabase.functions.invoke('abn-search', {
-      body: { name: name.trim(), maxResults },
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    // Call edge function directly via fetch to bypass Supabase client auth token
+    const { data, error } = await callEdgeFunction('abn-search', { name: name.trim(), maxResults });
 
-    if (error) {
+    if (error || !data) {
       console.warn('ABN search edge function error, falling back to mock:', error);
       return getMockSearchResults(name, maxResults);
     }
@@ -264,7 +287,7 @@ export async function searchABNByName(name: string, maxResults = 5): Promise<ABN
       return getMockSearchResults(name, maxResults);
     }
 
-    return data.results || [];
+    return (data.results as ABNSearchResult[]) || [];
   } catch (err) {
     console.warn('ABN search failed, falling back to mock:', err);
     return getMockSearchResults(name, maxResults);

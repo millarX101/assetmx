@@ -20,6 +20,10 @@ export const isSupabaseConfigured = () => {
   return Boolean(supabaseUrl && supabaseAnonKey);
 };
 
+// Get the Supabase URL and anon key for direct API calls
+export const getSupabaseUrl = () => supabaseUrl;
+export const getSupabaseAnonKey = () => supabaseAnonKey;
+
 /**
  * Get public URL for an image in the website-images bucket
  * @param path - Path within the bucket, e.g. "products/vehicles/hero-ranger.jpg"
