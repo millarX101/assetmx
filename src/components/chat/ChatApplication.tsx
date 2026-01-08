@@ -22,6 +22,7 @@ export function ChatApplication() {
     currentInputType,
     currentOptions,
     currentPlaceholder,
+    currentStepId,
     progress,
     sendMessage,
     selectOption,
@@ -29,6 +30,19 @@ export function ChatApplication() {
     resetChat,
     getApplicationSummary,
   } = useChatApplication();
+
+  // Get required documents based on current step
+  const getRequiredDocs = () => {
+    if (currentStepId === 'asset_upload_quote') {
+      return [
+        { id: 'quote_invoice', label: "Quote or Tax Invoice", description: "Upload your dealer quote or tax invoice" },
+      ];
+    }
+    // Default: document upload step for driver's licence
+    return [
+      { id: 'drivers_licence', label: "Driver's Licence (front)", description: "Clear photo of your licence" },
+    ];
+  };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -149,9 +163,7 @@ export function ChatApplication() {
       {/* File Upload - show for file_upload input type */}
       {isWaitingForInput && currentInputType === 'file_upload' && (
         <ChatFileUpload
-          requiredDocs={[
-            { id: 'drivers_licence', label: "Driver's Licence (front)", description: "Clear photo of your licence" },
-          ]}
+          requiredDocs={getRequiredDocs()}
           onComplete={(files) => {
             // Mark files as uploaded and proceed
             selectOption(`Uploaded ${files.length} documents`);

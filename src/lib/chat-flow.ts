@@ -811,6 +811,90 @@ export const CHAT_FLOW: ChatStep[] = [
     inputType: 'select',
     options: ["Brand new", "Demo", "Used (0-3 years)"],
     field: 'asset.assetCondition',
+    nextStep: 'asset_purchased_check',
+  },
+
+  // Check if they've already purchased or found the asset
+  {
+    id: 'asset_purchased_check',
+    messages: (data) => {
+      const assetType = data.application.asset?.assetType || 'vehicle';
+      const typeLabel = assetType === 'vehicle' ? 'vehicle' :
+                       assetType === 'truck' ? 'truck' : 'unit';
+      return [`Have you already found the ${typeLabel} you want to buy?`];
+    },
+    inputType: 'select',
+    options: ["Yes, I have a quote/invoice", "Yes, I know what I want", "Not yet, still looking"],
+    nextStep: (answer) => {
+      if (answer.toLowerCase().includes('quote') || answer.toLowerCase().includes('invoice')) {
+        return 'asset_upload_quote';
+      }
+      if (answer.toLowerCase().includes('know what')) {
+        return 'asset_make';
+      }
+      return 'asset_price';
+    },
+  },
+
+  // Upload quote/invoice path
+  {
+    id: 'asset_upload_quote',
+    messages: [
+      "Great! Please upload your quote or tax invoice.",
+      "This helps us process your application faster."
+    ],
+    inputType: 'file_upload',
+    options: [],
+    nextStep: 'asset_price',
+  },
+
+  // Manual entry path - make
+  {
+    id: 'asset_make',
+    messages: (data) => {
+      const assetType = data.application.asset?.assetType || 'vehicle';
+      const typeLabel = assetType === 'vehicle' ? 'vehicle' :
+                       assetType === 'truck' ? 'truck' : 'equipment';
+      return [`What's the make of the ${typeLabel}?`];
+    },
+    inputType: 'text',
+    field: 'asset.assetMake',
+    placeholder: "e.g. Toyota, Ford, Caterpillar",
+    nextStep: 'asset_model',
+  },
+
+  {
+    id: 'asset_model',
+    messages: ["And the model?"],
+    inputType: 'text',
+    field: 'asset.assetModel',
+    placeholder: "e.g. Hilux SR5, Ranger Wildtrak, 320D",
+    nextStep: 'asset_year',
+  },
+
+  {
+    id: 'asset_year',
+    messages: ["What year is it?"],
+    inputType: 'number',
+    field: 'asset.assetYear',
+    placeholder: "e.g. 2024",
+    validate: (value) => {
+      const year = parseInt(value);
+      const currentYear = new Date().getFullYear();
+      if (isNaN(year) || year < currentYear - 3 || year > currentYear + 1) {
+        return `Year must be between ${currentYear - 3} and ${currentYear + 1}`;
+      }
+      return null;
+    },
+    nextStep: 'asset_supplier',
+  },
+
+  {
+    id: 'asset_supplier',
+    messages: ["Where are you buying it from? (dealer name or 'private sale')"],
+    inputType: 'text',
+    field: 'asset.supplierName',
+    placeholder: "e.g. City Toyota, Private Sale",
     nextStep: 'asset_price',
   },
 
@@ -1582,6 +1666,12 @@ export function getStepProgress(stepId: string): { current: number; total: numbe
     'end_lead_captured': 4,
     // Asset details
     'asset_type_confirmed': 8,
+    'asset_purchased_check': 8,
+    'asset_upload_quote': 8,
+    'asset_make': 8,
+    'asset_model': 8,
+    'asset_year': 8,
+    'asset_supplier': 8,
     'asset_condition': 8,
     'asset_price': 9,
     'show_estimate': 10,

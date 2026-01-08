@@ -439,6 +439,44 @@ export function useChatApplication() {
           } else {
             console.log('Lead saved successfully');
             clearSavedState();
+
+            // Send admin notification email for new lead
+            try {
+              const supabaseUrl = getSupabaseUrl();
+              const anonKey = getSupabaseAnonKey();
+
+              if (supabaseUrl && anonKey) {
+                const leadEmailData = {
+                  type: 'new_lead',
+                  name: lead?.name || '',
+                  email: lead?.email || '',
+                  phone: lead?.phone || '',
+                  businessName: abnLookup?.entityName || business?.entityName || business?.businessName || '',
+                  abn: business?.abn || '',
+                  assetType: lead?.assetType || '',
+                  loanAmount: loanAmount,
+                  reason: lead?.reason || 'Did not qualify via chat',
+                  consentToShare: lead?.consentToShare ?? false,
+                };
+
+                const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-application-emails`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': anonKey,
+                  },
+                  body: JSON.stringify(leadEmailData),
+                });
+
+                if (!emailResponse.ok) {
+                  console.error('Failed to send lead notification email:', emailResponse.status);
+                } else {
+                  console.log('Lead notification email sent successfully');
+                }
+              }
+            } catch (emailError) {
+              console.error('Lead email error:', emailError);
+            }
           }
         } catch (error) {
           console.error('Lead save error:', error);
@@ -995,6 +1033,7 @@ export function useChatApplication() {
     currentInputType: state.currentInputType,
     currentOptions: state.currentOptions,
     currentPlaceholder: state.currentPlaceholder,
+    currentStepId: state.currentStepId,
     progress: state.progress,
     sendMessage: handleInput,
     selectOption: handleSelectOption,
