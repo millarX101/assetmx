@@ -255,6 +255,14 @@ export const CHAT_FLOW: ChatStep[] = [
       }
       return null;
     },
+    nextStep: 'abn_manual_lookup',
+  },
+
+  {
+    id: 'abn_manual_lookup',
+    messages: ["Thanks, just grabbing the details..."],
+    inputType: 'confirm',
+    options: [],
     action: 'abn_lookup',
     nextStep: 'abn_result',
   },
@@ -1449,6 +1457,7 @@ export function getStepProgress(stepId: string): { current: number; total: numbe
     'abn_search_results': 2,
     'abn_confirm_lookup': 2,
     'abn_manual_entry': 2,
+    'abn_manual_lookup': 2,
     'abn_result': 3,
     'abn_retry': 3,
     'abn_too_young': 3,
