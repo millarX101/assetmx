@@ -5,53 +5,36 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { formatCurrency } from '@/lib/calculator';
-import { Clock, Save, RefreshCw } from 'lucide-react';
-import type { RateConfig, FeeConfig } from '@/types/database';
+import { Clock, Save, RefreshCw, Info } from 'lucide-react';
 
-const assetTypes = ['vehicle', 'truck', 'equipment', 'technology'];
-const conditions = ['new', 'demo', 'used_0_3', 'used_4_7', 'used_8_plus'];
-
-const conditionLabels: Record<string, string> = {
-  new: 'New',
-  demo: 'Demo',
-  used_0_3: 'Used (0-3 yrs)',
-  used_4_7: 'Used (4-7 yrs)',
-  used_8_plus: 'Used (8+ yrs)',
+// New simplified rate structure by term
+const DEFAULT_TERM_RATES: Record<number, number> = {
+  12: 7.15,  // 1 year
+  24: 6.95,  // 2 years
+  36: 6.49,  // 3 years
+  48: 6.49,  // 4 years
+  60: 6.49,  // 5 years
 };
 
-const assetTypeLabels: Record<string, string> = {
-  vehicle: 'Vehicle',
-  truck: 'Truck/Trailer',
-  equipment: 'Equipment',
-  technology: 'Technology',
+const TERM_LABELS: Record<number, string> = {
+  12: '12 months (1 year)',
+  24: '24 months (2 years)',
+  36: '36 months (3 years)',
+  48: '48 months (4 years)',
+  60: '60 months (5 years)',
 };
 
-// Default rates (matching calculator.ts)
-const DEFAULT_RATES: Record<string, Record<string, number>> = {
-  vehicle: { new: 6.29, demo: 6.29, used_0_3: 6.49, used_4_7: 6.99, used_8_plus: 7.49 },
-  truck: { new: 6.49, demo: 6.49, used_0_3: 6.79, used_4_7: 7.29, used_8_plus: 7.99 },
-  equipment: { new: 6.49, demo: 6.79, used_0_3: 6.99, used_4_7: 7.49, used_8_plus: 8.29 },
-  technology: { new: 7.49, demo: 7.99, used_0_3: 8.29, used_4_7: 9.49, used_8_plus: 10.99 },
-};
-
-const DEFAULT_FEES = {
+const DEFAULT_FEES: Record<string, { amount: number; description: string; condition?: string }> = {
   platform_fee: { amount: 800, description: 'AssetMX platform fee' },
+  lender_establishment_fee: { amount: 500, description: 'Lender establishment fee' },
   ppsr_fee: { amount: 7.40, description: 'PPSR registration fee' },
-  lender_establishment_fee: { amount: 495, description: 'Lender establishment fee' },
+  inspection_fee: { amount: 250, description: 'Vehicle inspection fee', condition: 'Private sale only' },
 };
 
 export function AdminRates() {
-  const [rates, setRates] = useState<Record<string, Record<string, number>>>(DEFAULT_RATES);
-  const [fees, setFees] = useState<Record<string, { amount: number; description: string }>>(DEFAULT_FEES);
+  const [termRates, setTermRates] = useState<Record<number, number>>(DEFAULT_TERM_RATES);
+  const [fees, setFees] = useState<Record<string, { amount: number; description: string; condition?: string }>>(DEFAULT_FEES);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -66,33 +49,41 @@ export function AdminRates() {
 
   async function fetchRatesAndFees() {
     try {
-      // Fetch rates
-      const { data: rateData, error: rateError } = await supabase
-        .from('rate_config')
+      // Fetch term-based rates from rate_config
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: rateData, error: rateError } = await (supabase.from('rate_config') as any)
         .select('*');
 
       if (rateError) throw rateError;
 
       if (rateData && rateData.length > 0) {
-        const ratesMap: Record<string, Record<string, number>> = {};
-        rateData.forEach((r: RateConfig) => {
-          if (!ratesMap[r.asset_type]) ratesMap[r.asset_type] = {};
-          ratesMap[r.asset_type][r.asset_condition] = r.base_rate;
+        const ratesMap: Record<number, number> = { ...DEFAULT_TERM_RATES };
+        // Try to read term_months if it exists, otherwise use existing data
+        rateData.forEach((r: { term_months?: number; base_rate: number }) => {
+          if (r.term_months) {
+            ratesMap[r.term_months] = r.base_rate;
+          }
         });
-        setRates(ratesMap);
+        setTermRates(ratesMap);
       }
 
       // Fetch fees
-      const { data: feeData, error: feeError } = await supabase
-        .from('fee_config')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: feeData, error: feeError } = await (supabase.from('fee_config') as any)
         .select('*');
 
       if (feeError) throw feeError;
 
       if (feeData && feeData.length > 0) {
-        const feesMap: Record<string, { amount: number; description: string }> = {};
-        feeData.forEach((f: FeeConfig) => {
-          feesMap[f.fee_name] = { amount: f.amount, description: f.description || '' };
+        const feesMap: Record<string, { amount: number; description: string; condition?: string }> = { ...DEFAULT_FEES };
+        feeData.forEach((f: { fee_name: string; amount: number; description?: string }) => {
+          if (feesMap[f.fee_name]) {
+            feesMap[f.fee_name] = {
+              ...feesMap[f.fee_name],
+              amount: f.amount,
+              description: f.description || feesMap[f.fee_name].description,
+            };
+          }
         });
         setFees(feesMap);
       }
@@ -103,14 +94,11 @@ export function AdminRates() {
     }
   }
 
-  function handleRateChange(assetType: string, condition: string, value: string) {
+  function handleTermRateChange(term: number, value: string) {
     const numValue = parseFloat(value) || 0;
-    setRates((prev) => ({
+    setTermRates((prev) => ({
       ...prev,
-      [assetType]: {
-        ...prev[assetType],
-        [condition]: numValue,
-      },
+      [term]: numValue,
     }));
     setHasChanges(true);
   }
@@ -132,43 +120,26 @@ export function AdminRates() {
 
     setIsSaving(true);
     try {
-      // Update rates
-      for (const assetType of assetTypes) {
-        for (const condition of conditions) {
-          const rate = rates[assetType]?.[condition];
-          if (rate !== undefined) {
-            await supabase
-              .from('rate_config')
-              .upsert(
-                {
-                  asset_type: assetType,
-                  asset_condition: condition,
-                  base_rate: rate,
-                  updated_at: new Date().toISOString(),
-                } as never,
-                { onConflict: 'asset_type,asset_condition' }
-              );
-          }
-        }
-      }
+      // Note: The term-based rates would need a schema update to store term_months
+      // For now, we'll save to fee_config and handle rates differently
 
       // Update fees
       for (const [feeName, feeData] of Object.entries(fees)) {
-        await supabase
-          .from('fee_config')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from('fee_config') as any)
           .upsert(
             {
               fee_name: feeName,
               amount: feeData.amount,
               description: feeData.description,
               updated_at: new Date().toISOString(),
-            } as never,
+            },
             { onConflict: 'fee_name' }
           );
       }
 
       setHasChanges(false);
-      alert('Changes saved successfully!');
+      alert('Changes saved successfully! Note: Rate changes require a database schema update to take effect.');
     } catch (error) {
       console.error('Error saving changes:', error);
       alert('Error saving changes. Please try again.');
@@ -178,7 +149,7 @@ export function AdminRates() {
   }
 
   function resetToDefaults() {
-    setRates(DEFAULT_RATES);
+    setTermRates(DEFAULT_TERM_RATES);
     setFees(DEFAULT_FEES);
     setHasChanges(true);
   }
@@ -199,43 +170,6 @@ export function AdminRates() {
               <p className="text-muted-foreground mb-4">
                 Set up Supabase to manage rates. Currently showing default rates.
               </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Show read-only rates */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Default Base Rates (Read Only)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Asset Type</TableHead>
-                    {conditions.map((c) => (
-                      <TableHead key={c} className="text-center">
-                        {conditionLabels[c]}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {assetTypes.map((type) => (
-                    <TableRow key={type}>
-                      <TableCell className="font-medium">
-                        {assetTypeLabels[type]}
-                      </TableCell>
-                      {conditions.map((c) => (
-                        <TableCell key={c} className="text-center">
-                          {DEFAULT_RATES[type][c]}%
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
             </div>
           </CardContent>
         </Card>
@@ -272,59 +206,57 @@ export function AdminRates() {
 
       <Tabs defaultValue="rates">
         <TabsList>
-          <TabsTrigger value="rates">Base Rates</TabsTrigger>
+          <TabsTrigger value="rates">Interest Rates</TabsTrigger>
           <TabsTrigger value="fees">Fees</TabsTrigger>
         </TabsList>
 
         <TabsContent value="rates" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Base Interest Rates (%)</CardTitle>
+              <CardTitle>Interest Rates by Term</CardTitle>
               <p className="text-sm text-muted-foreground">
-                These are the lender base rates passed directly to customers. No markup applied.
+                Simple flat rates based on loan term. Same rate for all asset types (new to 3 years old).
               </p>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-32">Asset Type</TableHead>
-                        {conditions.map((c) => (
-                          <TableHead key={c} className="text-center min-w-24">
-                            {conditionLabels[c]}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {assetTypes.map((type) => (
-                        <TableRow key={type}>
-                          <TableCell className="font-medium">
-                            {assetTypeLabels[type]}
-                          </TableCell>
-                          {conditions.map((c) => (
-                            <TableCell key={c} className="text-center">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                max="30"
-                                value={rates[type]?.[c] ?? ''}
-                                onChange={(e) =>
-                                  handleRateChange(type, c, e.target.value)
-                                }
-                                className="w-20 text-center mx-auto"
-                              />
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <div className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {Object.entries(TERM_LABELS).map(([term, label]) => (
+                      <div key={term} className="bg-gray-50 rounded-lg p-4">
+                        <Label htmlFor={`rate-${term}`} className="text-sm font-medium">
+                          {label}
+                        </Label>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Input
+                            id={`rate-${term}`}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="30"
+                            value={termRates[Number(term)] ?? ''}
+                            onChange={(e) => handleTermRateChange(Number(term), e.target.value)}
+                            className="w-24 text-center"
+                          />
+                          <span className="text-lg font-semibold text-gray-600">%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="bg-blue-50 rounded-lg p-4 flex items-start gap-3">
+                    <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium mb-1">How rates work</p>
+                      <ul className="list-disc list-inside space-y-1 text-blue-700">
+                        <li>Same rate applies to all asset types (vehicles, trucks, equipment)</li>
+                        <li>Assets must be new to 3 years old to qualify for express</li>
+                        <li>Rates shown are passed directly to customers - no markup</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -344,85 +276,57 @@ export function AdminRates() {
                 <div className="text-center py-8 text-muted-foreground">Loading...</div>
               ) : (
                 <div className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="platform_fee">Platform Fee</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                          $
-                        </span>
-                        <Input
-                          id="platform_fee"
-                          type="number"
-                          step="1"
-                          min="0"
-                          value={fees.platform_fee?.amount ?? 800}
-                          onChange={(e) => handleFeeChange('platform_fee', e.target.value)}
-                          className="pl-8"
-                        />
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {Object.entries(fees).map(([feeName, feeData]) => (
+                      <div key={feeName} className="bg-gray-50 rounded-lg p-4">
+                        <Label htmlFor={feeName} className="text-sm font-medium">
+                          {feeData.description}
+                          {feeData.condition && (
+                            <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
+                              {feeData.condition}
+                            </span>
+                          )}
+                        </Label>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-lg text-gray-500">$</span>
+                          <Input
+                            id={feeName}
+                            type="number"
+                            step={feeName === 'ppsr_fee' ? '0.01' : '1'}
+                            min="0"
+                            value={feeData.amount}
+                            onChange={(e) => handleFeeChange(feeName, e.target.value)}
+                            className="w-28"
+                          />
+                        </div>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Our transparent fee (vs broker's hidden ~$2,000+)
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="lender_establishment_fee">Lender Establishment Fee</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                          $
-                        </span>
-                        <Input
-                          id="lender_establishment_fee"
-                          type="number"
-                          step="1"
-                          min="0"
-                          value={fees.lender_establishment_fee?.amount ?? 495}
-                          onChange={(e) =>
-                            handleFeeChange('lender_establishment_fee', e.target.value)
-                          }
-                          className="pl-8"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Charged by the lender
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="ppsr_fee">PPSR Fee</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                          $
-                        </span>
-                        <Input
-                          id="ppsr_fee"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={fees.ppsr_fee?.amount ?? 7.4}
-                          onChange={(e) => handleFeeChange('ppsr_fee', e.target.value)}
-                          className="pl-8"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Personal Property Securities Register
-                      </p>
-                    </div>
+                    ))}
                   </div>
 
                   <div className="bg-green-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-green-800 mb-2">Total Fees</h4>
+                    <h4 className="font-semibold text-green-800 mb-2">Standard Fees Total</h4>
                     <p className="text-2xl font-bold text-green-700">
                       {formatCurrency(
                         (fees.platform_fee?.amount ?? 800) +
-                          (fees.lender_establishment_fee?.amount ?? 495) +
-                          (fees.ppsr_fee?.amount ?? 7.4)
+                        (fees.lender_establishment_fee?.amount ?? 500) +
+                        (fees.ppsr_fee?.amount ?? 7.4)
                       )}
                     </p>
                     <p className="text-sm text-green-600 mt-1">
-                      All shown upfront to customers - no hidden charges
+                      Inspection fee ({formatCurrency(fees.inspection_fee?.amount ?? 250)}) only applies to private sales
                     </p>
+                  </div>
+
+                  <div className="bg-purple-50 rounded-lg p-4 flex items-start gap-3">
+                    <Info className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-purple-800">
+                      <p className="font-medium mb-1">Our transparent pricing</p>
+                      <p className="text-purple-700">
+                        Unlike traditional brokers who hide their commission in the interest rate
+                        (typically adding ~2% = ~$2,000+ on a $100k loan), we charge a flat
+                        platform fee. This saves customers significantly on larger loans.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

@@ -955,6 +955,88 @@ export const CHAT_FLOW: ChatStep[] = [
     inputType: 'number',
     field: 'directors.0.creditCardLimit',
     placeholder: "e.g. 15000 (enter 0 if none)",
+    nextStep: 'credit_card_outstanding',
+  },
+
+  // Credit card outstanding balance
+  {
+    id: 'credit_card_outstanding',
+    messages: ["How much is currently outstanding on your credit cards?"],
+    inputType: 'number',
+    field: 'directors.0.creditCardOutstanding',
+    placeholder: "e.g. 5000 (enter 0 if fully paid)",
+    skipIf: (data) => {
+      const directors = data.application.directors as unknown as Array<{ creditCardLimit?: number }>;
+      return !directors?.[0]?.creditCardLimit || Number(directors[0].creditCardLimit) === 0;
+    },
+    nextStep: 'monthly_mortgage_payment',
+  },
+
+  // ========== MONTHLY PAYMENTS (for affordability) ==========
+  {
+    id: 'monthly_mortgage_payment',
+    messages: ["What's your monthly mortgage payment?"],
+    inputType: 'number',
+    field: 'directors.0.monthlyMortgagePayment',
+    placeholder: "e.g. 2500 (enter 0 if none)",
+    skipIf: (data) => {
+      const directors = data.application.directors as unknown as Array<{ ownsProperty?: boolean; mortgageBalance?: number }>;
+      return !directors?.[0]?.ownsProperty || !directors?.[0]?.mortgageBalance || Number(directors[0].mortgageBalance) === 0;
+    },
+    nextStep: 'monthly_vehicle_payment',
+  },
+
+  {
+    id: 'monthly_vehicle_payment',
+    messages: ["What's your monthly vehicle loan payment?"],
+    inputType: 'number',
+    field: 'directors.0.monthlyVehicleLoanPayment',
+    placeholder: "e.g. 600 (enter 0 if none)",
+    skipIf: (data) => {
+      const directors = data.application.directors as unknown as Array<{ vehicleLoanBalance?: number }>;
+      return !directors?.[0]?.vehicleLoanBalance || Number(directors[0].vehicleLoanBalance) === 0;
+    },
+    nextStep: 'monthly_credit_card_payment',
+  },
+
+  {
+    id: 'monthly_credit_card_payment',
+    messages: ["What's your typical monthly credit card payment?"],
+    inputType: 'number',
+    field: 'directors.0.monthlyCreditCardPayment',
+    placeholder: "e.g. 500 (minimum payment)",
+    skipIf: (data) => {
+      const directors = data.application.directors as unknown as Array<{ creditCardLimit?: number }>;
+      return !directors?.[0]?.creditCardLimit || Number(directors[0].creditCardLimit) === 0;
+    },
+    nextStep: 'income_salary',
+  },
+
+  // ========== INCOME ==========
+  {
+    id: 'income_salary',
+    messages: ["Now for income. What's your annual salary/wages? (before tax)"],
+    inputType: 'number',
+    field: 'directors.0.annualSalary',
+    placeholder: "e.g. 85000",
+    nextStep: 'income_other',
+  },
+
+  {
+    id: 'income_other',
+    messages: ["Any other regular income? (dividends, rental, etc.)"],
+    inputType: 'number',
+    field: 'directors.0.otherIncome',
+    placeholder: "e.g. 10000 per year (enter 0 if none)",
+    nextStep: 'living_expenses',
+  },
+
+  {
+    id: 'living_expenses',
+    messages: ["Estimate your monthly living expenses (food, utilities, insurance, etc.)"],
+    inputType: 'number',
+    field: 'directors.0.monthlyLivingExpenses',
+    placeholder: "e.g. 3000",
     nextStep: 'director_net_position',
   },
 
@@ -970,6 +1052,12 @@ export const CHAT_FLOW: ChatStep[] = [
         vehiclesValue?: number;
         vehicleLoanBalance?: number;
         creditCardLimit?: number;
+        annualSalary?: number;
+        otherIncome?: number;
+        monthlyMortgagePayment?: number;
+        monthlyVehicleLoanPayment?: number;
+        monthlyCreditCardPayment?: number;
+        monthlyLivingExpenses?: number;
       }>;
       const d = directors?.[0];
 
@@ -986,10 +1074,19 @@ export const CHAT_FLOW: ChatStep[] = [
 
       const netPosition = totalAssets - totalLiabilities;
 
+      const annualIncome = (Number(d?.annualSalary) || 0) + (Number(d?.otherIncome) || 0);
+      const monthlyIncome = annualIncome / 12;
+
+      const totalMonthlyPayments =
+        (Number(d?.monthlyMortgagePayment) || 0) +
+        (Number(d?.monthlyVehicleLoanPayment) || 0) +
+        (Number(d?.monthlyCreditCardPayment) || 0) +
+        (Number(d?.monthlyLivingExpenses) || 0);
+
       return [
-        `Assets: ${formatMoney(totalAssets)}`,
-        `Liabilities: ${formatMoney(totalLiabilities)}`,
-        `Net position: ${formatMoney(netPosition)}`
+        `Assets: ${formatMoney(totalAssets)} | Liabilities: ${formatMoney(totalLiabilities)}`,
+        `Net position: ${formatMoney(netPosition)}`,
+        `Monthly income: ${formatMoney(monthlyIncome)} | Monthly expenses: ${formatMoney(totalMonthlyPayments)}`
       ];
     },
     inputType: 'select',
@@ -1245,18 +1342,32 @@ export const CHAT_FLOW: ChatStep[] = [
     ],
     inputType: 'file_upload',
     options: [], // Document requirements handled by the file upload component
+    nextStep: 'affordability_notice',
+  },
+
+  // Affordability declaration notice
+  {
+    id: 'affordability_notice',
+    messages: [
+      "Almost done!",
+      "After you submit, Westpac will email you an affordability declaration to sign electronically.",
+      "This confirms you can comfortably afford the proposed repayments.",
+      "Please check your email and complete it promptly to avoid delays."
+    ],
+    inputType: 'select',
+    options: ["I understand, submit my application"],
     nextStep: 'submission_complete',
   },
 
   {
     id: 'submission_complete',
     messages: [
-      "Application submitted.",
-      "Next steps:",
-      "1. Privacy consent form sent to your email",
-      "2. Sign and return",
+      "Application submitted successfully!",
+      "What happens next:",
+      "1. Westpac affordability declaration sent to your email - please sign",
+      "2. We'll review your application",
       "3. Response within 15 minutes (business hours)",
-      "Updates via email and SMS."
+      "You'll receive updates via email and SMS."
     ],
     inputType: 'confirm',
     options: ["Done"],

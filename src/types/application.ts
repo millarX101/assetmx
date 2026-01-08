@@ -58,6 +58,17 @@ export interface Director {
   vehiclesValue?: number;
   vehicleLoanBalance?: number;
   creditCardLimit?: number;
+  creditCardOutstanding?: number;
+  // Monthly payments (for affordability)
+  monthlyMortgagePayment?: number;
+  monthlyInvestmentMortgagePayment?: number;
+  monthlyVehicleLoanPayment?: number;
+  monthlyCreditCardPayment?: number;
+  // Income & Expenses
+  annualSalary?: number;
+  otherIncome?: number;
+  otherIncomeDescription?: string;
+  monthlyLivingExpenses?: number;
   // Legacy fields (kept for backwards compatibility)
   savingsValue?: number;
   otherLoansBalance?: number;
@@ -65,6 +76,8 @@ export interface Director {
   totalAssets?: number;
   totalLiabilities?: number;
   netPosition?: number;
+  totalMonthlyPayments?: number;
+  totalMonthlyIncome?: number;
   // Detailed breakdown (optional, for more complex flows)
   personalAssets?: PersonalAsset[];
   personalLiabilities?: PersonalLiability[];

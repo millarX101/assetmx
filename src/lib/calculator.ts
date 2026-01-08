@@ -47,14 +47,65 @@ export const LENDER_ESTABLISHMENT_FEE = 500; // Financed into the loan (per lend
 export const BROKER_MARGIN = 2.00; // What brokers typically add to hide commission (~$2k on $100k vs our $800)
 
 // Base rates by term (from lender rate sheets)
-// 1-5 years: 6.45%, 5+ years: 7.15%
-// These are the ACTUAL lender rates - no markup
-export const BASE_RATE_SHORT = 6.45; // 1-5 years (12-60 months)
-export const BASE_RATE_LONG = 7.15;  // 5+ years (61-84 months)
+// Default fallback rates if database unavailable
+export const DEFAULT_RATES: Record<number, number> = {
+  12: 7.15,  // 1 year
+  24: 6.95,  // 2 years
+  36: 6.49,  // 3 years
+  48: 6.49,  // 4 years
+  60: 6.49,  // 5 years
+};
 
-// Get base rate based on term
+// Legacy constants for backwards compatibility
+export const BASE_RATE_SHORT = 6.49; // 3-5 years (default)
+export const BASE_RATE_LONG = 7.15;  // 1 year
+
+// Rate cache to avoid excessive database calls
+let rateCache: { rates: Record<number, number>; timestamp: number } | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Get base rate based on term (uses cached rates or defaults)
 export function getBaseRate(termMonths: number): number {
-  return termMonths <= 60 ? BASE_RATE_SHORT : BASE_RATE_LONG;
+  const rates = rateCache?.rates || DEFAULT_RATES;
+
+  // Find exact match or closest lower term
+  if (rates[termMonths]) {
+    return rates[termMonths];
+  }
+
+  // For terms 36-60, use the 36-month rate (or closest)
+  if (termMonths >= 36 && termMonths <= 60) {
+    return rates[36] || DEFAULT_RATES[36];
+  }
+
+  // For 12-month term
+  if (termMonths <= 12) {
+    return rates[12] || DEFAULT_RATES[12];
+  }
+
+  // For 24-month term range
+  if (termMonths > 12 && termMonths < 36) {
+    return rates[24] || DEFAULT_RATES[24];
+  }
+
+  // Fallback to 5-year rate
+  return rates[60] || DEFAULT_RATES[60];
+}
+
+// Update rate cache (called from components that fetch from DB)
+export function updateRateCache(rates: Record<number, number>): void {
+  rateCache = { rates, timestamp: Date.now() };
+}
+
+// Check if cache is stale
+export function isRateCacheStale(): boolean {
+  if (!rateCache) return true;
+  return Date.now() - rateCache.timestamp > CACHE_TTL;
+}
+
+// Get cached rates (for display purposes)
+export function getCachedRates(): Record<number, number> {
+  return rateCache?.rates || DEFAULT_RATES;
 }
 
 // Maximum balloon percentages by term (years)
