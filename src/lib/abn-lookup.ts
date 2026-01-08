@@ -90,8 +90,12 @@ export async function lookupABN(abn: string): Promise<ABNLookupResult | null> {
 
   try {
     // Try the Supabase Edge Function first
+    // Note: Edge functions require authorization header even for public functions
     const { data, error } = await supabase.functions.invoke('abn-lookup', {
       body: { abn: clean },
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (error) {
@@ -242,8 +246,12 @@ export async function searchABNByName(name: string, maxResults = 5): Promise<ABN
 
   try {
     // Try the Supabase Edge Function
+    // Note: Edge functions require authorization header even for public functions
     const { data, error } = await supabase.functions.invoke('abn-search', {
       body: { name: name.trim(), maxResults },
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     if (error) {

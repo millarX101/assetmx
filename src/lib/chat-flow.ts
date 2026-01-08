@@ -316,19 +316,15 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'abn_retry',
-    messages: ["No worries! Let's try again - what's the correct ABN?"],
-    inputType: 'text',
-    field: 'business.abn',
-    placeholder: 'Enter your 11-digit ABN',
-    validate: (value) => {
-      const cleaned = cleanABN(value);
-      if (!validateABN(cleaned)) {
-        return "That ABN doesn't look quite right. Should be 11 digits.";
+    messages: ["No worries! How would you like to find your business?"],
+    inputType: 'select',
+    options: ["Search by name again", "Enter ABN manually"],
+    nextStep: (answer) => {
+      if (answer.toLowerCase().includes('name') || answer.toLowerCase().includes('search')) {
+        return 'greeting';
       }
-      return null;
+      return 'abn_manual_entry';
     },
-    action: 'abn_lookup',
-    nextStep: 'abn_result',
   },
 
   {
