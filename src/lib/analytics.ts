@@ -39,7 +39,8 @@ export async function trackEvent({
   }
 
   try {
-    await supabase.from('analytics_events').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('analytics_events') as any).insert({
       event_name: eventName,
       event_category: category,
       session_id: getSessionId(),

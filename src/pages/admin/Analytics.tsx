@@ -54,17 +54,25 @@ export function AdminAnalytics() {
       const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
       // Fetch applications
-      const { data: applications } = await supabase
-        .from('applications')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: applications } = await (supabase.from('applications') as any)
         .select('*');
 
       // Fetch leads
-      const { data: leads } = await supabase
-        .from('leads')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: leads } = await (supabase.from('leads') as any)
         .select('*');
 
-      const apps = applications || [];
-      const allLeads = leads || [];
+      const apps = (applications || []) as Array<{
+        created_at: string;
+        status: string;
+        asset_type: string;
+        loan_amount: number;
+      }>;
+      const allLeads = (leads || []) as Array<{
+        created_at: string;
+        status: string;
+      }>;
 
       // Calculate application stats
       const applicationsThisWeek = apps.filter(

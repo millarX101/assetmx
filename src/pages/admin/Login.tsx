@@ -21,7 +21,7 @@ export function AdminLogin() {
 
   // Check for existing session on mount (handles magic link redirect)
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     async function checkSession() {
       if (!isSupabaseConfigured()) {
