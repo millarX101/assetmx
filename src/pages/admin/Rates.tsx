@@ -120,8 +120,28 @@ export function AdminRates() {
 
     setIsSaving(true);
     try {
-      // Note: The term-based rates would need a schema update to store term_months
-      // For now, we'll save to fee_config and handle rates differently
+      // Save term-based rates to rate_config
+      for (const [term, rate] of Object.entries(termRates)) {
+        const termMonths = Number(term);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: rateError } = await (supabase.from('rate_config') as any)
+          .upsert(
+            {
+              term_months: termMonths,
+              base_rate: rate,
+              asset_type: 'all', // Using 'all' since we now have flat rates
+              asset_condition: 'all',
+              is_active: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'term_months' }
+          );
+
+        if (rateError) {
+          console.error('Error saving rate for term', termMonths, rateError);
+          throw rateError;
+        }
+      }
 
       // Update fees
       for (const [feeName, feeData] of Object.entries(fees)) {
@@ -139,7 +159,7 @@ export function AdminRates() {
       }
 
       setHasChanges(false);
-      alert('Changes saved successfully! Note: Rate changes require a database schema update to take effect.');
+      alert('Changes saved successfully!');
     } catch (error) {
       console.error('Error saving changes:', error);
       alert('Error saving changes. Please try again.');

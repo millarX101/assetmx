@@ -151,7 +151,6 @@ export function ChatApplication() {
         <ChatFileUpload
           requiredDocs={[
             { id: 'drivers_licence', label: "Driver's Licence (front)", description: "Clear photo of your licence" },
-            { id: 'financials', label: "Latest Tax Return or Financials", description: "Most recent ATO assessment or accountant-prepared financials" },
           ]}
           onComplete={(files) => {
             // Mark files as uploaded and proceed

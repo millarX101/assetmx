@@ -410,6 +410,15 @@ export function useChatApplication() {
         const abnLookup = flowData.abnLookup;
         const business = flowData.application.business;
 
+        // Map loan amount range to a numeric value (midpoint)
+        const loanAmountMap: Record<string, number> = {
+          'Under $30k': 20000,
+          '$30k - $75k': 50000,
+          '$75k - $150k': 100000,
+          'Over $150k': 200000,
+        };
+        const loanAmount = lead?.loanAmount ? (loanAmountMap[lead.loanAmount] || 0) : 0;
+
         try {
           const { error: insertError } = await supabase.from('leads').insert({
             name: lead?.name || '',
@@ -417,7 +426,8 @@ export function useChatApplication() {
             phone: lead?.phone || '',
             business_name: abnLookup?.entityName || business?.entityName || business?.businessName || '',
             abn: business?.abn || '',
-            asset_type: flowData.application.asset?.assetType || '',
+            asset_type: lead?.assetType || flowData.application.asset?.assetType || '',
+            loan_amount: loanAmount,
             reason: lead?.reason || 'Did not qualify via chat',
             source: 'chat_application',
             status: 'new',
@@ -467,6 +477,57 @@ export function useChatApplication() {
           }
         } catch (error) {
           console.error('Novated lead save error:', error);
+        }
+        break;
+      }
+
+      case 'send_director_form': {
+        // Send email to additional director with form link
+        if (!isSupabaseConfigured()) {
+          console.log('Supabase not configured - skipping director form email');
+          break;
+        }
+
+        const directorEmail = flowData.application.directors?.directors?.[1]?.email;
+        const primaryDirector = flowData.application.directors?.directors?.[0];
+        const business = flowData.application.business;
+        const abnLookup = flowData.abnLookup;
+
+        if (!directorEmail) {
+          console.log('No director email to send to');
+          break;
+        }
+
+        try {
+          const supabaseUrl = getSupabaseUrl();
+          const anonKey = getSupabaseAnonKey();
+
+          if (supabaseUrl && anonKey) {
+            const emailData = {
+              type: 'director_form_request',
+              directorEmail,
+              businessName: business?.entityName || abnLookup?.entityName || '',
+              primaryContactName: `${primaryDirector?.firstName || ''} ${primaryDirector?.lastName || ''}`.trim() || 'The applicant',
+              primaryContactEmail: primaryDirector?.email || '',
+            };
+
+            const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-application-emails`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': anonKey,
+              },
+              body: JSON.stringify(emailData),
+            });
+
+            if (!emailResponse.ok) {
+              console.error('Failed to send director form email:', emailResponse.status);
+            } else {
+              console.log('Director form email sent successfully to:', directorEmail);
+            }
+          }
+        } catch (emailError) {
+          console.error('Director form email error:', emailError);
         }
         break;
       }
@@ -637,6 +698,16 @@ export function useChatApplication() {
   // Move to the next step
   const moveToStep = useCallback(async (stepId: string, flowData: ChatFlowData) => {
     debugLog('NAV', `Moving to step: ${stepId}`);
+
+    // If moving to greeting from an end state, reset the chat completely
+    if (stepId === 'greeting') {
+      clearSavedState();
+      flowData = {
+        application: createEmptyApplication(),
+        currentDirectorIndex: 0,
+      };
+    }
+
     const step = getStep(stepId);
     if (!step) {
       debugLog('ERROR', `Step not found: ${stepId}`);

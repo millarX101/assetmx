@@ -8,6 +8,7 @@ export type AdminRole = 'viewer' | 'editor' | 'admin';
 export interface Lead {
   id: string;
   created_at: string;
+  name: string;
   email: string;
   phone: string;
   business_name: string;
@@ -24,6 +25,9 @@ export interface Lead {
   status: LeadStatus;
   notes: string | null;
   assigned_to: string | null;
+  reason: string | null;
+  source: string | null;
+  consent_to_share: boolean;
 }
 
 export interface RateConfig {
@@ -34,6 +38,7 @@ export interface RateConfig {
   is_active: boolean;
   updated_at: string;
   updated_by: string | null;
+  term_months: number | null;
 }
 
 export interface FeeConfig {

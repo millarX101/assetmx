@@ -6,6 +6,8 @@ import type { ApplicationData } from '@/types/application';
 
 export type InputType = 'text' | 'select' | 'number' | 'date' | 'email' | 'phone' | 'confirm' | 'abn_select' | 'file_upload';
 
+export type ChatAction = 'abn_lookup' | 'abn_search' | 'calculate_quote' | 'check_eligibility' | 'submit_application' | 'save_lead' | 'save_novated_lead' | 'send_director_form';
+
 export interface ChatStep {
   id: string;
   messages: string[] | ((data: ChatFlowData) => string[]);
@@ -14,7 +16,7 @@ export interface ChatStep {
   field?: string;  // Dot notation path e.g. 'business.abn', 'directors.0.firstName'
   placeholder?: string;
   validate?: (value: string, data: ChatFlowData) => string | null;  // Returns error message or null
-  action?: 'abn_lookup' | 'abn_search' | 'calculate_quote' | 'check_eligibility' | 'submit_application' | 'save_lead' | 'save_novated_lead';
+  action?: ChatAction;
   nextStep: string | ((answer: string, data: ChatFlowData) => string);
   skipIf?: (data: ChatFlowData) => boolean;
 }
@@ -48,6 +50,8 @@ export interface ChatFlowData {
     email?: string;
     reason?: string;  // Why they didn't qualify
     consentToShare?: boolean;  // Permission to share with partner brokers
+    assetType?: string;  // What type of asset they want
+    loanAmount?: string;  // Rough loan amount range
   };
   // Eligibility tracking
   eligibility?: {
@@ -348,11 +352,15 @@ export const CHAT_FLOW: ChatStep[] = [
     },
     inputType: 'select',
     options: ["Yes, take my details", "No thanks"],
-    nextStep: (answer) => {
+    nextStep: (answer, data) => {
       if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
-      return 'lead_capture_name';
+      // Auto-set reason for disqualification
+      const years = data.abnLookup ? yearsSince(data.abnLookup.abnRegisteredDate) : 0;
+      const months = Math.round(years * 12);
+      data.lead = { ...(data.lead || {}), reason: `ABN only ${months} months old (need 2+ years)` };
+      return 'lead_capture_asset_type';
     },
   },
 
@@ -369,11 +377,15 @@ export const CHAT_FLOW: ChatStep[] = [
     },
     inputType: 'select',
     options: ["Yes, take my details", "No thanks"],
-    nextStep: (answer) => {
+    nextStep: (answer, data) => {
       if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
-      return 'lead_capture_name';
+      // Auto-set reason for disqualification
+      const gstYears = data.abnLookup?.gstRegisteredDate ? yearsSince(data.abnLookup.gstRegisteredDate) : 0;
+      const gstMonths = Math.round(gstYears * 12);
+      data.lead = { ...(data.lead || {}), reason: `GST registration only ${gstMonths} months (need 2+ years)` };
+      return 'lead_capture_asset_type';
     },
   },
 
@@ -386,11 +398,13 @@ export const CHAT_FLOW: ChatStep[] = [
     ],
     inputType: 'select',
     options: ["Re-enter ABN", "I'm not GST registered"],
-    nextStep: (answer) => {
+    nextStep: (answer, data) => {
       if (answer.toLowerCase().includes('re-enter') || answer.toLowerCase().includes('abn')) {
         return 'abn_retry';
       }
-      return 'lead_capture_name';
+      // Auto-set reason for disqualification
+      data.lead = { ...(data.lead || {}), reason: 'Not GST registered' };
+      return 'lead_capture_asset_type';
     },
   },
 
@@ -402,7 +416,7 @@ export const CHAT_FLOW: ChatStep[] = [
       "You meet AssetMX Express business requirements. Now let's check the asset."
     ],
     inputType: 'confirm',
-    options: ["Continue"],
+    options: [],
     nextStep: 'eligibility_asset_type',
   },
 
@@ -509,11 +523,13 @@ export const CHAT_FLOW: ChatStep[] = [
     ],
     inputType: 'select',
     options: ["Yes, take my details", "No thanks"],
-    nextStep: (answer) => {
+    nextStep: (answer, data) => {
       if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
-      return 'lead_capture_name';
+      // Auto-set reason for disqualification
+      data.lead = { ...(data.lead || {}), reason: 'Fixed/installed equipment (not mobile asset)' };
+      return 'lead_capture_asset_type';
     },
   },
 
@@ -541,11 +557,13 @@ export const CHAT_FLOW: ChatStep[] = [
     ],
     inputType: 'select',
     options: ["Yes, take my details", "No thanks"],
-    nextStep: (answer) => {
+    nextStep: (answer, data) => {
       if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
-      return 'lead_capture_name';
+      // Auto-set reason for disqualification
+      data.lead = { ...(data.lead || {}), reason: 'Asset too old (over 3 years)' };
+      return 'lead_capture_asset_type';
     },
   },
 
@@ -593,11 +611,13 @@ export const CHAT_FLOW: ChatStep[] = [
     ],
     inputType: 'select',
     options: ["Yes, take my details", "No thanks"],
-    nextStep: (answer) => {
+    nextStep: (answer, data) => {
       if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
-      return 'lead_capture_name';
+      // Auto-set reason for disqualification
+      data.lead = { ...(data.lead || {}), reason: 'No property security and unable to provide 20% deposit' };
+      return 'lead_capture_asset_type';
     },
   },
 
@@ -625,11 +645,13 @@ export const CHAT_FLOW: ChatStep[] = [
     ],
     inputType: 'select',
     options: ["Yes, take my details", "No thanks"],
-    nextStep: (answer) => {
+    nextStep: (answer, data) => {
       if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
-      return 'lead_capture_name';
+      // Auto-set reason for disqualification
+      data.lead = { ...(data.lead || {}), reason: 'Loan amount over $150k' };
+      return 'lead_capture_asset_type';
     },
   },
 
@@ -657,11 +679,13 @@ export const CHAT_FLOW: ChatStep[] = [
     ],
     inputType: 'select',
     options: ["Yes, take my details", "No thanks"],
-    nextStep: (answer) => {
+    nextStep: (answer, data) => {
       if (answer.toLowerCase().includes('no')) {
         return 'end_saved';
       }
-      return 'lead_capture_name';
+      // Auto-set reason for disqualification
+      data.lead = { ...(data.lead || {}), reason: 'Credit history issues (bankruptcy, defaults, or judgments)' };
+      return 'lead_capture_asset_type';
     },
   },
 
@@ -672,11 +696,30 @@ export const CHAT_FLOW: ChatStep[] = [
       "You qualify for AssetMX Express. Proceeding to application."
     ],
     inputType: 'confirm',
-    options: ["Continue"],
+    options: [],
     nextStep: 'asset_type_confirmed',
   },
 
   // ========== LEAD CAPTURE FLOW ==========
+  // First capture what they're looking for and amount
+  {
+    id: 'lead_capture_asset_type',
+    messages: ["Before we save your details - what type of asset are you looking to finance?"],
+    inputType: 'select',
+    options: ["Vehicle", "Truck/Trailer", "Equipment", "Other"],
+    field: 'lead.assetType',
+    nextStep: 'lead_capture_amount',
+  },
+
+  {
+    id: 'lead_capture_amount',
+    messages: ["And roughly how much are you looking to borrow?"],
+    inputType: 'select',
+    options: ["Under $30k", "$30k - $75k", "$75k - $150k", "Over $150k"],
+    field: 'lead.loanAmount',
+    nextStep: 'lead_capture_name',
+  },
+
   {
     id: 'lead_capture_name',
     messages: ["What's your name?"],
@@ -709,10 +752,12 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'lead_capture_consent',
     messages: [
-      "Can we share your details with a partner who handles cases outside AssetMX Express?"
+      "We only work with trusted partners who look after our clients.",
+      "Can we share your details with a partner who may be able to help with your finance needs?",
+      "Note that rates and terms may vary depending on your circumstances."
     ],
     inputType: 'select',
-    options: ["Yes", "No, contact me directly"],
+    options: ["Yes, that's fine", "No, contact me directly"],
     field: 'lead.consentToShare',
     nextStep: 'lead_capture_complete',
   },
@@ -723,25 +768,35 @@ export const CHAT_FLOW: ChatStep[] = [
       const consented = data.lead?.consentToShare;
       if (consented) {
         return [
-          "Details saved. Our team or a partner will contact you within 24 hours."
+          "Great! Our team or one of our trusted partners will be in touch within 24 hours to discuss your options."
         ];
       }
       return [
-        "Details saved. Our team will contact you within 24 hours."
+        "No problem. Our team will contact you within 24 hours."
       ];
     },
-    inputType: 'confirm',
-    options: ["Done"],
+    inputType: 'select',
+    options: ["Done", "Start a new enquiry"],
     action: 'save_lead',
-    nextStep: 'end_lead_captured',
+    nextStep: (answer) => {
+      if (answer.toLowerCase().includes('new') || answer.toLowerCase().includes('start')) {
+        return 'greeting';
+      }
+      return 'end_lead_captured';
+    },
   },
 
   {
     id: 'end_lead_captured',
-    messages: [],
-    inputType: 'confirm',
-    options: [],
-    nextStep: 'end_lead_captured',
+    messages: ["Thanks for your enquiry! Is there anything else we can help with?"],
+    inputType: 'select',
+    options: ["Start a new enquiry", "No, I'm done"],
+    nextStep: (answer) => {
+      if (answer.toLowerCase().includes('new') || answer.toLowerCase().includes('start')) {
+        return 'greeting';
+      }
+      return 'end_lead_captured';
+    },
   },
 
   // Continue with full application after eligibility check
@@ -1110,7 +1165,7 @@ export const CHAT_FLOW: ChatStep[] = [
       if (entityType.includes('sole trader') || entityType.includes('individual')) {
         return ["Sole trader - no additional directors required."];
       }
-      return ["Additional directors or guarantors?"];
+      return ["Any additional directors or guarantors on this application?"];
     },
     inputType: 'select',
     options: (data) => {
@@ -1118,94 +1173,90 @@ export const CHAT_FLOW: ChatStep[] = [
       if (entityType.includes('sole trader') || entityType.includes('individual')) {
         return ["Continue"];
       }
-      return ["Just me", "Add another"];
+      return ["Just me", "Yes, add another"];
     },
     nextStep: (answer, data) => {
       const entityType = data.abnLookup?.entityType?.toLowerCase() || '';
       if (entityType.includes('sole trader') || entityType.includes('individual')) {
         return 'loan_term';
       }
-      if (answer.toLowerCase().includes('another') || answer.toLowerCase().includes('add')) {
-        return 'additional_director_email';
+      if (answer.toLowerCase().includes('another') || answer.toLowerCase().includes('yes')) {
+        return 'additional_director_method';
       }
       return 'loan_term';
     },
   },
 
-  // Additional director - email + basic A&L
+  // Ask how they want to add the additional director
   {
-    id: 'additional_director_email',
-    messages: ["Additional director email?"],
+    id: 'additional_director_method',
+    messages: [
+      "How would you like to add their details?",
+      "We can email them a short form to complete, or you can enter the basics now."
+    ],
+    inputType: 'select',
+    options: ["Email them directly (recommended)", "I'll enter their details"],
+    nextStep: (answer) => {
+      if (answer.toLowerCase().includes('email') || answer.toLowerCase().includes('recommend')) {
+        return 'additional_director_email_request';
+      }
+      return 'additional_director_email';
+    },
+  },
+
+  // Request email to send form
+  {
+    id: 'additional_director_email_request',
+    messages: ["What's their email address? We'll send them a quick form to complete."],
     inputType: 'email',
     field: 'directors.1.email',
     placeholder: "their@email.com",
     validate: validateEmail,
-    nextStep: 'additional_director_assets',
+    nextStep: 'additional_director_email_sent',
   },
 
-  // Additional director asset/liability collection
   {
-    id: 'additional_director_assets',
-    messages: ["Do they own their home?"],
+    id: 'additional_director_email_sent',
+    messages: [
+      "Sending them a quick form now...",
+      "They'll receive an email with a link to complete their details.",
+      "Let's continue with your application - we'll notify you when they've completed it."
+    ],
+    inputType: 'confirm',
+    options: [],
+    action: 'send_director_form',
+    nextStep: 'loan_term',
+  },
+
+  // Manual entry path - just collect email and basic info
+  {
+    id: 'additional_director_email',
+    messages: ["Their email address?"],
+    inputType: 'email',
+    field: 'directors.1.email',
+    placeholder: "their@email.com",
+    validate: validateEmail,
+    nextStep: 'additional_director_property_owner',
+  },
+
+  // Simplified - just ask if they own property (main thing lenders care about)
+  {
+    id: 'additional_director_property_owner',
+    messages: ["Do they own property in Australia?"],
     inputType: 'select',
-    options: ["Yes", "No"],
+    options: ["Yes", "No", "Not sure"],
     field: 'directors.1.ownsProperty',
-    nextStep: (answer) => {
-      if (answer.toLowerCase() === 'yes') {
-        return 'additional_director_property_value';
-      }
-      return 'additional_director_vehicles';
-    },
+    nextStep: 'additional_director_done',
   },
 
   {
-    id: 'additional_director_property_value',
-    messages: ["Their home value?"],
-    inputType: 'number',
-    field: 'directors.1.propertyValue',
-    placeholder: "e.g. 600000",
-    nextStep: 'additional_director_mortgage',
-  },
-
-  {
-    id: 'additional_director_mortgage',
-    messages: ["Their mortgage balance?"],
-    inputType: 'number',
-    field: 'directors.1.mortgageBalance',
-    placeholder: "e.g. 300000 (enter 0 if paid off)",
-    nextStep: 'additional_director_vehicles',
-  },
-
-  {
-    id: 'additional_director_vehicles',
-    messages: ["Their vehicle value?"],
-    inputType: 'number',
-    field: 'directors.1.vehiclesValue',
-    placeholder: "e.g. 30000 (enter 0 if none)",
-    nextStep: (answer) => {
-      const value = Number(answer) || 0;
-      if (value > 0) {
-        return 'additional_director_vehicle_loan';
-      }
-      return 'additional_director_credit_cards';
-    },
-  },
-
-  {
-    id: 'additional_director_vehicle_loan',
-    messages: ["Their car loan balance?"],
-    inputType: 'number',
-    field: 'directors.1.vehicleLoanBalance',
-    placeholder: "e.g. 15000 (enter 0 if paid off)",
-    nextStep: 'additional_director_credit_cards',
-  },
-
-  {
-    id: 'additional_director_credit_cards',
-    messages: ["Their total credit card limit?"],
-    inputType: 'number',
-    field: 'directors.1.creditCardLimit',
-    placeholder: "e.g. 10000 (enter 0 if none)",
+    id: 'additional_director_done',
+    messages: [
+      "Got it. We may follow up with them directly if we need more details.",
+      "Let's continue."
+    ],
+    inputType: 'confirm',
+    options: [],
     nextStep: 'loan_term',
   },
 
@@ -1214,10 +1265,10 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'loan_term',
     messages: [
       "Details collected. Final step: loan structure.",
-      "Loan term?"
+      "What loan term would you like?"
     ],
     inputType: 'select',
-    options: ["3 years", "4 years", "5 years"],
+    options: ["1 year", "2 years", "3 years", "4 years", "5 years"],
     field: 'loan.termMonths',
     nextStep: 'balloon_preference',
   },
@@ -1227,15 +1278,31 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: (data) => {
       const termMonths = data.application.loan?.termMonths || 60;
       const termYears = Math.ceil(termMonths / 12);
-      // Max balloon: 1yr=65%, 2yr=60%, 3yr=50%, 4yr=40%, 5yr+=30%
-      const maxBalloon = termYears === 1 ? 65 : termYears === 2 ? 60 : termYears === 3 ? 50 : termYears === 4 ? 40 : 30;
+      // Max balloon based on term: 1yr=60%, 2yr=55%, 3yr=50%, 4yr=40%, 5yr=30%
+      const maxBalloon = termYears === 1 ? 60 : termYears === 2 ? 55 : termYears === 3 ? 50 : termYears === 4 ? 40 : 30;
       return [
         "Do you want a balloon payment at the end?",
         `(For a ${termYears} year term, max balloon is ${maxBalloon}%)`
       ];
     },
     inputType: 'select',
-    options: ["No balloon - own it outright", "20% balloon", "30% balloon", "40% balloon", "What's a balloon?"],
+    options: (data) => {
+      const termMonths = data.application.loan?.termMonths || 60;
+      const termYears = Math.ceil(termMonths / 12);
+      // Max balloon based on term: 1yr=60%, 2yr=55%, 3yr=50%, 4yr=40%, 5yr=30%
+      const maxBalloon = termYears === 1 ? 60 : termYears === 2 ? 55 : termYears === 3 ? 50 : termYears === 4 ? 40 : 30;
+
+      const options = ["No balloon - own it outright"];
+      if (maxBalloon >= 10) options.push("10% balloon");
+      if (maxBalloon >= 20) options.push("20% balloon");
+      if (maxBalloon >= 30) options.push("30% balloon");
+      if (maxBalloon >= 40) options.push("40% balloon");
+      if (maxBalloon >= 50) options.push("50% balloon");
+      if (maxBalloon >= 55) options.push("55% balloon");
+      if (maxBalloon >= 60) options.push("60% balloon");
+      options.push("What's a balloon?");
+      return options;
+    },
     field: 'loan.balloonPercentage',
     nextStep: (answer) => {
       if (answer.toLowerCase().includes("what's")) {
@@ -1250,7 +1317,8 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: (data) => {
       const termMonths = data.application.loan?.termMonths || 60;
       const termYears = Math.ceil(termMonths / 12);
-      const maxBalloon = termYears === 1 ? 65 : termYears === 2 ? 60 : termYears === 3 ? 50 : termYears === 4 ? 40 : 30;
+      // Max balloon based on term: 1yr=60%, 2yr=55%, 3yr=50%, 4yr=40%, 5yr=30%
+      const maxBalloon = termYears === 1 ? 60 : termYears === 2 ? 55 : termYears === 3 ? 50 : termYears === 4 ? 40 : 30;
       return [
         "Good question!",
         "A balloon is a lump sum you pay at the end of the loan.",
@@ -1260,7 +1328,13 @@ export const CHAT_FLOW: ChatStep[] = [
       ];
     },
     inputType: 'select',
-    options: ["No balloon - own it outright", "Lower payments with balloon"],
+    options: (data) => {
+      const termMonths = data.application.loan?.termMonths || 60;
+      const termYears = Math.ceil(termMonths / 12);
+      // Max balloon based on term: 1yr=60%, 2yr=55%, 3yr=50%, 4yr=40%, 5yr=30%
+      const maxBalloon = termYears === 1 ? 60 : termYears === 2 ? 55 : termYears === 3 ? 50 : termYears === 4 ? 40 : 30;
+      return ["No balloon - own it outright", `Lower payments (${maxBalloon}% balloon)`];
+    },
     field: 'loan.balloonPercentage',
     nextStep: 'deposit_question',
   },
@@ -1323,13 +1397,14 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'privacy_consent',
     messages: [
-      "Before submitting, you'll sign a privacy consent form.",
-      "This authorises:\n• Credit check\n• Identity verification",
-      "The form will be sent to your email.",
-      "Ready to proceed?"
+      "Almost there! When you submit, we'll email you:",
+      "• Privacy consent form (authorises credit check & identity verification)",
+      "• Affordability declaration (confirms you can comfortably afford the repayments)",
+      "Please keep an eye out and action when you can.",
+      "Ready to submit?"
     ],
     inputType: 'select',
-    options: ["Proceed", "Save for later"],
+    options: ["Submit my application", "Save for later"],
     nextStep: (answer) => {
       if (answer.toLowerCase().includes('later') || answer.toLowerCase().includes('save')) {
         return 'save_for_later';
@@ -1368,10 +1443,10 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: [
       "Application submitted successfully!",
       "What happens next:",
-      "1. Westpac affordability declaration sent to your email - please sign",
+      "1. Check your email for the privacy consent and affordability declaration - please sign both",
       "2. We'll review your application",
       "3. Response within 15 minutes (business hours)",
-      "You'll receive updates via email and SMS."
+      "You'll receive updates via email."
     ],
     inputType: 'confirm',
     options: ["Done"],
@@ -1382,26 +1457,41 @@ export const CHAT_FLOW: ChatStep[] = [
   // ========== END STATES ==========
   {
     id: 'end_complete',
-    messages: [],
-    inputType: 'confirm',
-    options: [],
-    nextStep: 'end_complete',
+    messages: ["Your application has been submitted. Need to finance another asset?"],
+    inputType: 'select',
+    options: ["Start a new application", "No, I'm done"],
+    nextStep: (answer) => {
+      if (answer.toLowerCase().includes('new') || answer.toLowerCase().includes('start')) {
+        return 'greeting';
+      }
+      return 'end_complete';
+    },
   },
 
   {
     id: 'end_saved',
-    messages: [],
-    inputType: 'confirm',
-    options: [],
-    nextStep: 'end_saved',
+    messages: ["Your progress has been saved. You can return anytime to continue."],
+    inputType: 'select',
+    options: ["Start a new enquiry", "I'm done for now"],
+    nextStep: (answer) => {
+      if (answer.toLowerCase().includes('new') || answer.toLowerCase().includes('start')) {
+        return 'greeting';
+      }
+      return 'end_saved';
+    },
   },
 
   {
     id: 'end_ineligible',
-    messages: [],
-    inputType: 'confirm',
-    options: [],
-    nextStep: 'end_ineligible',
+    messages: ["Is there anything else we can help with?"],
+    inputType: 'select',
+    options: ["Start a new enquiry", "No, I'm done"],
+    nextStep: (answer) => {
+      if (answer.toLowerCase().includes('new') || answer.toLowerCase().includes('start')) {
+        return 'greeting';
+      }
+      return 'end_ineligible';
+    },
   },
 ];
 
@@ -1432,18 +1522,22 @@ export function mapOptionToValue(option: string, field: string): string | number
 
   // Loan term mapping
   if (field === 'loan.termMonths') {
-    if (option.includes('3')) return 36;
-    if (option.includes('4')) return 48;
-    if (option.includes('5')) return 60;
+    if (option.includes('1 year')) return 12;
+    if (option.includes('2 year')) return 24;
+    if (option.includes('3 year')) return 36;
+    if (option.includes('4 year')) return 48;
+    if (option.includes('5 year')) return 60;
   }
 
   // Balloon mapping
   if (field === 'loan.balloonPercentage') {
     if (option.toLowerCase().includes('no balloon') || option.toLowerCase().includes('own it')) return 0;
-    if (option.includes('20')) return 20;
-    if (option.includes('30')) return 30;
-    if (option.includes('40')) return 40;
-    if (option.toLowerCase().includes('lower payments')) return 20;
+    // Extract percentage from option like "20% balloon" or "Lower payments (30% balloon)"
+    const percentMatch = option.match(/(\d+)%/);
+    if (percentMatch) {
+      return parseInt(percentMatch[1], 10);
+    }
+    if (option.toLowerCase().includes('lower payments')) return 20; // fallback
   }
 
   return option;
@@ -1478,6 +1572,8 @@ export function getStepProgress(stepId: string): { current: number; total: numbe
     'eligibility_credit_issues': 6,
     'eligibility_qualified': 7,
     // Lead capture
+    'lead_capture_asset_type': 4,
+    'lead_capture_amount': 4,
     'lead_capture_name': 4,
     'lead_capture_phone': 4,
     'lead_capture_email': 4,
@@ -1504,13 +1600,12 @@ export function getStepProgress(stepId: string): { current: number; total: numbe
     'liability_credit_cards': 15,
     'director_net_position': 15,
     'more_directors': 15,
+    'additional_director_method': 16,
+    'additional_director_email_request': 16,
+    'additional_director_email_sent': 16,
     'additional_director_email': 16,
-    'additional_director_assets': 16,
-    'additional_director_property_value': 16,
-    'additional_director_mortgage': 16,
-    'additional_director_vehicles': 17,
-    'additional_director_vehicle_loan': 17,
-    'additional_director_credit_cards': 17,
+    'additional_director_property_owner': 16,
+    'additional_director_done': 16,
     // Loan setup
     'loan_term': 18,
     'balloon_preference': 19,
