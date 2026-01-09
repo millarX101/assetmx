@@ -384,6 +384,17 @@ export function Landing() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Our Story */}
+          <div className="max-w-3xl mx-auto mt-16 text-center">
+            <h3 className="text-2xl font-display text-slate-900 mb-4">Our Story</h3>
+            <p className="text-slate-600 leading-relaxed">
+              From helping thousands of business clients over the past two decades, we identified a largely untouched part of the market that suffers through traditional channels. Good businesses with clean credit were paying the same rates as everyone else, subsidising higher-risk borrowers through opaque broker margins.
+            </p>
+            <p className="text-slate-600 leading-relaxed mt-4">
+              We're redefining how easy lending should be for great business clients. We built this system from the ground up — Australian owned and run, to benefit Australian businesses.
+            </p>
+          </div>
         </div>
       </section>
 
