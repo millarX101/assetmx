@@ -37,7 +37,7 @@ interface SummaryData {
   };
   quote?: {
     monthlyRepayment: number;
-    weeklyRepayment: number;
+    weeklyRepayment?: number;
     indicativeRate: number;
   };
 }
@@ -159,7 +159,7 @@ export function ChatSummaryCard({ data, onEdit }: ChatSummaryCardProps) {
                 {formatCurrency(data.quote.monthlyRepayment)}/month
               </div>
               <div className="text-sm text-slate-500 mt-1">
-                ({formatCurrency(data.quote.weeklyRepayment)}/week at {data.quote.indicativeRate.toFixed(2)}% p.a.)
+                ({formatCurrency(data.quote.weeklyRepayment || data.quote.monthlyRepayment / 4.33)}/week at {data.quote.indicativeRate.toFixed(2)}% p.a.)
               </div>
             </div>
           </div>

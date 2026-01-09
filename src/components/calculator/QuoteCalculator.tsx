@@ -21,11 +21,14 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
-import { InfoIcon, ArrowRight } from 'lucide-react';
+import { InfoIcon, ArrowRight, MessageCircle } from 'lucide-react';
 import { CostBreakdown } from './CostBreakdown';
 import { BrokerComparison } from './BrokerComparison';
 import { LeadCaptureModal } from '@/components/admin/LeadCaptureModal';
 import { useApplicationStore } from '@/stores/applicationStore';
+
+// Storage key for passing calculator data to chat
+const CALCULATOR_TO_CHAT_KEY = 'assetmx_calculator_quote';
 
 const assetTypeLabels = {
   vehicle: 'Vehicle (Car, Ute, Van)',
@@ -88,6 +91,21 @@ export function QuoteCalculator() {
         block: 'start',
       });
     }, 100);
+  };
+
+  // Navigate to chat with pre-filled calculator data
+  const handleApplyNow = () => {
+    if (liveQuote) {
+      // Store calculator data for the chat to pick up
+      localStorage.setItem(CALCULATOR_TO_CHAT_KEY, JSON.stringify({
+        formData: { ...formData, balloonPercentage: effectiveBalloon },
+        quote: liveQuote,
+        payFeeUpfront,
+      }));
+      // Also init the store for other components
+      initFromCalculator({ ...formData, balloonPercentage: effectiveBalloon });
+      navigate('/chat-apply');
+    }
   };
 
   return (
@@ -289,13 +307,23 @@ export function QuoteCalculator() {
                 </Card>
               )}
 
-              <Button
-                onClick={handleShowFullBreakdown}
-                className="w-full bg-gradient-brand hover:opacity-90 text-white shadow-lg shadow-purple-900/20 border-0"
-                size="lg"
-              >
-                See Full Cost Breakdown <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={handleShowFullBreakdown}
+                  variant="outline"
+                  className="flex-1 border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-400"
+                  size="lg"
+                >
+                  See Full Cost Breakdown <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={handleApplyNow}
+                  className="flex-1 bg-gradient-brand hover:opacity-90 text-white shadow-lg shadow-purple-900/20 border-0"
+                  size="lg"
+                >
+                  Apply for This Loan <MessageCircle className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -320,13 +348,10 @@ export function QuoteCalculator() {
                   </div>
                   <Button
                     size="lg"
-                    onClick={() => {
-                      initFromCalculator(formData);
-                      navigate('/chat-apply');
-                    }}
+                    onClick={handleApplyNow}
                     className="bg-gradient-brand hover:opacity-90 text-white shadow-lg shadow-purple-900/20 w-full md:w-auto"
                   >
-                    Start Application
+                    Apply for This Loan <MessageCircle className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>

@@ -37,8 +37,13 @@ export interface ChatFlowData {
   businessNameSearch?: string;
   quote?: {
     monthlyRepayment: number;
-    weeklyRepayment: number;
+    weeklyRepayment?: number;
     indicativeRate: number;
+    totalInterest?: number;
+    totalRepayments?: number;
+    totalFeesFinanced?: number;
+    totalFeesUpfront?: number;
+    totalCost?: number;
   };
   currentDirectorIndex: number;
   eligibilityPassed?: boolean;
@@ -66,6 +71,8 @@ export interface ChatFlowData {
     type: string;
     url: string;
   }[];
+  // Flag indicating user came from calculator with pre-filled data
+  fromCalculator?: boolean;
 }
 
 // Helper to format currency
@@ -944,7 +951,7 @@ export const CHAT_FLOW: ChatStep[] = [
       }
       return [
         `Price: ${formatMoney(price)}`,
-        `Indicative repayment: ~${formatMoney(quote.monthlyRepayment)}/month over 5 years (~${formatMoney(quote.weeklyRepayment)}/week) at ${quote.indicativeRate.toFixed(2)}% p.a.`,
+        `Indicative repayment: ~${formatMoney(quote.monthlyRepayment)}/month over 5 years (~${formatMoney(quote.weeklyRepayment || quote.monthlyRepayment / 4.33)}/week) at ${quote.indicativeRate.toFixed(2)}% p.a.`,
         "Continue to full application?"
       ];
     },

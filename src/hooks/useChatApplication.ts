@@ -34,6 +34,43 @@ export interface ChatState {
 
 const TYPING_DELAY = 800; // ms between bot messages
 const STORAGE_KEY = 'assetmx_chat_progress';
+const CALCULATOR_TO_CHAT_KEY = 'assetmx_calculator_quote';
+
+// Load calculator data if coming from quote calculator
+function loadCalculatorData(): { formData: QuoteInput; quote: QuoteResult; payFeeUpfront: boolean } | null {
+  try {
+    const data = localStorage.getItem(CALCULATOR_TO_CHAT_KEY);
+    if (data) {
+      // Clear it so we don't use it again on refresh
+      localStorage.removeItem(CALCULATOR_TO_CHAT_KEY);
+      return JSON.parse(data);
+    }
+  } catch {
+    // Ignore errors
+  }
+  return null;
+}
+
+interface QuoteInput {
+  assetType: 'vehicle' | 'truck' | 'equipment';
+  assetCondition: 'new' | 'demo' | 'used_0_3' | 'used_4_7' | 'used_8_plus';
+  loanAmount: number;
+  termMonths: number;
+  balloonPercentage: number;
+  financePlatformFee?: boolean;
+}
+
+interface QuoteResult {
+  indicativeRate: number;
+  monthlyRepayment: number;
+  weeklyRepayment: number;
+  fortnightlyRepayment: number;
+  totalRepayments: number;
+  totalInterest: number;
+  balloonAmount: number;
+  estimatedSaving: number;
+  [key: string]: unknown;
+}
 
 // Debug logging helper
 const DEBUG = true; // Set to false in production
@@ -123,6 +160,74 @@ function clearSavedState() {
 
 export function useChatApplication() {
   const [state, setState] = useState<ChatState>(() => {
+    // Check if coming from calculator with pre-filled data
+    const calculatorData = loadCalculatorData();
+    if (calculatorData) {
+      debugLog('INIT', 'Loading from calculator', calculatorData);
+      // Clear any existing saved state since we're starting fresh from calculator
+      clearSavedState();
+
+      const { formData, quote } = calculatorData;
+      const startStep = getStep('greeting')!;
+
+      // Pre-fill application with calculator data
+      const prefilledApp = createEmptyApplication();
+      prefilledApp.asset.assetType = formData.assetType;
+      prefilledApp.asset.assetCondition = formData.assetCondition;
+      prefilledApp.asset.assetPriceIncGst = formData.loanAmount; // Approximate - they'll confirm
+      prefilledApp.loan.loanAmount = formData.loanAmount;
+      prefilledApp.loan.termMonths = formData.termMonths;
+      prefilledApp.loan.balloonPercentage = formData.balloonPercentage;
+      prefilledApp.loan.balloonAmount = quote.balloonAmount;
+
+      const flowData: ChatFlowData = {
+        application: prefilledApp,
+        currentDirectorIndex: 0,
+        quote: {
+          indicativeRate: quote.indicativeRate,
+          monthlyRepayment: quote.monthlyRepayment,
+          totalInterest: quote.totalInterest,
+          totalRepayments: quote.totalRepayments,
+          totalFeesFinanced: 0,
+          totalFeesUpfront: 0,
+          totalCost: quote.totalRepayments,
+        },
+        fromCalculator: true,
+      };
+
+      // Start with a welcome message that acknowledges the quote
+      const assetTypeLabel = formData.assetType === 'vehicle' ? 'vehicle' : formData.assetType === 'truck' ? 'truck' : 'equipment';
+      const welcomeMessages = [
+        `Welcome back! I see you've got a quote for ${assetTypeLabel} finance.`,
+        `$${formData.loanAmount.toLocaleString()} over ${formData.termMonths} months at ${quote.indicativeRate.toFixed(2)}% p.a.`,
+        "Let's get your application started. First, I need to verify your business.",
+        "What's your business name or ABN?"
+      ];
+
+      const initialOptions = typeof startStep.options === 'function'
+        ? startStep.options(flowData)
+        : (startStep.options || []);
+
+      return {
+        messages: welcomeMessages.map((content, i) => ({
+          id: `calc-init-${i}`,
+          content,
+          sender: 'bot' as const,
+          timestamp: new Date(),
+          type: 'bot' as const,
+        })),
+        currentStepId: 'greeting',
+        flowData,
+        isTyping: false,
+        isComplete: false,
+        isWaitingForInput: true,
+        currentInputType: startStep.inputType,
+        currentOptions: initialOptions,
+        currentPlaceholder: startStep.placeholder || '',
+        progress: getStepProgress('greeting'),
+      };
+    }
+
     const saved = loadSavedState();
     const initialStep = getStep('greeting')!;
 
