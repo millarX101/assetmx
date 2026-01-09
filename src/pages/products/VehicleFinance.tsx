@@ -9,8 +9,8 @@ import { getImageUrl } from '@/lib/supabase';
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "FinancialProduct",
-  "name": "Vehicle Finance",
-  "description": "Finance for utes, vans, cars and commercial vehicles with transparent $800 flat fee",
+  "name": "Business Car Finance",
+  "description": "Business car finance for utes, vans, cars and commercial vehicles with transparent $800 flat fee. No broker mark-ups.",
   "provider": {
     "@type": "FinancialService",
     "name": "AssetMX",
@@ -29,10 +29,10 @@ export function VehicleFinance() {
   return (
     <div className="min-h-screen bg-ivory">
       <SEO
-        title="Vehicle Finance Australia | Ute, Van & Car Finance | $800 Flat Fee"
-        description="Finance your next ute, van or company car with transparent pricing. No hidden broker fees, just $800 flat. Ford Ranger, Toyota Hilux, Mercedes Sprinter - fast 15-minute approval."
-        keywords="vehicle finance Australia, ute finance, van finance, car finance business, Ford Ranger finance, Toyota Hilux finance, fleet finance, commercial vehicle loan, chattel mortgage"
-        canonicalUrl="https://assetmx.com.au/vehicle-finance"
+        title="Car Finance for Australian Businesses | No Broker Mark-ups"
+        description="Business car finance with transparent pricing. No hidden broker fees, no origination fee, just $800 flat. Ford Ranger, Toyota Hilux, Mercedes Sprinter - fast 15-minute approval."
+        keywords="business car finance, car finance Australia, ute finance, van finance, car loan business, Ford Ranger finance, Toyota Hilux finance, fleet finance, commercial vehicle loan, chattel mortgage"
+        canonicalUrl="https://assetmx.com.au/car-finance"
         structuredData={structuredData}
       />
       <Header />
@@ -47,9 +47,9 @@ export function VehicleFinance() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-white">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display mb-6">
-                Vehicle Finance
+                Business Car Finance
                 <br />
-                <span className="text-pink-300">Without the Games</span>
+                <span className="text-pink-300">Without Broker Mark-ups</span>
               </h1>
               <p className="text-xl text-purple-100 mb-8 max-w-lg">
                 Finance your next ute, van, or company car with transparent pricing.

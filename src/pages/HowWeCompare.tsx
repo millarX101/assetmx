@@ -21,9 +21,9 @@ export function HowWeCompare() {
   return (
     <div className="min-h-screen bg-ivory">
       <SEO
-        title="How We Compare | AssetMX vs Traditional Brokers | Transparent Finance"
-        description="See how AssetMX is changing SME lending. No hidden broker commissions, no endless phone calls, no paperwork headaches. Just $800 flat fee and same-day approval."
-        keywords="asset finance comparison, broker fees, transparent finance, SME lending, business finance Australia"
+        title="AssetMX vs Brokers | See the Real Cost Difference"
+        description="Compare AssetMX to traditional finance brokers. No hidden commissions, no $990 origination fees, no rate loading. Just $800 flat fee and same-day approval."
+        keywords="asset finance comparison, broker fees Australia, business car loan comparison, equipment finance rates, best asset finance, origination fee"
         canonicalUrl="https://assetmx.com.au/how-we-compare"
         structuredData={structuredData}
       />
@@ -182,6 +182,13 @@ export function HowWeCompare() {
                     <div className="flex items-start gap-3">
                       <X className="h-5 w-5 text-red-400 mt-0.5 flex-shrink-0" />
                       <div>
+                        <div className="font-medium text-slate-700">Origination fee</div>
+                        <div className="text-sm text-slate-500">$990 added to your loan</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <X className="h-5 w-5 text-red-400 mt-0.5 flex-shrink-0" />
+                      <div>
                         <div className="font-medium text-slate-700">Rate loading</div>
                         <div className="text-sm text-slate-500">Your rate is 1-2% higher than it should be</div>
                       </div>
@@ -224,6 +231,13 @@ export function HowWeCompare() {
                     <div className="flex items-start gap-3">
                       <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                       <div>
+                        <div className="font-medium text-slate-700">No origination fee</div>
+                        <div className="text-sm text-slate-500">$0 extra charges</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
                         <div className="font-medium text-slate-700">Lender base rate</div>
                         <div className="text-sm text-slate-500">No markup, no loading</div>
                       </div>
@@ -247,6 +261,13 @@ export function HowWeCompare() {
                       <div>
                         <div className="font-medium text-slate-700">Digital everything</div>
                         <div className="text-sm text-slate-500">Upload, e-sign, done</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <div className="font-medium text-slate-700">Free finance calculator</div>
+                        <div className="text-sm text-slate-500">See your real rate in 30 seconds</div>
                       </div>
                     </div>
                   </div>

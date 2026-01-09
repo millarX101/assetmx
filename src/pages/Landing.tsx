@@ -138,7 +138,7 @@ export function Landing() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {/* Vehicles */}
-            <Link to="/vehicle-finance" className="group">
+            <Link to="/car-finance" className="group">
               <Card className="border-purple-100 shadow-soft hover:shadow-card transition-all hover:-translate-y-1 overflow-hidden">
                 <div className="aspect-[16/10] relative overflow-hidden">
                   <img

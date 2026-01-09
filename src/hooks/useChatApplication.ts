@@ -348,8 +348,13 @@ export function useChatApplication() {
     const requiresTextInput = step.inputType === 'text' || step.inputType === 'number' ||
                               step.inputType === 'email' || step.inputType === 'phone' ||
                               step.inputType === 'date';
-    if (step.action && options.length === 0 && !requiresTextInput && autoProgressCallback) {
-      debugLog('AUTO', `Auto-progressing step ${step.id} with action: ${step.action}`);
+
+    // Also auto-progress for 'confirm' inputType with no options (info-only steps)
+    const isInfoOnlyStep = step.inputType === 'confirm' && options.length === 0 && !step.action && step.nextStep;
+
+    if ((step.action && options.length === 0 && !requiresTextInput && autoProgressCallback) ||
+        (isInfoOnlyStep && autoProgressCallback)) {
+      debugLog('AUTO', `Auto-progressing step ${step.id}${step.action ? ` with action: ${step.action}` : ' (info-only step)'}`);
       // Execute the action
       let updatedData = { ...flowData };
 

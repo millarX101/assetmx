@@ -9,8 +9,8 @@ import { getImageUrl } from '@/lib/supabase';
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "FinancialProduct",
-  "name": "Truck & Van Finance",
-  "description": "Finance for rigid trucks, vans and light commercial vehicles with transparent $800 flat fee",
+  "name": "Truck Finance Australia",
+  "description": "Truck and van finance for rigid trucks, vans and light commercial vehicles. Transparent $800 flat fee, no hidden broker fees.",
   "provider": {
     "@type": "FinancialService",
     "name": "AssetMX",
@@ -29,9 +29,9 @@ export function TruckFinance() {
   return (
     <div className="min-h-screen bg-ivory">
       <SEO
-        title="Truck & Van Finance Australia | Rigid Trucks & Commercial Vans | $800 Flat Fee"
-        description="Finance your rigid truck, van or light commercial vehicle with transparent pricing. Isuzu, Hino, Fuso, Transit, Sprinter - no broker markup, just $800 flat fee. Fast approval for business owners."
-        keywords="truck finance Australia, rigid truck finance, van finance, Isuzu truck finance, Hino finance, commercial van loan, light truck finance, business vehicle finance"
+        title="Truck Finance Australia | No Hidden Broker Fees"
+        description="Truck and van finance with transparent pricing. Isuzu, Hino, Fuso, Transit, Sprinter - no broker markup, no origination fee, just $800 flat. Fast approval for business owners."
+        keywords="truck finance Australia, rigid truck finance, van finance, Isuzu truck finance, Hino finance, commercial van loan, light truck finance, business vehicle finance, truck loan SME"
         canonicalUrl="https://assetmx.com.au/truck-finance"
         structuredData={structuredData}
       />
@@ -47,9 +47,9 @@ export function TruckFinance() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-white">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display mb-6">
-                Truck & Van Finance
+                Truck Finance
                 <br />
-                <span className="text-pink-300">For Growing Businesses</span>
+                <span className="text-pink-300">Without Hidden Broker Fees</span>
               </h1>
               <p className="text-lg text-purple-100 mb-4">
                 Delivery drivers, tradies, removalists, couriers - get your business moving

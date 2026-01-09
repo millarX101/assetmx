@@ -9,8 +9,8 @@ import { getImageUrl } from '@/lib/supabase';
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "FinancialProduct",
-  "name": "Equipment Finance",
-  "description": "Finance for excavators, loaders and construction equipment with transparent $800 flat fee",
+  "name": "Equipment Finance Australia",
+  "description": "Fixed-rate equipment finance for excavators, loaders and construction equipment. Transparent $800 flat fee for established SMEs.",
   "provider": {
     "@type": "FinancialService",
     "name": "AssetMX",
@@ -29,9 +29,9 @@ export function EquipmentFinance() {
   return (
     <div className="min-h-screen bg-ivory">
       <SEO
-        title="Equipment Finance Australia | Excavator & Loader Finance | $800 Flat Fee"
-        description="Finance your excavator, loader or construction equipment with transparent pricing. CAT, Komatsu, Hitachi, Kubota - no broker markup, just $800 flat fee. Fast approval for tradies and contractors."
-        keywords="equipment finance Australia, excavator finance, loader finance, construction equipment loan, CAT finance, Komatsu finance, earthmoving finance, skid steer finance, machinery loan"
+        title="Equipment Finance Australia | Transparent SME Funding"
+        description="Equipment finance for excavators, loaders and construction machinery. CAT, Komatsu, Hitachi, Kubota - no broker markup, no origination fee, just $800 flat. Fast approval for tradies and contractors."
+        keywords="equipment finance Australia, excavator finance, loader finance, construction equipment loan, CAT finance, Komatsu finance, earthmoving finance, skid steer finance, machinery loan, equipment loan SME"
         canonicalUrl="https://assetmx.com.au/equipment-finance"
         structuredData={structuredData}
       />
@@ -47,9 +47,9 @@ export function EquipmentFinance() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="text-white">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-display mb-6">
-                Equipment Finance
+                Fixed-Rate Equipment Finance
                 <br />
-                <span className="text-pink-300">Designed for Business Owners</span>
+                <span className="text-pink-300">for Established SMEs</span>
               </h1>
               <p className="text-lg text-purple-100 mb-4">
                 Plumbers, builders, landscapers, electricians - stop paying inflated hire costs.

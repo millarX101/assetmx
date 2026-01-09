@@ -76,11 +76,11 @@ export function Header() {
               {/* Dropdown */}
               <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-purple-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
                 <div className="py-2 px-1">
-                  <Link to="/vehicle-finance" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
+                  <Link to="/car-finance" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
                     <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                      <span className="text-purple-700 text-xs font-bold">V</span>
+                      <span className="text-purple-700 text-xs font-bold">C</span>
                     </div>
-                    Vehicle Finance
+                    Car Finance
                   </Link>
                   <Link to="/equipment-finance" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
                     <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -99,6 +99,42 @@ export function Header() {
                       <span className="text-purple-700 text-xs font-bold">EV</span>
                     </div>
                     Electric Vehicles
+                  </Link>
+                </div>
+              </div>
+            </div>
+            <div className="relative group">
+              <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-slate-600 hover:text-purple-700 transition-colors rounded-lg hover:bg-purple-50">
+                Learn
+                <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" />
+              </button>
+              {/* Dropdown */}
+              <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-xl shadow-xl border border-purple-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
+                <div className="py-2 px-1">
+                  <Link to="/guides/how-asset-finance-works" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
+                    <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                      <span className="text-purple-700 text-xs font-bold">1</span>
+                    </div>
+                    How Asset Finance Works
+                  </Link>
+                  <Link to="/guides/advertised-rates-misleading" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
+                    <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                      <span className="text-purple-700 text-xs font-bold">2</span>
+                    </div>
+                    Why Rates Are Misleading
+                  </Link>
+                  <Link to="/guides/broker-fees-explained" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
+                    <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                      <span className="text-purple-700 text-xs font-bold">3</span>
+                    </div>
+                    Business Car Finance
+                  </Link>
+                  <div className="border-t border-purple-100 my-1"></div>
+                  <Link to="/how-we-compare" className="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 hover:text-purple-700 rounded-lg transition-all">
+                    <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                      <span className="text-purple-700 text-xs font-bold">vs</span>
+                    </div>
+                    How We Compare
                   </Link>
                 </div>
               </div>
@@ -192,11 +228,11 @@ export function Header() {
                 <div className="text-sm font-medium text-slate-500 mb-2">Products</div>
                 <div className="pl-2 flex flex-col gap-1">
                   <Link
-                    to="/vehicle-finance"
+                    to="/car-finance"
                     className="px-3 py-2 text-sm text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Vehicle Finance
+                    Car Finance
                   </Link>
                   <Link
                     to="/equipment-finance"
@@ -218,6 +254,39 @@ export function Header() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Electric Vehicles
+                  </Link>
+                </div>
+              </div>
+              <div className="px-4 py-2">
+                <div className="text-sm font-medium text-slate-500 mb-2">Learn</div>
+                <div className="pl-2 flex flex-col gap-1">
+                  <Link
+                    to="/guides/how-asset-finance-works"
+                    className="px-3 py-2 text-sm text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    How Asset Finance Works
+                  </Link>
+                  <Link
+                    to="/guides/advertised-rates-misleading"
+                    className="px-3 py-2 text-sm text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Why Rates Are Misleading
+                  </Link>
+                  <Link
+                    to="/guides/broker-fees-explained"
+                    className="px-3 py-2 text-sm text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Business Car Finance
+                  </Link>
+                  <Link
+                    to="/how-we-compare"
+                    className="px-3 py-2 text-sm text-slate-700 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    How We Compare
                   </Link>
                 </div>
               </div>

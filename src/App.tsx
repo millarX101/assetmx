@@ -12,6 +12,9 @@ import { EquipmentFinance } from '@/pages/products/EquipmentFinance';
 import { EVLeasing } from '@/pages/products/EVLeasing';
 import { HowWeCompare } from '@/pages/HowWeCompare';
 import { Contact } from '@/pages/Contact';
+import { HowAssetFinanceWorks } from '@/pages/guides/HowAssetFinanceWorks';
+import { AdvertisedRatesMisleading } from '@/pages/guides/AdvertisedRatesMisleading';
+import { BrokerFeesExplained } from '@/pages/guides/BrokerFeesExplained';
 import { AdminLogin } from '@/pages/admin/Login';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { AdminDashboard } from '@/pages/admin/Dashboard';
@@ -61,12 +64,18 @@ function App() {
         <Route path="/credit-guide" element={<CreditGuide />} />
 
         {/* Product pages */}
-        <Route path="/vehicle-finance" element={<VehicleFinance />} />
+        <Route path="/car-finance" element={<VehicleFinance />} />
+        <Route path="/vehicle-finance" element={<Navigate to="/car-finance" replace />} />
         <Route path="/truck-finance" element={<TruckFinance />} />
         <Route path="/equipment-finance" element={<EquipmentFinance />} />
         <Route path="/ev-leasing" element={<EVLeasing />} />
         <Route path="/how-we-compare" element={<HowWeCompare />} />
         <Route path="/contact" element={<Contact />} />
+
+        {/* Guide pages */}
+        <Route path="/guides/how-asset-finance-works" element={<HowAssetFinanceWorks />} />
+        <Route path="/guides/advertised-rates-misleading" element={<AdvertisedRatesMisleading />} />
+        <Route path="/guides/broker-fees-explained" element={<BrokerFeesExplained />} />
 
         {/* Admin routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

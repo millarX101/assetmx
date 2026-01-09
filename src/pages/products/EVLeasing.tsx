@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -5,6 +6,7 @@ import { CheckCircle, ArrowRight, Zap, Leaf, Calculator, Users } from 'lucide-re
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 import { getImageUrl } from '@/lib/supabase';
+import { NovatedLeaseModal } from '@/components/NovatedLeaseModal';
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -25,6 +27,8 @@ const structuredData = {
 };
 
 export function EVLeasing() {
+  const [novatedModalOpen, setNovatedModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-ivory">
       <SEO
@@ -179,11 +183,12 @@ export function EVLeasing() {
                     <span>Save $10k-$20k+ in tax over the lease term</span>
                   </li>
                 </ul>
-                <Link to="/chat-apply">
-                  <Button className="w-full bg-gradient-brand hover:opacity-90">
-                    Enquire About Novated Lease
-                  </Button>
-                </Link>
+                <Button
+                  className="w-full bg-gradient-brand hover:opacity-90"
+                  onClick={() => setNovatedModalOpen(true)}
+                >
+                  Enquire About Novated Lease
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -442,6 +447,9 @@ export function EVLeasing() {
           </p>
         </div>
       </footer>
+
+      {/* Novated Lease Modal */}
+      <NovatedLeaseModal open={novatedModalOpen} onOpenChange={setNovatedModalOpen} />
     </div>
   );
 }

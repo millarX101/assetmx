@@ -10,8 +10,14 @@
 
   <!-- Product Pages -->
   <url>
-    <loc>https://assetmx.com.au/vehicle-finance</loc>
-    <lastmod>2025-01-07</lastmod>
+    <loc>https://assetmx.com.au/car-finance</loc>
+    <lastmod>2026-01-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://assetmx.com.au/asset-finance</loc>
+    <lastmod>2026-01-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -56,6 +62,26 @@
     <lastmod>2025-01-07</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+
+  <!-- Guides -->
+  <url>
+    <loc>https://assetmx.com.au/guides/how-asset-finance-works</loc>
+    <lastmod>2026-01-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://assetmx.com.au/guides/broker-fees-explained</loc>
+    <lastmod>2026-01-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://assetmx.com.au/guides/advertised-rates-misleading</loc>
+    <lastmod>2026-01-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
 
   <!-- Legal Pages -->
