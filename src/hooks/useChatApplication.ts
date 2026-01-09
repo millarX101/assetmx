@@ -472,6 +472,7 @@ export function useChatApplication() {
                   headers: {
                     'Content-Type': 'application/json',
                     'apikey': anonKey,
+                    'Authorization': `Bearer ${anonKey}`,
                   },
                   body: JSON.stringify(leadEmailData),
                 });
@@ -568,6 +569,7 @@ export function useChatApplication() {
               headers: {
                 'Content-Type': 'application/json',
                 'apikey': anonKey,
+                'Authorization': `Bearer ${anonKey}`,
               },
               body: JSON.stringify(emailData),
             });
@@ -734,6 +736,7 @@ export function useChatApplication() {
                   headers: {
                     'Content-Type': 'application/json',
                     'apikey': anonKey,
+                    'Authorization': `Bearer ${anonKey}`,
                   },
                   body: JSON.stringify(emailData),
                 });

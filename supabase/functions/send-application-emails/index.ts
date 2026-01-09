@@ -359,12 +359,18 @@ async function sendEmail(
   subject: string,
   html: string
 ): Promise<{ success: boolean; error?: string }> {
+  console.log("[EMAIL] Attempting to send email to:", to);
+  console.log("[EMAIL] Subject:", subject);
+  console.log("[EMAIL] RESEND_API_KEY present:", !!RESEND_API_KEY);
+
   if (!RESEND_API_KEY) {
-    console.log("Resend API key not configured - email would be sent to:", to);
-    return { success: true }; // Return success for development
+    console.error("[EMAIL] RESEND_API_KEY not configured!");
+    return { success: false, error: "RESEND_API_KEY not configured" };
   }
 
   try {
+    console.log("[EMAIL] Sending with from:", FROM_EMAIL);
+
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -379,13 +385,24 @@ async function sendEmail(
       }),
     });
 
+    const responseText = await response.text();
+    console.log("[EMAIL] Resend response status:", response.status);
+    console.log("[EMAIL] Resend response body:", responseText);
+
     if (!response.ok) {
-      const errorData = await response.json();
-      return { success: false, error: errorData.message || "Failed to send email" };
+      let errorMessage = "Failed to send email";
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || errorMessage;
+      } catch {}
+      console.error("[EMAIL] Failed:", errorMessage);
+      return { success: false, error: errorMessage };
     }
 
+    console.log("[EMAIL] Successfully sent to:", to);
     return { success: true };
   } catch (error) {
+    console.error("[EMAIL] Exception:", error.message);
     return { success: false, error: error.message };
   }
 }

@@ -731,11 +731,18 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'lead_capture_phone',
-    messages: ["And the best number to reach you?"],
+    messages: ["Best number to reach you?"],
     inputType: 'phone',
     field: 'lead.phone',
     placeholder: "04XX XXX XXX",
-    validate: validatePhone,
+    validate: (value) => {
+      // Allow skip option
+      if (value.toLowerCase() === 'skip' || value.toLowerCase() === 'email only') {
+        return null;
+      }
+      return validatePhone(value);
+    },
+    options: ["Skip - email only"],
     nextStep: 'lead_capture_email',
   },
 
