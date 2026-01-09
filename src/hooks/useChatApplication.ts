@@ -445,6 +445,10 @@ export function useChatApplication() {
               const supabaseUrl = getSupabaseUrl();
               const anonKey = getSupabaseAnonKey();
 
+              console.log('[EMAIL DEBUG] Lead saved, attempting to send email notification');
+              console.log('[EMAIL DEBUG] supabaseUrl:', supabaseUrl ? 'SET' : 'MISSING');
+              console.log('[EMAIL DEBUG] anonKey:', anonKey ? 'SET' : 'MISSING');
+
               if (supabaseUrl && anonKey) {
                 const leadEmailData = {
                   type: 'new_lead',
@@ -459,7 +463,11 @@ export function useChatApplication() {
                   consentToShare: lead?.consentToShare ?? false,
                 };
 
-                const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-application-emails`, {
+                const emailUrl = `${supabaseUrl}/functions/v1/send-application-emails`;
+                console.log('[EMAIL DEBUG] Calling edge function:', emailUrl);
+                console.log('[EMAIL DEBUG] Email data:', leadEmailData);
+
+                const emailResponse = await fetch(emailUrl, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -468,14 +476,20 @@ export function useChatApplication() {
                   body: JSON.stringify(leadEmailData),
                 });
 
+                console.log('[EMAIL DEBUG] Response status:', emailResponse.status);
+                const responseText = await emailResponse.text();
+                console.log('[EMAIL DEBUG] Response body:', responseText);
+
                 if (!emailResponse.ok) {
-                  console.error('Failed to send lead notification email:', emailResponse.status);
+                  console.error('Failed to send lead notification email:', emailResponse.status, responseText);
                 } else {
                   console.log('Lead notification email sent successfully');
                 }
+              } else {
+                console.error('[EMAIL DEBUG] Cannot send email - missing supabaseUrl or anonKey');
               }
             } catch (emailError) {
-              console.error('Lead email error:', emailError);
+              console.error('[EMAIL DEBUG] Lead email error:', emailError);
             }
           }
         } catch (error) {
@@ -707,8 +721,15 @@ export function useChatApplication() {
               const supabaseUrl = getSupabaseUrl();
               const anonKey = getSupabaseAnonKey();
 
+              console.log('[EMAIL DEBUG] Application submitted, attempting to send emails');
+              console.log('[EMAIL DEBUG] supabaseUrl:', supabaseUrl ? 'SET' : 'MISSING');
+              console.log('[EMAIL DEBUG] anonKey:', anonKey ? 'SET' : 'MISSING');
+
               if (supabaseUrl && anonKey) {
-                const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-application-emails`, {
+                const emailUrl = `${supabaseUrl}/functions/v1/send-application-emails`;
+                console.log('[EMAIL DEBUG] Calling edge function:', emailUrl);
+
+                const emailResponse = await fetch(emailUrl, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -717,14 +738,20 @@ export function useChatApplication() {
                   body: JSON.stringify(emailData),
                 });
 
+                console.log('[EMAIL DEBUG] Response status:', emailResponse.status);
+                const responseText = await emailResponse.text();
+                console.log('[EMAIL DEBUG] Response body:', responseText);
+
                 if (!emailResponse.ok) {
-                  console.error('Failed to send confirmation emails:', emailResponse.status);
+                  console.error('Failed to send confirmation emails:', emailResponse.status, responseText);
                 } else {
                   console.log('Confirmation emails sent successfully');
                 }
+              } else {
+                console.error('[EMAIL DEBUG] Cannot send email - missing supabaseUrl or anonKey');
               }
             } catch (emailError) {
-              console.error('Email sending error:', emailError);
+              console.error('[EMAIL DEBUG] Email sending error:', emailError);
             }
           }
         } catch (error) {
