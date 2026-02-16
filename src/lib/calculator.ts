@@ -49,16 +49,16 @@ export const BROKER_MARGIN = 2.00; // What brokers typically add to hide commiss
 // Base rates by term (from lender rate sheets)
 // Default fallback rates if database unavailable
 export const DEFAULT_RATES: Record<number, number> = {
-  12: 7.15,  // 1 year
-  24: 6.95,  // 2 years
-  36: 6.49,  // 3 years
-  48: 6.49,  // 4 years
-  60: 6.49,  // 5 years
+  12: 8.49,  // 1 year
+  24: 7.49,  // 2 years
+  36: 6.89,  // 3 years
+  48: 6.89,  // 4 years
+  60: 6.89,  // 5 years
 };
 
 // Legacy constants for backwards compatibility
-export const BASE_RATE_SHORT = 6.49; // 3-5 years (default)
-export const BASE_RATE_LONG = 7.15;  // 1 year
+export const BASE_RATE_SHORT = 6.89; // 3-5 years (default)
+export const BASE_RATE_LONG = 8.49;  // 1 year
 
 // Rate cache to avoid excessive database calls
 let rateCache: { rates: Record<number, number>; timestamp: number } | null = null;
@@ -131,32 +131,32 @@ export function getMaxBalloon(termMonths: number): number {
 // Legacy BASE_RATES kept for backwards compatibility but now unused
 export const BASE_RATES: Record<string, Record<string, number>> = {
   vehicle: {
-    new: 6.45,
-    demo: 6.45,
-    used_0_3: 6.45,
-    used_4_7: 6.45,
-    used_8_plus: 6.45
+    new: 6.89,
+    demo: 6.89,
+    used_0_3: 6.89,
+    used_4_7: 6.89,
+    used_8_plus: 6.89
   },
   truck: {
-    new: 6.45,
-    demo: 6.45,
-    used_0_3: 6.45,
-    used_4_7: 6.45,
-    used_8_plus: 6.45
+    new: 6.89,
+    demo: 6.89,
+    used_0_3: 6.89,
+    used_4_7: 6.89,
+    used_8_plus: 6.89
   },
   equipment: {
-    new: 6.45,
-    demo: 6.45,
-    used_0_3: 6.45,
-    used_4_7: 6.45,
-    used_8_plus: 6.45
+    new: 6.89,
+    demo: 6.89,
+    used_0_3: 6.89,
+    used_4_7: 6.89,
+    used_8_plus: 6.89
   },
   technology: {
-    new: 6.45,
-    demo: 6.45,
-    used_0_3: 6.45,
-    used_4_7: 6.45,
-    used_8_plus: 6.45
+    new: 6.89,
+    demo: 6.89,
+    used_0_3: 6.89,
+    used_4_7: 6.89,
+    used_8_plus: 6.89
   },
 };
 
@@ -220,7 +220,7 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
   }
 
   // Get base rate based on term length
-  // 1-5 years: 6.45%, 5+ years: 7.15%
+  // 1 year: 8.49%, 2 years: 7.49%, 3-5 years: 6.89%
   const indicativeRate = getBaseRate(input.termMonths);
 
   // Balloon is calculated on the ASSET VALUE (loan amount), not financed amount

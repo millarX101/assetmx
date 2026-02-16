@@ -10,11 +10,11 @@ import { Clock, Save, RefreshCw, Info } from 'lucide-react';
 
 // New simplified rate structure by term
 const DEFAULT_TERM_RATES: Record<number, number> = {
-  12: 7.15,  // 1 year
-  24: 6.95,  // 2 years
-  36: 6.49,  // 3 years
-  48: 6.49,  // 4 years
-  60: 6.49,  // 5 years
+  12: 8.49,  // 1 year
+  24: 7.49,  // 2 years
+  36: 6.89,  // 3 years
+  48: 6.89,  // 4 years
+  60: 6.89,  // 5 years
 };
 
 const TERM_LABELS: Record<number, string> = {

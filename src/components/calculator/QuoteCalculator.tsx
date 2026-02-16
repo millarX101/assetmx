@@ -358,7 +358,7 @@ export function QuoteCalculator() {
             </Card>
 
             <p className="text-xs text-slate-500 text-center max-w-2xl mx-auto">
-              *Rate subject to credit assessment. Rates from 6.45% p.a. for 1-5 year terms, 7.15% p.a. for longer terms.
+              *Rate subject to credit assessment. Rates from 6.89% p.a. for 3-5 year terms, 8.49% p.a. for 1 year terms.
               For established businesses with 2+ years trading history and good credit. Rates are lender base rates
               with no markup. Our $800 fee is shown separately for full transparency.
             </p>
