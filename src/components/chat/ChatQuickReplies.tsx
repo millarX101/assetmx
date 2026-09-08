@@ -21,7 +21,7 @@ export function ChatQuickReplies({ options, onSelect, disabled = false, vertical
   // Vertical layout for ABN selection (business cards)
   if (vertical) {
     return (
-      <div className="flex flex-col gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom-2 duration-300 max-h-80 overflow-y-auto bg-white border-t border-slate-200 flex-shrink-0">
+      <div className="flex flex-col gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom-2 duration-300 max-h-80 overflow-y-auto bg-cream border-t border-ink-200 flex-shrink-0">
         {normalizedOptions.map((option) => {
           // Check if this is a business result (contains ABN:)
           const isBusinessOption = option.value.includes('ABN:');
@@ -40,18 +40,18 @@ export function ChatQuickReplies({ options, onSelect, disabled = false, vertical
                 disabled={disabled}
                 className={cn(
                   'w-full p-3 rounded-lg text-left',
-                  'border-2 border-purple-200 bg-white',
-                  'hover:bg-purple-50 hover:border-purple-300',
+                  'border border-ink-300 bg-ivory',
+                  'hover:bg-sage-100 hover:border-forest',
                   'active:bg-purple-100 active:scale-[0.99]',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                   'transition-all duration-150',
                   'focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2'
                 )}
               >
-                <div className="font-medium text-purple-800 text-sm leading-tight">{businessName}</div>
+                <div className="font-medium text-ink text-sm leading-tight">{businessName}</div>
                 <div className="flex items-center gap-2 mt-1">
-                  {state && <span className="text-xs text-slate-500">{state}</span>}
-                  <span className="text-xs text-slate-400">ABN: {abn}</span>
+                  {state && <span className="text-xs text-ink-500">{state}</span>}
+                  <span className="text-xs text-ink-400">ABN: {abn}</span>
                 </div>
               </button>
             );
@@ -65,8 +65,8 @@ export function ChatQuickReplies({ options, onSelect, disabled = false, vertical
               disabled={disabled}
               className={cn(
                 'w-full px-4 py-3 rounded-lg text-sm font-medium text-center',
-                'border-2 border-slate-200 bg-white text-slate-600',
-                'hover:bg-slate-50 hover:border-slate-300',
+                'border border-ink-300 bg-ivory text-ink-700',
+                'hover:bg-sand hover:border-ink',
                 'active:bg-slate-100 active:scale-[0.99]',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
                 'transition-all duration-150',
@@ -83,7 +83,7 @@ export function ChatQuickReplies({ options, onSelect, disabled = false, vertical
 
   // Horizontal layout (default)
   return (
-    <div className="flex flex-wrap gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom-2 duration-300 bg-white border-t border-slate-200 flex-shrink-0">
+    <div className="flex flex-wrap gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] animate-in fade-in slide-in-from-bottom-2 duration-300 bg-cream border-t border-ink-200 flex-shrink-0">
       {normalizedOptions.map((option) => (
         <button
           key={option.value}
@@ -91,9 +91,9 @@ export function ChatQuickReplies({ options, onSelect, disabled = false, vertical
           disabled={disabled}
           className={cn(
             'px-4 py-2 rounded-full text-sm font-medium',
-            'border-2 border-purple-200 bg-white text-purple-700',
-            'hover:bg-purple-50 hover:border-purple-300',
-            'active:bg-purple-100 active:scale-95',
+            'border border-ink-300 bg-ivory text-ink',
+            'hover:bg-sage-100 hover:border-forest',
+            'active:bg-sage-200 active:scale-95',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             'transition-all duration-150',
             'focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2'

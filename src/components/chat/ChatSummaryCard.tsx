@@ -76,8 +76,8 @@ export function ChatSummaryCard({ data, onEdit }: ChatSummaryCardProps) {
   const directorsList = data.directors?.directors || [];
 
   return (
-    <Card className="border-purple-200 shadow-lg overflow-hidden">
-      <CardHeader className="bg-gradient-brand text-white pb-4">
+    <Card className="border-ink-200 bg-ivory shadow-lg overflow-hidden">
+      <CardHeader className="bg-forest text-cream pb-4">
         <CardTitle className="text-lg font-semibold">Application Summary</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
@@ -116,9 +116,9 @@ export function ChatSummaryCard({ data, onEdit }: ChatSummaryCardProps) {
           onEdit={onEdit ? () => onEdit('personal') : undefined}
         >
           {directorsList.map((director, index) => (
-            <div key={index} className={index > 0 ? 'mt-3 pt-3 border-t border-slate-100' : ''}>
+            <div key={index} className={index > 0 ? 'mt-3 pt-3 border-t border-ink-100' : ''}>
               {directorsList.length > 1 && (
-                <div className="text-xs text-slate-400 mb-1">Director {index + 1}</div>
+                <div className="text-xs text-ink-500 mb-1">Director {index + 1}</div>
               )}
               <SummaryRow label="Name" value={director.firstName || 'Not provided'} />
               <SummaryRow label="Email" value={director.email || 'Not provided'} />
@@ -152,13 +152,13 @@ export function ChatSummaryCard({ data, onEdit }: ChatSummaryCardProps) {
 
         {/* Quote Section */}
         {data.quote && (
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 border-t border-purple-100">
+          <div className="bg-sage-100 p-4 border-t border-sage-200">
             <div className="text-center">
-              <div className="text-sm text-slate-500 mb-1">Estimated repayments</div>
-              <div className="text-2xl font-mono font-bold text-purple-700">
+              <div className="text-sm text-ink-600 mb-1">Estimated repayments</div>
+              <div className="text-2xl font-display text-forest">
                 {formatCurrency(data.quote.monthlyRepayment)}/month
               </div>
-              <div className="text-sm text-slate-500 mt-1">
+              <div className="text-sm text-ink-600 mt-1">
                 ({formatCurrency(data.quote.weeklyRepayment || data.quote.monthlyRepayment / 4.33)}/week at {data.quote.indicativeRate.toFixed(2)}% p.a.)
               </div>
             </div>
@@ -178,9 +178,9 @@ interface SummarySectionProps {
 
 function SummarySection({ icon, title, children, onEdit }: SummarySectionProps) {
   return (
-    <div className="p-4 border-b border-slate-100 last:border-b-0">
+    <div className="p-4 border-b border-ink-100 last:border-b-0">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 text-purple-700">
+        <div className="flex items-center gap-2 text-forest">
           {icon}
           <span className="font-medium text-sm">{title}</span>
         </div>
@@ -189,7 +189,7 @@ function SummarySection({ icon, title, children, onEdit }: SummarySectionProps) 
             variant="ghost"
             size="sm"
             onClick={onEdit}
-            className="h-7 px-2 text-xs text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+            className="h-7 px-2 text-xs text-forest hover:text-forest-800 hover:bg-sage-100"
           >
             <Edit2 className="h-3 w-3 mr-1" />
             Edit
@@ -209,8 +209,8 @@ interface SummaryRowProps {
 function SummaryRow({ label, value }: SummaryRowProps) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="text-slate-800 font-medium text-right max-w-[60%] truncate">{value}</span>
+      <span className="text-ink-600">{label}</span>
+      <span className="text-ink font-medium text-right max-w-[60%] truncate">{value}</span>
     </div>
   );
 }

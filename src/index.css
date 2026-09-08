@@ -4,49 +4,49 @@
 
 @layer base {
   :root {
-    /* MillarX Brand - Purple/Pink Theme */
-    --background: 30 20% 98%; /* Ivory #FAFAF9 */
-    --foreground: 215 28% 17%; /* Slate 800 */
-    --card: 0 0% 100%;
-    --card-foreground: 215 28% 17%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 28% 17%;
-    --primary: 293 78% 33%; /* Purple 700 #86198F */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 300 100% 98%; /* Purple 50 */
-    --secondary-foreground: 293 78% 33%;
-    --muted: 30 6% 96%; /* Cream */
-    --muted-foreground: 215 16% 47%;
-    --accent: 300 100% 98%;
-    --accent-foreground: 293 78% 33%;
-    --destructive: 0 84% 60%;
+    /* AssetMX brand - cream / forest / sage / ink */
+    --background: 37 59% 90%; /* cream #F5EAD8 */
+    --foreground: 20 5% 12%; /* ink #201E1D */
+    --card: 35 46% 95%; /* paper #F9F4ED */
+    --card-foreground: 20 5% 12%;
+    --popover: 35 46% 95%;
+    --popover-foreground: 20 5% 12%;
+    --primary: 81 25% 22%; /* forest #3D472B */
+    --primary-foreground: 37 59% 90%;
+    --secondary: 84 34% 78%; /* sage #CCDBB2 */
+    --secondary-foreground: 81 25% 22%;
+    --muted: 38 49% 85%; /* sand #EBDDC5 */
+    --muted-foreground: 30 11% 35%;
+    --accent: 90 71% 93%; /* sage-100 #F0FAE1 */
+    --accent-foreground: 81 25% 22%;
+    --destructive: 8 59% 44%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 293 78% 33%; /* Purple 700 */
-    --radius: 0.75rem;
+    --border: 37 24% 82%; /* #DCD3C4 */
+    --input: 37 24% 82%;
+    --ring: 81 25% 22%;
+    --radius: 1rem;
   }
 
   .dark {
-    --background: 293 95% 10%; /* Purple 900 */
-    --foreground: 300 100% 98%;
-    --card: 293 62% 22%; /* Purple 800 */
-    --card-foreground: 300 100% 98%;
-    --popover: 293 62% 22%;
-    --popover-foreground: 300 100% 98%;
-    --primary: 300 76% 72%; /* Purple 300 */
-    --primary-foreground: 293 95% 10%;
-    --secondary: 293 62% 22%;
-    --secondary-foreground: 300 100% 98%;
-    --muted: 293 62% 22%;
-    --muted-foreground: 300 50% 80%;
-    --accent: 293 62% 22%;
-    --accent-foreground: 300 100% 98%;
-    --destructive: 0 63% 31%;
+    --background: 81 26% 14%; /* forest-800 */
+    --foreground: 37 59% 90%;
+    --card: 81 25% 19%;
+    --card-foreground: 37 59% 90%;
+    --popover: 81 25% 19%;
+    --popover-foreground: 37 59% 90%;
+    --primary: 84 34% 78%;
+    --primary-foreground: 81 26% 14%;
+    --secondary: 81 25% 22%;
+    --secondary-foreground: 37 59% 90%;
+    --muted: 81 25% 22%;
+    --muted-foreground: 84 20% 75%;
+    --accent: 81 25% 22%;
+    --accent-foreground: 37 59% 90%;
+    --destructive: 8 59% 35%;
     --destructive-foreground: 0 0% 100%;
-    --border: 293 62% 22%;
-    --input: 293 62% 22%;
-    --ring: 300 76% 72%;
+    --border: 81 20% 28%;
+    --input: 81 20% 28%;
+    --ring: 84 34% 78%;
   }
 }
 
@@ -58,39 +58,35 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight;
+    @apply font-display font-normal tracking-tight;
   }
 }
 
 @layer components {
-  /* MillarX Brand Gradients */
+  /* Brand surfaces (flat, no gradients). Class names kept for compatibility. */
   .bg-gradient-brand {
-    background: linear-gradient(135deg, #4A044E 0%, #86198F 50%, #EC4899 100%);
+    background: #3D472B;
   }
 
   .bg-gradient-dark {
-    background: linear-gradient(135deg, #4A044E 0%, #701A75 50%, #A21CAF 100%);
+    background: #272E1B;
   }
 
   .bg-gradient-light {
-    background: linear-gradient(135deg, #FAE8FF 0%, #F5D0FE 50%, #FDF4FF 100%);
+    background: #F0FAE1;
   }
 
-  /* Gradient Text */
   .text-gradient-brand {
-    background: linear-gradient(to right, #701A75, #A21CAF, #EC4899);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #3D472B;
   }
 
-  /* Financial Figures Styling */
+  /* Financial figures styling */
   .font-financial {
-    @apply font-mono font-medium tabular-nums;
+    @apply font-sans font-semibold tabular-nums;
   }
 
-  /* Focus Ring - Purple */
+  /* Focus ring */
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2;
+    @apply focus:outline-none focus:ring-2 focus:ring-forest focus:ring-offset-2;
   }
 }
