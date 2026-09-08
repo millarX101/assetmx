@@ -1,0 +1,59 @@
+# Netlify config for the PUBLIC site (assetmx.com.au).
+# Create this as a separate Netlify site with Base directory = "site".
+[build]
+  base = "site"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Application routes live on the React app at app.assetmx.com.au
+[[redirects]]
+  from = "/apply"
+  to = "https://app.assetmx.com.au/apply"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/chat-apply"
+  to = "https://app.assetmx.com.au/chat-apply"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/admin/*"
+  to = "https://app.assetmx.com.au/admin/:splat"
+  status = 301
+  force = true
+
+# Old route
+[[redirects]]
+  from = "/vehicle-finance"
+  to = "/car-finance"
+  status = 301
+
+# www -> apex
+[[redirects]]
+  from = "https://www.assetmx.com.au/*"
+  to = "https://assetmx.com.au/:splat"
+  status = 301
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=2592000"

@@ -1,0 +1,11 @@
+---
+/** Answer-first callout: the sentence an LLM should quote. */
+import { longDate } from '@/data/entity';
+interface Props { answer: string; updated: string; label?: string }
+const { answer, updated, label = 'Short answer' } = Astro.props;
+---
+<div class="rounded-card border-l-4 border-signal bg-signal-50 px-5 py-4">
+  <p class="eyebrow">{label}</p>
+  <p class="mt-1 text-lg font-medium text-ink leading-snug">{answer}</p>
+  <p class="mt-2 text-xs text-ink-500">Last reviewed {longDate(updated)} by AssetMX.</p>
+</div>

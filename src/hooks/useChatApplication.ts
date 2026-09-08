@@ -9,7 +9,7 @@ import {
   type ChatFlowData,
 } from '@/lib/chat-flow';
 import { lookupABN, cleanABN, searchABNByName } from '@/lib/abn-lookup';
-import { calculateQuote } from '@/lib/calculator';
+import { calculateQuote, getMaxBalloon } from '@/lib/calculator';
 import type { ApplicationData, AssetType, AssetCondition } from '@/types/application';
 import { createEmptyApplication } from '@/types/application';
 import { supabase, isSupabaseConfigured, getSupabaseUrl, getSupabaseAnonKey } from '@/lib/supabase';
@@ -39,6 +39,27 @@ const CALCULATOR_TO_CHAT_KEY = 'assetmx_calculator_quote';
 // Load calculator data if coming from quote calculator
 function loadCalculatorData(): { formData: QuoteInput; quote: QuoteResult; payFeeUpfront: boolean } | null {
   try {
+    // Public site quote island (assetmx.com.au) hands off via the query string,
+    // because localStorage is not shared across origins.
+    const params = new URLSearchParams(window.location.search);
+    const amount = Number(params.get('amount'));
+    const term = Number(params.get('term'));
+    if (amount >= 5000 && amount <= 500000 && term >= 12 && term <= 84) {
+      const balloonPercentage = Math.max(0, Math.min(Number(params.get('balloon') ?? 0) || 0, getMaxBalloon(term)));
+      const financePlatformFee = params.get('fee') !== 'upfront';
+      const formData: QuoteInput = {
+        assetType: 'vehicle',
+        assetCondition: 'new',
+        loanAmount: amount,
+        termMonths: term,
+        balloonPercentage,
+        financePlatformFee,
+      };
+      const quote = calculateQuote(formData) as unknown as QuoteResult;
+      // Strip the params so a refresh does not re-seed the chat
+      window.history.replaceState({}, '', window.location.pathname);
+      return { formData, quote, payFeeUpfront: !financePlatformFee };
+    }
     const data = localStorage.getItem(CALCULATOR_TO_CHAT_KEY);
     if (data) {
       // Clear it so we don't use it again on refresh

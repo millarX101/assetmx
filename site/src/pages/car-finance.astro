@@ -1,0 +1,44 @@
+---
+import ProductPage from '@/components/ProductPage.astro';
+---
+<ProductPage
+  path="/car-finance"
+  productName="Business car finance"
+  category="Business vehicle finance (chattel mortgage)"
+  title="Business car finance Australia | Lender rate plus $800 flat fee"
+  description="Low-doc business car finance for utes, vans, cars and 4WDs. Lender base rate shown separately, flat $800 fee, no broker mark-up. ABN 24+ months and GST registered."
+  eyebrow="Business car finance"
+  h1="Business car finance"
+  h1Accent="without the broker mark-up"
+  intro="Finance your next ute, van or company car with the lender's base rate shown separately and a flat $800 fee. Low-doc for ABN businesses trading 24 months or more."
+  shortAnswer="AssetMX arranges low-doc chattel mortgages on cars, utes and vans from $5,000 to $500,000 for GST-registered businesses with an ABN older than 24 months, charging a flat $800 fee on top of the lender's base rate."
+  heroImage="hero-ranger.jpg"
+  heroAlt="Ford Ranger Wildtrak, a popular Australian business ute"
+  example={{ label: 'Example ute', amount: 75_000, termMonths: 60, balloonPct: 0 }}
+  cardsTitle="Vehicles we finance"
+  cardsIntro="From a single work ute to a small fleet, the same transparent pricing applies."
+  cards={[
+    { title: 'Utes and 4WDs', image: 'utes-hilux.jpg', alt: 'Toyota Hilux work ute', body: 'Ranger, Hilux, Triton, LandCruiser. The workhorses of Australian business.', points: ['New and used', 'Balloon options by term'] },
+    { title: 'Vans and light commercials', image: 'vans-transit.jpg', alt: 'Commercial van used for deliveries', body: 'Transit, Sprinter, HiAce. Fitouts can be financed with the vehicle.', points: ['Fitout included in the invoice', 'Same-day conditional approval when in policy'] },
+    { title: 'Prestige vehicles', image: 'prestige-bmw.jpg', alt: 'BMW prestige vehicle', body: 'BMW, Mercedes, Audi, Porsche for business use without inflated finance costs.', points: ['Business-use percentage applies', 'Balloon options available'] },
+  ]}
+  whyTitle="Why business owners use AssetMX for car finance"
+  why={[
+    { t: 'The price is the price', d: 'Lender base rate plus $800. No commission in the rate, no origination fee, no surprise at settlement.' },
+    { t: 'No phone tag', d: 'Quote, fit check, upload and sign online. Conditional approval is typically the same business day for in-policy applications.' },
+    { t: 'Built for clean-credit businesses', d: 'If you have traded 24 months, are GST registered and have a clean file, you should not be paying for other people\'s risk.' },
+  ]}
+  faqs={[
+    { q: 'Can I finance a used car for my business?', a: 'Yes. The vehicle must be no older than 15 years at the end of the loan term. A 7-year-old ute on a 5-year term is fine.' },
+    { q: 'Can I claim the GST on a chattel mortgage?', a: 'Businesses registered for GST can usually claim the GST on the purchase price in the BAS period the vehicle is acquired, subject to your accounting method and business-use percentage. Check with your accountant.' },
+    { q: 'Do I need tax returns?', a: 'Not for in-policy low-doc applications. Lenders rely on ABN age, GST registration, credit history and bank statements. Very large or complex deals may need more.' },
+    { q: 'What is the maximum balloon on a car loan?', a: 'It depends on the term: 65% at 1 year, 60% at 2, 50% at 3, 40% at 4 and 30% at 5 years or more.' },
+  ]}
+  related={[
+    { label: 'Chattel mortgage vs finance lease', href: '/answers/chattel-mortgage-vs-finance-lease' },
+    { label: 'Financing used vehicles', href: '/answers/financing-used-vehicles-and-equipment' },
+    { label: 'Business car finance guide', href: '/guides/business-car-finance' },
+    { label: 'Current rates', href: '/rates' },
+  ]}
+  updated="2026-09-08"
+/>

@@ -1,0 +1,22 @@
+{
+  "tier": "tier-1",
+  "label": "Major bank low-doc",
+  "description": "Big-four and second-tier bank asset finance divisions. Sharpest rates, tightest policy. This is the policy AssetMX qualifies against by default.",
+  "reviewedOn": "2026-09-08",
+  "lowDoc": {
+    "minAbnMonths": 24,
+    "gstRequired": true,
+    "maxAmountNoFinancials": 250000,
+    "propertyOwnerRequired": false,
+    "minDeposit": "None for property owners; typically 10 to 20% otherwise, or a shorter term",
+    "creditFileRequirement": "Clean: no defaults, no judgments, no recent arrears on directors or the business",
+    "maxAssetAgeAtEnd": 15,
+    "privateSaleAllowed": true,
+    "typicalTurnaround": "Same business day conditional approval when fully in policy"
+  },
+  "notes": [
+    "Asset must be primarily business use and on the standard asset list (vehicles, trucks, yellow goods, common trade equipment).",
+    "Above the no-financials cap, expect a request for the latest financial statements or BAS.",
+    "Non-property-owning applicants usually need a deposit or stronger bank statement conduct."
+  ]
+}

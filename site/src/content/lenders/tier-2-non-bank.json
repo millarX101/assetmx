@@ -1,0 +1,22 @@
+{
+  "tier": "tier-2",
+  "label": "Non-bank low-doc",
+  "description": "Specialist non-bank asset financiers. Slightly higher rates than the banks, more flexible on deposit, property ownership and asset type.",
+  "reviewedOn": "2026-09-08",
+  "lowDoc": {
+    "minAbnMonths": 24,
+    "gstRequired": true,
+    "maxAmountNoFinancials": 150000,
+    "propertyOwnerRequired": false,
+    "minDeposit": "Often none with clean bank statement conduct",
+    "creditFileRequirement": "Clean or near-clean; small paid defaults sometimes considered with explanation",
+    "maxAssetAgeAtEnd": 15,
+    "privateSaleAllowed": true,
+    "typicalTurnaround": "Same business day to two business days"
+  },
+  "notes": [
+    "Wider asset appetite: specialised or older equipment that banks decline.",
+    "Rates typically sit above the bank tier; AssetMX still adds no margin.",
+    "Bank statements are the primary serviceability evidence."
+  ]
+}

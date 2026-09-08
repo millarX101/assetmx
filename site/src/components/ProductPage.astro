@@ -1,0 +1,168 @@
+---
+/**
+ * Shared template for the four product pages. Each page passes data only,
+ * so entity data, rates and worked examples stay consistent.
+ */
+import { Image } from 'astro:assets';
+import Base from '@/layouts/Base.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Faq from '@/components/Faq.astro';
+import Cta from '@/components/Cta.astro';
+import RateTable from '@/components/RateTable.astro';
+import AnswerBox from '@/components/AnswerBox.astro';
+import { ENTITY, PRICING, APP_LINKS, money, pct, longDate } from '@/data/entity';
+import { RATES, rateForTerm } from '@/data/rates';
+import { calculateQuote } from '@/lib/calculator';
+import { breadcrumbs, faqPage, financialProduct } from '@/lib/schema';
+import { img } from '@/lib/images';
+
+interface Card { title: string; image: string; alt: string; body: string; points: string[] }
+interface Props {
+  path: string;
+  title: string;
+  description: string;
+  eyebrow: string;
+  h1: string;
+  h1Accent: string;
+  intro: string;
+  shortAnswer: string;
+  heroImage: string;
+  heroAlt: string;
+  example: { label: string; amount: number; termMonths: number; balloonPct: number };
+  cardsTitle: string;
+  cardsIntro: string;
+  cards: Card[];
+  alsoFinance?: { name: string; note: string }[];
+  whyTitle: string;
+  why: { t: string; d: string }[];
+  faqs: { q: string; a: string }[];
+  productName: string;
+  category: string;
+  updated: string;
+  related: { label: string; href: string }[];
+}
+const p = Astro.props;
+const url = `${ENTITY.siteUrl}${p.path}`;
+const ex = calculateQuote({ amount: p.example.amount, termMonths: p.example.termMonths, balloonPct: p.example.balloonPct });
+const schema = [
+  breadcrumbs([{ name: 'Home', url: ENTITY.siteUrl + '/' }, { name: p.productName, url }]),
+  financialProduct({ url, name: p.productName, description: p.description, category: p.category }),
+  faqPage(p.faqs),
+];
+---
+<Base title={p.title} description={p.description} path={p.path} schema={schema} dateModified={p.updated}>
+  <section class="container-x pt-8">
+    <Breadcrumbs items={[{ name: p.productName, href: p.path }]} />
+  </section>
+
+  <section class="container-x mt-6 grid gap-10 lg:grid-cols-[1.05fr_1fr] lg:items-center">
+    <div>
+      <p class="eyebrow">{p.eyebrow}</p>
+      <h1 class="mt-3">{p.h1} <span class="text-signal-700">{p.h1Accent}</span></h1>
+      <p class="mt-5 text-lg text-ink-600 max-w-xl">{p.intro}</p>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <a href="/#quote" class="btn-primary">Get a quote</a>
+        <a href={APP_LINKS.quote} class="btn-ghost">Apply online</a>
+      </div>
+      <p class="mt-3 text-xs text-ink-500">ABN 24+ months · GST registered · {money(PRICING.minAmount)} to {money(PRICING.maxAmount)}</p>
+    </div>
+    <div class="relative">
+      <Image src={img(p.heroImage)} alt={p.heroAlt} width={1200} height={800} class="rounded-card object-cover w-full aspect-[3/2]" loading="eager" fetchpriority="high" />
+      <div class="card absolute -bottom-5 left-5 right-5 sm:right-auto sm:w-72 p-4">
+        <p class="text-xs text-ink-500">{p.example.label}: {money(p.example.amount)}</p>
+        <p class="num mt-1 text-2xl font-semibold">{money(ex.monthly, 0)}<span class="text-sm font-normal text-ink-500">/month</span></p>
+        <p class="text-xs text-ink-500">
+          {p.example.termMonths / 12} years, {p.example.balloonPct}% balloon, lender rate {pct(ex.ratePct)} (verified {longDate(RATES.verifiedOn)}), {PRICING.platformFeeLabel} fee financed.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container-x mt-16">
+    <AnswerBox answer={p.shortAnswer} updated={p.updated} label="In one sentence" />
+  </section>
+
+  <section class="container-x mt-16">
+    <h2>{p.cardsTitle}</h2>
+    <p class="mt-2 text-ink-600 max-w-2xl">{p.cardsIntro}</p>
+    <div class="mt-8 grid gap-5 md:grid-cols-3">
+      {p.cards.map((c) => (
+        <article class="card overflow-hidden">
+          <Image src={img(c.image)} alt={c.alt} width={640} height={420} class="h-44 w-full object-cover" loading="lazy" />
+          <div class="p-5">
+            <h3>{c.title}</h3>
+            <p class="mt-2 text-sm text-ink-600">{c.body}</p>
+            <ul class="mt-3 space-y-1 text-sm">
+              {c.points.map((pt) => <li class="flex gap-2"><span class="text-signal-700" aria-hidden="true">✓</span>{pt}</li>)}
+            </ul>
+          </div>
+        </article>
+      ))}
+    </div>
+    {p.alsoFinance && (
+      <div class="mt-8">
+        <h3>We also finance</h3>
+        <ul class="mt-3 grid gap-2 grid-cols-2 md:grid-cols-4 text-sm">
+          {p.alsoFinance.map((a) => (
+            <li class="rounded-card border border-ink-200 bg-paper px-4 py-3">
+              <span class="block font-semibold text-ink">{a.name}</span>
+              <span class="text-ink-500">{a.note}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </section>
+
+  <section class="container-x mt-16 grid gap-8 md:grid-cols-[1fr_1.4fr] md:items-start">
+    <div>
+      <p class="eyebrow">Pricing</p>
+      <h2 class="mt-2">Lender base rate plus {PRICING.platformFeeLabel}. That is the whole price.</h2>
+      <p class="mt-3 text-ink-600">
+        On the {money(p.example.amount)} example above, a broker loading the rate by about {pct(PRICING.typicalBrokerMarginPct, 0)} would show you
+        {pct(ex.brokerRatePct)} and cost about {money(ex.saving)} more over the term. <a href="/how-we-compare" class="underline">How we compare</a>.
+      </p>
+    </div>
+    <RateTable />
+  </section>
+
+  <section class="container-x mt-16">
+    <h2>{p.whyTitle}</h2>
+    <div class="mt-6 grid gap-5 md:grid-cols-3">
+      {p.why.map((w) => (
+        <div class="card p-5">
+          <h3>{w.t}</h3>
+          <p class="mt-2 text-sm text-ink-600">{w.d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="container-x mt-16">
+    <h2>Eligibility for {p.productName.toLowerCase()}</h2>
+    <div class="mt-4 table-wrap">
+      <table>
+        <tbody>
+          <tr><th scope="row">ABN</th><td>Active for at least {PRICING.minAbnMonths} months</td></tr>
+          <tr><th scope="row">GST</th><td>Registered</td></tr>
+          <tr><th scope="row">Amount</th><td class="num">{money(PRICING.minAmount)} to {money(PRICING.maxAmount)}</td></tr>
+          <tr><th scope="row">Term</th><td class="num">{PRICING.minTermMonths} to {PRICING.maxTermMonths} months</td></tr>
+          <tr><th scope="row">Asset age</th><td>No more than {PRICING.maxAssetAgeAtTermEnd} years old at the end of the term</td></tr>
+          <tr><th scope="row">Documents</th><td>Driver licence, business bank statements, supplier invoice. No tax returns for in-policy low-doc deals.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-3 text-sm text-ink-600">Full detail on <a href="/lender-policies" class="underline">lender low-doc policies</a> and <a href="/answers/low-doc-asset-finance-requirements" class="underline">requirements</a>.</p>
+  </section>
+
+  <div class="container-x">
+    <Faq items={p.faqs} />
+    <section class="mt-10">
+      <p class="eyebrow">Related</p>
+      <ul class="mt-3 flex flex-wrap gap-2">
+        {p.related.map((r) => <li><a href={r.href} class="pill no-underline hover:bg-ink-200">{r.label}</a></li>)}
+      </ul>
+    </section>
+    <Cta />
+  </div>
+</Base>

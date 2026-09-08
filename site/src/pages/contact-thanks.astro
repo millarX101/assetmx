@@ -1,0 +1,12 @@
+---
+import Base from '@/layouts/Base.astro';
+import { ENTITY } from '@/data/entity';
+---
+<Base title="Message sent" description="Thanks for contacting AssetMX." path="/contact-thanks" noindex>
+  <section class="container-x py-24 max-w-xl">
+    <p class="eyebrow">Message sent</p>
+    <h1 class="mt-2">Thanks, we have it</h1>
+    <p class="mt-4 text-ink-600">We reply within a few hours, Monday to Friday. If it is urgent, email <a href={`mailto:${ENTITY.email}`} class="underline">{ENTITY.email}</a>.</p>
+    <a href="/" class="btn-ghost mt-8">Back to home</a>
+  </section>
+</Base>

@@ -1,0 +1,111 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import AnswerBox from '@/components/AnswerBox.astro';
+import Faq from '@/components/Faq.astro';
+import Cta from '@/components/Cta.astro';
+import { ENTITY, PRICING, money, longDate } from '@/data/entity';
+import { breadcrumbs, faqPage } from '@/lib/schema';
+
+const tiers = (await getCollection('lenders')).sort((a, b) => a.data.tier.localeCompare(b.data.tier));
+const reviewed = tiers.reduce((latest, t) => (t.data.reviewedOn > latest ? t.data.reviewedOn : latest), tiers[0].data.reviewedOn);
+const reviewedIso = reviewed.toISOString().slice(0, 10);
+
+const title = `Lender low-doc policies for asset finance in Australia (reviewed ${longDate(reviewedIso)})`;
+const description = 'What Australian lenders require for low-doc asset finance: ABN age, GST, credit file, deposit, asset age and no-financials caps, by lender tier. Reviewed monthly by AssetMX.';
+const shortAnswer = `Australian bank low-doc asset finance policy generally requires an ABN active for ${PRICING.minAbnMonths} months or more, GST registration, a clean credit file, a business-use asset no older than ${PRICING.maxAssetAgeAtTermEnd} years at the end of the term, and no financial statements up to a lender-specific cap. Non-bank lenders are more flexible on deposit and asset type at slightly higher rates.`;
+
+const rows: { label: string; get: (t: (typeof tiers)[number]['data']) => string }[] = [
+  { label: 'Minimum ABN age', get: (t) => (t.lowDoc.minAbnMonths ? `${t.lowDoc.minAbnMonths} months` : 'No minimum') },
+  { label: 'GST registration', get: (t) => (t.lowDoc.gstRequired ? 'Required' : 'Not required') },
+  { label: 'No-financials cap', get: (t) => (t.lowDoc.maxAmountNoFinancials ? money(t.lowDoc.maxAmountNoFinancials) : 'Financials always required') },
+  { label: 'Property ownership', get: (t) => (t.lowDoc.propertyOwnerRequired ? 'Required' : 'Not required') },
+  { label: 'Deposit', get: (t) => t.lowDoc.minDeposit },
+  { label: 'Credit file', get: (t) => t.lowDoc.creditFileRequirement },
+  { label: 'Max asset age at end of term', get: (t) => `${t.lowDoc.maxAssetAgeAtEnd} years` },
+  { label: 'Private sales', get: (t) => (t.lowDoc.privateSaleAllowed ? 'Allowed (inspection fee may apply)' : 'Not allowed') },
+  { label: 'Typical turnaround', get: (t) => t.lowDoc.typicalTurnaround },
+];
+
+const faqs = [
+  { q: 'Why do you not name the lenders?', a: 'Lender policies are confidential to accredited introducers and change without notice. We publish the policy shape by tier so you can see where you fit, and match you to a specific lender inside the application.' },
+  { q: 'What does "low-doc" actually mean?', a: 'The lender approves on ABN age, GST registration, credit history and bank statements instead of full financial statements and tax returns. It is not "no-doc": identification, bank statements and the asset invoice are still required.' },
+  { q: 'I have traded 18 months. Can I apply?', a: 'Not under bank low-doc policy, which is what AssetMX qualifies against. Some non-bank lenders consider 12 to 18 months with a deposit and property ownership, usually at higher rates through a broker.' },
+  { q: 'How often is this page updated?', a: `Monthly, and immediately when a panel lender changes a headline criterion. The review date at the top of the page is ${longDate(reviewedIso)}.` },
+];
+
+const schema = [
+  breadcrumbs([{ name: 'Home', url: ENTITY.siteUrl + '/' }, { name: 'Lender policies', url: ENTITY.siteUrl + '/lender-policies' }]),
+  faqPage([{ q: 'What do Australian lenders require for low-doc asset finance?', a: shortAnswer }, ...faqs]),
+];
+---
+<Base title={title} description={description} path="/lender-policies" schema={schema} dateModified={reviewedIso}>
+  <section class="container-x pt-8">
+    <Breadcrumbs items={[{ name: 'Lender policies', href: '/lender-policies' }]} />
+    <p class="eyebrow mt-6">Lender low-doc policies</p>
+    <h1 class="mt-2 max-w-3xl">What lenders actually require for low-doc asset finance</h1>
+    <div class="mt-6 max-w-3xl"><AnswerBox answer={shortAnswer} updated={reviewedIso} label="Policy summary" /></div>
+  </section>
+
+  <section class="container-x mt-12">
+    <h2>Policy matrix by lender tier</h2>
+    <p class="mt-2 text-ink-600 max-w-2xl">Indicative shape of policy on the AssetMX panel. Your application is matched to a specific lender after the fit check.</p>
+    <div class="mt-6 table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Criterion</th>
+            {tiers.map((t) => <th scope="col">{t.data.label}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr>
+              <th scope="row" class="font-medium text-ink bg-transparent border-b border-ink-100">{r.label}</th>
+              {tiers.map((t) => <td>{r.get(t.data)}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="container-x mt-12 grid gap-5 md:grid-cols-3">
+    {tiers.map((t) => (
+      <article class="card p-5">
+        <p class="eyebrow">{t.data.label}</p>
+        <p class="mt-2 text-sm text-ink-600">{t.data.description}</p>
+        <ul class="mt-3 space-y-1.5 text-sm text-ink-700 list-disc pl-4">{t.data.notes.map((n) => <li>{n}</li>)}</ul>
+        <p class="mt-3 text-xs text-ink-500">Reviewed {longDate(t.data.reviewedOn.toISOString().slice(0, 10))}</p>
+      </article>
+    ))}
+  </section>
+
+  <section class="container-x mt-16 grid gap-8 md:grid-cols-2">
+    <div class="card p-6">
+      <h2 class="text-xl">Where AssetMX sits</h2>
+      <p class="mt-3 text-sm text-ink-700">
+        AssetMX qualifies every application against the major-bank low-doc tier first, because that is where the sharpest rates are.
+        If you fit, you get the lender base rate plus a flat {PRICING.platformFeeLabel}. If you do not fit the bank tier but fit the non-bank tier,
+        we tell you the rate difference before you apply. If you sit in the full-doc tier, we say so in the fit check and suggest a broker.
+      </p>
+    </div>
+    <div class="card p-6">
+      <h2 class="text-xl">What every tier will ask for</h2>
+      <ul class="mt-3 space-y-1.5 text-sm text-ink-700 list-disc pl-4">
+        <li>Driver licence for each director or guarantor</li>
+        <li>ABN and GST status (we look these up automatically)</li>
+        <li>Business bank statements, typically the last 3 to 6 months</li>
+        <li>Supplier invoice or private-sale details for the asset</li>
+        <li>Consent to a credit check on formal application</li>
+      </ul>
+      <p class="mt-3 text-sm"><a href="/answers/documents-needed-low-doc-asset-finance" class="underline">Documents in detail</a></p>
+    </div>
+  </section>
+
+  <div class="container-x">
+    <Faq items={faqs} />
+    <Cta title="Check your fit in about a minute" body="We look up your ABN and GST status and tell you which tier you sit in before you upload anything." />
+  </div>
+</Base>

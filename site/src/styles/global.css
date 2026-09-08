@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+/* AssetMX finance-grade design system (rebuild v1, Sep 2026)
+   ink #0B1F2A  ·  signal green #00C48C  ·  Inter  ·  tabular nums  ·  12px radius */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, monospace;
+
+  --color-ink: #0B1F2A;
+  --color-ink-800: #14303D;
+  --color-ink-700: #1F4353;
+  --color-ink-600: #3A5A6A;
+  --color-ink-500: #5C7482;
+  --color-ink-400: #8A9BA6;
+  --color-ink-300: #B7C3CB;
+  --color-ink-200: #D9E0E5;
+  --color-ink-100: #EEF2F4;
+  --color-ink-50: #F7F9FA;
+
+  --color-signal: #00C48C;
+  --color-signal-600: #00A877;
+  --color-signal-700: #008A62;
+  --color-signal-100: #D6F7EC;
+  --color-signal-50: #EDFCF6;
+
+  --color-amber: #F5A524;
+  --color-amber-100: #FDEFD3;
+  --color-red: #E5484D;
+  --color-red-100: #FCE4E5;
+
+  --color-paper: #FFFFFF;
+  --color-canvas: #F7F9FA;
+
+  --radius-card: 12px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 1px 2px rgba(11, 31, 42, 0.06), 0 8px 24px -12px rgba(11, 31, 42, 0.18);
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-feature-settings: "cv11", "ss01", "tnum";
+  }
+  h1, h2, h3, h4 { @apply text-ink tracking-tight; text-wrap: balance; }
+  h1 { @apply text-4xl md:text-5xl font-semibold leading-[1.05]; }
+  h2 { @apply text-2xl md:text-3xl font-semibold leading-tight; }
+  h3 { @apply text-xl font-semibold leading-snug; }
+  p { text-wrap: pretty; }
+  a { @apply underline-offset-4; }
+  strong { @apply font-semibold text-ink; }
+  .num, table td, table th { font-variant-numeric: tabular-nums; }
+  ::selection { background: var(--color-signal-100); }
+}
+
+@layer components {
+  .container-x { @apply mx-auto w-full max-w-6xl px-5 md:px-8; }
+  .prose-mx { @apply text-ink-700 leading-relaxed; }
+  .prose-mx h2 { @apply mt-12 mb-4 scroll-mt-24; }
+  .prose-mx h3 { @apply mt-8 mb-3 scroll-mt-24; }
+  .prose-mx p { @apply my-4; }
+  .prose-mx ul { @apply my-4 list-disc pl-6 space-y-1.5; }
+  .prose-mx ol { @apply my-4 list-decimal pl-6 space-y-1.5; }
+  .prose-mx a { @apply text-signal-700 underline hover:text-signal-600; }
+  .prose-mx table { @apply my-6 w-full text-sm border-collapse; }
+  .prose-mx th { @apply text-left font-semibold text-ink bg-ink-50 px-3 py-2 border-b border-ink-200; }
+  .prose-mx td { @apply px-3 py-2 border-b border-ink-100 align-top; }
+  .prose-mx blockquote { @apply my-6 border-l-4 border-signal pl-4 text-ink-600 italic; }
+  .prose-mx hr { @apply my-10 border-ink-200; }
+  .prose-mx code { @apply font-mono text-[0.9em] bg-ink-100 px-1 py-0.5 rounded; }
+
+  .btn, .btn-primary, .btn-ink, .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-card px-5 py-3 text-sm font-semibold transition-colors no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-signal focus-visible:ring-offset-2; }
+  .btn-primary { @apply bg-signal text-ink hover:bg-signal-600; }
+  .btn-ink { @apply bg-ink text-white hover:bg-ink-800; }
+  .btn-ghost { @apply bg-transparent text-ink border border-ink-200 hover:border-ink hover:bg-white; }
+  .card { @apply rounded-card bg-paper border border-ink-200 shadow-card; }
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-[0.12em] text-signal-700; }
+  .pill { @apply inline-flex items-center rounded-pill bg-ink-100 px-3 py-1 text-xs font-medium text-ink-700; }
+  .table-wrap { @apply w-full overflow-x-auto rounded-card border border-ink-200 bg-paper; }
+  .table-wrap table { @apply w-full text-sm; }
+  .table-wrap th { @apply text-left font-semibold bg-ink-50 px-4 py-3 border-b border-ink-200 whitespace-nowrap; }
+  .table-wrap td { @apply px-4 py-3 border-b border-ink-100 align-top; }
+  .table-wrap tr:last-child td { @apply border-b-0; }
+}

@@ -1,0 +1,22 @@
+{
+  "tier": "tier-3",
+  "label": "Full-doc or out of policy",
+  "description": "Deals that fall outside low-doc policy: new ABNs, no GST, credit impairment, unusual assets or amounts above the low-doc cap. Not the AssetMX model; a broker with lender relationships is the right channel.",
+  "reviewedOn": "2026-09-08",
+  "lowDoc": {
+    "minAbnMonths": 0,
+    "gstRequired": false,
+    "maxAmountNoFinancials": 0,
+    "propertyOwnerRequired": false,
+    "minDeposit": "Deal-specific",
+    "creditFileRequirement": "Assessed case by case with full financials",
+    "maxAssetAgeAtEnd": 20,
+    "privateSaleAllowed": true,
+    "typicalTurnaround": "Days to weeks"
+  },
+  "notes": [
+    "Full financial statements, tax returns and BAS are required.",
+    "AssetMX will tell you within the fit check if your deal sits here, so you do not waste time on a low-doc application.",
+    "Ask us anyway: policy edges move, and we will say plainly if we cannot help."
+  ]
+}

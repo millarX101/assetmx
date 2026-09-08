@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="56" viewBox="0 0 220 56" role="img" aria-label="AssetMX">
+  <rect x="4" y="8" width="40" height="40" rx="10" fill="#0B1F2A"/>
+  <path d="M15.5 36.5 L24 17.5 L32.5 36.5 M19 30 H29" stroke="#00C48C" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <text x="54" y="37" font-family="Inter, Arial, sans-serif" font-size="27" font-weight="600" letter-spacing="-0.5" fill="#0B1F2A">Asset<tspan fill="#00C48C">MX</tspan></text>
+</svg>

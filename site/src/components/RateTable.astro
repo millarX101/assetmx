@@ -1,0 +1,40 @@
+---
+/** Dated lender base-rate table. The only place rate numbers are rendered as a table. */
+import { RATES } from '@/data/rates';
+import { PRICING, pct, longDate } from '@/data/entity';
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+const rows = RATES.byTerm.map((r) => ({
+  term: `${r.termMonths / 12} ${r.termMonths === 12 ? 'year' : 'years'}`,
+  months: r.termMonths,
+  rate: pct(r.ratePct),
+  balloon: `${RATES.maxBalloonByTerm[r.termMonths]}%`,
+}));
+---
+<div class="table-wrap">
+  <table>
+    <caption class="sr-only">Indicative lender base rates by term</caption>
+    <thead>
+      <tr>
+        <th scope="col">Term</th>
+        <th scope="col">Lender base rate (p.a.)</th>
+        {!compact && <th scope="col">Maximum balloon</th>}
+        {!compact && <th scope="col">AssetMX fee</th>}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((r) => (
+        <tr>
+          <td class="font-medium text-ink">{r.term} <span class="text-ink-400">({r.months} mo)</span></td>
+          <td class="num font-semibold text-ink">{r.rate}</td>
+          {!compact && <td class="num">{r.balloon}</td>}
+          {!compact && <td class="num">{PRICING.platformFeeLabel} flat</td>}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<p class="mt-2 text-xs text-ink-500">
+  Indicative rates for in-policy low-doc applicants, verified {longDate(RATES.verifiedOn)} against {RATES.source}.
+  Your rate is set by the lender. AssetMX adds no margin to it.
+</p>

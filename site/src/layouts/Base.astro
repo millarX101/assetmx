@@ -1,0 +1,90 @@
+---
+/**
+ * Base layout: full <head>, header, footer, organisation JSON-LD.
+ * Ships zero client JS. Pages pass extra JSON-LD nodes via `schema`.
+ */
+import '@/styles/global.css';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import JsonLd from '@/components/JsonLd.astro';
+import { ENTITY } from '@/data/entity';
+import { graph, organization, website, webPage } from '@/lib/schema';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Path starting with "/" (no trailing slash). Defaults to current URL. */
+  path?: string;
+  ogType?: 'website' | 'article';
+  ogImage?: string;
+  /** Extra schema.org nodes appended to the page @graph. */
+  schema?: object[];
+  pageType?: string;
+  dateModified?: string;
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  path = Astro.url.pathname.replace(/\/$/, '') || '/',
+  ogType = 'website',
+  ogImage = ENTITY.ogImage,
+  schema = [],
+  pageType,
+  dateModified,
+  noindex = false,
+} = Astro.props;
+
+const canonical = path === '/' ? `${ENTITY.siteUrl}/` : `${ENTITY.siteUrl}${path}`;
+const fullTitle = title.includes('AssetMX') ? title : `${title} | AssetMX`;
+const ld = graph(
+  organization(),
+  website(),
+  webPage({ url: canonical, name: fullTitle, description, type: pageType, dateModified }),
+  ...schema,
+);
+---
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow, max-snippet:-1, max-image-preview:large'} />
+    <meta name="author" content={`${ENTITY.brand} (${ENTITY.legalName})`} />
+    <meta name="theme-color" content="#0B1F2A" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={ENTITY.brand} />
+    <meta property="og:locale" content="en_AU" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="geo.region" content="AU" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <JsonLd data={ld} />
+    <slot name="head" />
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 btn-ink">Skip to content</a>
+    <Header />
+    <main id="main" class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

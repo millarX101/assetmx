@@ -1,0 +1,77 @@
+---
+import Base from '@/layouts/Base.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import RateTable from '@/components/RateTable.astro';
+import AnswerBox from '@/components/AnswerBox.astro';
+import Faq from '@/components/Faq.astro';
+import Cta from '@/components/Cta.astro';
+import { ENTITY, PRICING, money, pct, longDate } from '@/data/entity';
+import { RATES, lowestRate } from '@/data/rates';
+import { calculateQuote } from '@/lib/calculator';
+import { breadcrumbs, faqPage } from '@/lib/schema';
+
+const title = `Asset finance rates Australia: lender base rates from ${pct(lowestRate())} (verified ${longDate(RATES.verifiedOn)})`;
+const description = `Current indicative lender base rates for low-doc asset finance by term, verified ${longDate(RATES.verifiedOn)}. AssetMX adds no margin: the rate plus a flat $800 fee is the whole price.`;
+const shortAnswer = `As at ${longDate(RATES.verifiedOn)}, indicative lender base rates for in-policy low-doc asset finance are ${RATES.byTerm.map((r) => `${pct(r.ratePct)} p.a. over ${r.termMonths} months`).join(', ')}. AssetMX shows the lender rate unchanged and charges a separate flat $800 fee.`;
+
+const examples = [50_000, 100_000, 250_000].map((amount) => ({ amount, q: calculateQuote({ amount, termMonths: 60, balloonPct: 0 }) }));
+
+const faqs = [
+  { q: 'Why do shorter terms have higher rates?', a: 'Lenders price shorter terms higher because establishment costs are recovered over fewer payments. Terms of 36 months and longer currently share the lowest tier.' },
+  { q: 'Is this a comparison rate?', a: 'No. These are lender base rates before the lender establishment fee and the AssetMX fee. The quote tool shows the total cost of credit, which is the number to compare between providers.' },
+  { q: 'Will my rate be exactly this?', a: 'The lender sets your rate on formal application, based on the business, the directors and the asset. In-policy low-doc applicants typically receive the listed tier. Rates are indicative and change with lender funding costs.' },
+  { q: 'How often are rates updated here?', a: 'Whenever our lender panel changes its rate sheets. The verification date on this page changes with them. If the date is old, treat the rates as stale and get a live quote.' },
+];
+const schema = [breadcrumbs([{ name: 'Home', url: ENTITY.siteUrl + '/' }, { name: 'Rates', url: ENTITY.siteUrl + '/rates' }]), faqPage([{ q: 'What are current asset finance rates in Australia?', a: shortAnswer }, ...faqs])];
+---
+<Base title={title} description={description} path="/rates" schema={schema} dateModified={RATES.verifiedOn}>
+  <section class="container-x pt-8">
+    <Breadcrumbs items={[{ name: 'Rates', href: '/rates' }]} />
+    <p class="eyebrow mt-6">Current rates</p>
+    <h1 class="mt-2 max-w-3xl">Asset finance rates, dated and unmarked</h1>
+    <div class="mt-6 max-w-3xl"><AnswerBox answer={shortAnswer} updated={RATES.verifiedOn} label="Current rates" /></div>
+  </section>
+
+  <section class="container-x mt-12 grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+    <div>
+      <h2>Lender base rate by term</h2>
+      <div class="mt-4"><RateTable /></div>
+    </div>
+    <aside class="card p-6 text-sm">
+      <p class="eyebrow">What is and is not in the rate</p>
+      <ul class="mt-3 space-y-2 text-ink-700">
+        <li><strong>In the rate:</strong> the lender's cost of funds and credit margin for in-policy low-doc borrowers.</li>
+        <li><strong>Not in the rate:</strong> any AssetMX margin. Our fee is {PRICING.platformFeeLabel}, shown separately, financed or paid upfront.</li>
+        <li><strong>Also itemised:</strong> lender establishment fee, typically {money(PRICING.lenderEstablishmentFee)}, financed into the loan.</li>
+        <li><strong>Broker comparison:</strong> brokers typically add about {pct(PRICING.typicalBrokerMarginPct, 0)} to this rate as commission.</li>
+      </ul>
+    </aside>
+  </section>
+
+  <section class="container-x mt-16">
+    <h2>What the rate means in dollars</h2>
+    <p class="mt-2 text-ink-600 max-w-2xl">Five-year term, no balloon, {PRICING.platformFeeLabel} fee financed, repayments in advance. Calculated by the same engine as the quote tool.</p>
+    <div class="mt-6 table-wrap">
+      <table>
+        <thead><tr><th scope="col">Amount</th><th scope="col">Lender rate</th><th scope="col">Monthly</th><th scope="col">Total interest</th><th scope="col">Total cost of credit</th><th scope="col">Broker at +{pct(PRICING.typicalBrokerMarginPct, 0)}</th></tr></thead>
+        <tbody>
+          {examples.map(({ amount, q }) => (
+            <tr>
+              <td class="num font-medium text-ink">{money(amount)}</td>
+              <td class="num">{pct(q.ratePct)}</td>
+              <td class="num">{money(q.monthly, 2)}</td>
+              <td class="num">{money(q.totalInterest)}</td>
+              <td class="num font-semibold text-ink">{money(q.totalCost)}</td>
+              <td class="num text-ink-500">{money(q.brokerTotalCost)} (+{money(q.saving)})</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="container-x">
+    <Faq items={faqs} />
+    <Cta title="Run your own numbers" body="Any amount from $5,000 to $500,000, any term from 12 to 84 months, balloon up to the lender cap." />
+  </div>
+</Base>

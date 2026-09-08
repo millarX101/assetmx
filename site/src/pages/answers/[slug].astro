@@ -1,0 +1,82 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import AnswerBox from '@/components/AnswerBox.astro';
+import KeyFacts from '@/components/KeyFacts.astro';
+import Faq from '@/components/Faq.astro';
+import Cta from '@/components/Cta.astro';
+import { ENTITY } from '@/data/entity';
+import { article, breadcrumbs, faqPage } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('answers');
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const d = entry.data;
+const path = `/answers/${entry.id}`;
+const url = `${ENTITY.siteUrl}${path}`;
+const updated = d.updated.toISOString().slice(0, 10);
+
+const all = await getCollection('answers');
+const related = d.related
+  .map((slug) => all.find((e) => e.id === slug))
+  .filter((e): e is NonNullable<typeof e> => Boolean(e));
+
+const schema = [
+  breadcrumbs([
+    { name: 'Home', url: ENTITY.siteUrl + '/' },
+    { name: 'Answers', url: ENTITY.siteUrl + '/answers' },
+    { name: d.question, url },
+  ]),
+  article({ url, headline: d.question, description: d.description, published: updated, modified: updated }),
+  // The page's own question is the first FAQ entity so the short answer is machine-readable.
+  faqPage([{ q: d.question, a: d.shortAnswer }, ...d.faq]),
+];
+---
+<Base title={d.question} description={d.description} path={path} ogType="article" schema={schema} dateModified={updated}>
+  <article class="container-x pt-8">
+    <Breadcrumbs items={[{ name: 'Answers', href: '/answers' }, { name: d.question, href: path }]} />
+    <p class="eyebrow mt-6 capitalize">{d.category.replace('-', ' ')}</p>
+    <h1 class="mt-2 max-w-3xl">{d.question}</h1>
+
+    <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_300px] lg:items-start">
+      <div>
+        <AnswerBox answer={d.shortAnswer} updated={updated} />
+        <div class="prose-mx mt-8 max-w-none">
+          <Content />
+        </div>
+        {d.sources.length > 0 && (
+          <section class="mt-10">
+            <h2 class="text-lg">Sources</h2>
+            <ul class="mt-3 space-y-1 text-sm">
+              {d.sources.map((s) => (
+                <li><a href={s.url} rel="noopener nofollow" target="_blank" class="text-signal-700 underline">{s.label}</a></li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {d.faq.length > 0 && <Faq items={d.faq} title="Related questions" />}
+      </div>
+      <div class="space-y-5 lg:sticky lg:top-24">
+        <KeyFacts facts={d.keyFacts} />
+        {related.length > 0 && (
+          <aside class="card p-5">
+            <p class="eyebrow">Related answers</p>
+            <ul class="mt-3 space-y-2 text-sm">
+              {related.map((r) => <li><a href={`/answers/${r.id}`} class="text-ink hover:text-signal-700 no-underline">{r.data.question}</a></li>)}
+            </ul>
+          </aside>
+        )}
+        <aside class="card p-5 text-sm">
+          <p class="eyebrow">About this answer</p>
+          <p class="mt-2 text-ink-600">Written and reviewed by {ENTITY.brand} ({ENTITY.legalName}, Australian Credit Licence {ENTITY.acl}). General information only.</p>
+        </aside>
+      </div>
+    </div>
+    <Cta />
+  </article>
+</Base>
