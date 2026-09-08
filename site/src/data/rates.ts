@@ -5,7 +5,7 @@
  * Mirrors DEFAULT_RATES in the app (src/lib/calculator.ts) and the rate_config table.
  */
 export const RATES = {
-  verifiedOn: '2026-02-16',
+  verifiedOn: '2026-09-08',
   source: 'AssetMX lender panel rate sheets',
   byTerm: [
     { termMonths: 12, ratePct: 8.49 },
