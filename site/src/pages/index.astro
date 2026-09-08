@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import Base from '@/layouts/Base.astro';
+import QuickStart from '@/islands/QuickStart';
 import QuoteCalculator from '@/islands/QuoteCalculator';
 import Faq from '@/components/Faq.astro';
 import Cta from '@/components/Cta.astro';
@@ -12,179 +13,166 @@ import { calculateQuote } from '@/lib/calculator';
 import { faqPage, offerCatalog } from '@/lib/schema';
 import { img } from '@/lib/images';
 
-const title = 'AssetMX | Low-doc asset finance, $800 flat fee, no hidden commission';
-const description = `Self-serve low-doc asset finance for ABN businesses trading 24+ months. Lender base rate from ${pct(lowestRate())} p.a. shown separately plus a flat $800 fee. Quote in about 60 seconds.`;
+const title = 'AssetMX | Finance the gear. Skip the broker. $800 flat fee asset finance';
+const description = `Transparent vehicle, truck and equipment finance for established Australian businesses. One flat $800 fee, no lender commission, lender base rate from ${pct(lowestRate())} p.a. Three questions to start.`;
 
-// Worked example computed by the same engine as the quote island.
 const ex = calculateQuote({ amount: 100_000, termMonths: 60, balloonPct: 0 });
 
 const products = [
-  { title: 'Cars, utes and vans', sub: 'Ranger, Hilux, Transit, Sprinter', href: '/car-finance', image: 'hero-ranger.jpg', alt: 'Ford Ranger ute used for business' },
-  { title: 'Trucks and light commercials', sub: 'Isuzu, Hino, Fuso, cab chassis', href: '/truck-finance', image: 'hero-truck.jpg', alt: 'Isuzu rigid truck' },
-  { title: 'Equipment and machinery', sub: 'Excavators, loaders, earthmoving', href: '/equipment-finance', image: 'hero-excavator.jpg', alt: 'Excavator on a construction site' },
-  { title: 'Electric vehicles', sub: 'Tesla, BYD, European EVs', href: '/ev-leasing', image: 'hero-ev.jpg', alt: 'Tesla Model 3 electric vehicle' },
+  { eyebrow: 'Vehicle finance', title: 'Cars, utes and vans', body: 'Work utes, dual cabs, tradie vans, company cars and light commercials. Business-use vehicles for sole traders, partnerships, companies and trusts.', href: '/car-finance', image: 'hero-ranger.jpg', alt: 'Ford Ranger ute used for business' },
+  { eyebrow: 'Truck finance', title: 'Trucks and trailers', body: 'Rigid trucks, tippers, refrigerated bodies, flat tops and trailers for transport, logistics, construction and agriculture operators.', href: '/truck-finance', image: 'hero-truck.jpg', alt: 'Isuzu rigid truck' },
+  { eyebrow: 'Equipment finance', title: 'Machinery and equipment', body: 'Excavators, loaders, skid steers, forklifts, manufacturing equipment, fit-outs, agricultural and earthmoving machinery.', href: '/equipment-finance', image: 'hero-excavator.jpg', alt: 'Excavator on a construction site' },
 ];
 
 const steps = [
-  { n: '1', t: 'Quote in about 60 seconds', d: 'Set the amount, term and balloon. You see the lender base rate, our flat fee and the total cost before you give us a single detail.' },
-  { n: '2', t: 'Check your fit', d: 'We look up your ABN and GST status automatically and tell you straight away if you fit bank low-doc policy. No credit check yet.' },
-  { n: '3', t: 'Upload, sign, settle', d: 'Driver licence, bank statements and the invoice. Our system reads them, flags gaps, and prepares the lender file. Conditional approval is typically same business day.' },
+  { n: '1', t: 'Three questions', d: 'Asset, amount, ABN. Takes under a minute, right here on this page.' },
+  { n: '2', t: 'We pre-fill', d: 'Business name, entity type, GST status and trading history come from the Australian Business Register. You confirm, not type.' },
+  { n: '3', t: 'Finish in chat', d: 'A short guided conversation covers the rest: the asset details, a few financials, your consent. Then it is with the lender.' },
 ];
 
 const fit = [
-  { ok: true, t: 'ABN active for 24 months or more' },
-  { ok: true, t: 'Registered for GST' },
-  { ok: true, t: `Financing ${money(PRICING.minAmount)} to ${money(PRICING.maxAmount)} of business-use assets` },
-  { ok: true, t: 'Directors with a clean credit history' },
-  { ok: false, t: 'New ABNs, non-GST businesses, or complex deals that need a relationship manager. A traditional broker will suit you better.' },
+  { t: 'Trading 2+ years', d: 'An active ABN with at least two years behind it, registered for GST.' },
+  { t: 'Clean credit', d: 'No defaults or judgments on the business or its directors.' },
+  { t: 'Vehicles, trucks or equipment', d: `Utes, trucks, trailers, excavators, machinery and the like, for business use, from ${money(PRICING.minAmount)} to ${money(PRICING.maxAmount)}.` },
 ];
 
 const faqs = [
-  { q: 'What does AssetMX charge?', a: `A flat ${PRICING.platformFeeLabel} fee, shown separately from the lender's base rate. It can be financed into the loan or paid upfront. There is no commission built into your interest rate.` },
-  { q: 'What is low-doc asset finance?', a: 'Finance for a business asset where the lender approves on ABN age, GST registration, credit history and bank statements rather than full financial statements and tax returns. It suits established businesses buying vehicles, trucks and equipment.' },
-  { q: 'Who is eligible?', a: `Businesses with an ABN active for at least ${PRICING.minAbnMonths} months, registered for GST, financing between ${money(PRICING.minAmount)} and ${money(PRICING.maxAmount)}, with an asset no older than ${PRICING.maxAssetAgeAtTermEnd} years at the end of the term.` },
-  { q: 'What rate will I pay?', a: `Indicative lender base rates are ${RATES.byTerm.map((r) => `${pct(r.ratePct)} for ${r.termMonths} months`).join(', ')}, verified ${longDate(RATES.verifiedOn)}. The lender sets your final rate after a formal application. AssetMX adds no margin.` },
-  { q: 'How fast is approval?', a: 'The online quote is instant. Conditional approval for in-policy low-doc applications is typically the same business day, and settlement usually follows within one to two business days of the signed documents and invoice arriving.' },
-  { q: 'Does getting a quote affect my credit score?', a: 'No. A quote on this site runs no credit enquiry. Lenders only check the business and directors once you submit a formal application.' },
+  { q: 'What is the AssetMX fee?', a: `One flat ${PRICING.platformFeeLabel} fee, disclosed before you apply. We do not take lender commission on top, so it is not built into your rate. It can be financed into the loan or paid upfront.` },
+  { q: 'Who is eligible?', a: `Australian businesses with an active ABN trading for ${PRICING.minAbnMonths / 12} or more years, registered for GST, clean credit for the business and its directors, and an asset for business use such as a vehicle, truck, trailer or equipment.` },
+  { q: 'What can I finance?', a: 'Cars, utes and vans; trucks and trailers; excavators, machinery, agricultural and manufacturing equipment, and other income-producing business assets. New or used, from a dealer or a private seller.' },
+  { q: 'How long does the application take?', a: 'Three questions on this page take under a minute. Most of the remaining application is pre-filled from your ABN, and the guided chat usually finishes in about four minutes. Conditional approval for in-policy files is typically the same business day.' },
+  { q: 'Is there a credit check when I start?', a: 'No. Nothing is checked against your credit file until you explicitly consent inside the application.' },
+  { q: 'What rate will I pay?', a: `Indicative lender base rates are ${RATES.byTerm.map((r) => `${pct(r.ratePct)} over ${r.termMonths} months`).join(', ')}, verified ${longDate(RATES.verifiedOn)}. The lender sets your final rate on application. AssetMX adds nothing to it.` },
+  { q: 'What is a chattel mortgage?', a: 'A business loan secured against the asset you are buying. You own the asset from day one, the lender holds a mortgage over it until the loan is repaid, and GST-registered businesses can usually claim the GST on the purchase price up front.' },
+  { q: 'Do I need a deposit?', a: 'Not always. Depending on the asset, the lender and your trading history, finance can cover the full purchase price. A deposit or trade-in can lower your repayments.' },
 ];
 
-const answers = (await getCollection('answers'))
-  .sort((a, b) => a.data.question.localeCompare(b.data.question))
-  .slice(0, 6);
+const answers = (await getCollection('answers')).sort((a, b) => a.data.question.localeCompare(b.data.question)).slice(0, 6);
 ---
 <Base title={title} description={description} path="/" schema={[faqPage(faqs), offerCatalog()]}>
-  <!-- Hero + quote island -->
-  <section class="container-x pt-14 pb-10 md:pt-20 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:items-start">
+  <!-- Hero -->
+  <section class="container-x pt-12 pb-10 md:pt-16 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:items-start">
     <div>
-      <p class="eyebrow">Low-doc asset finance for established businesses</p>
-      <h1 class="mt-3">
-        {PRICING.platformFeeLabel} flat.<br />
-        <span class="text-signal-700">Lender rate shown separately.</span>
-      </h1>
-      <p class="mt-5 text-lg text-ink-600 max-w-xl">
-        No commission hidden in your rate. No phone tag. Quote, check your fit and apply online for cars, trucks and equipment
-        from {money(PRICING.minAmount)} to {money(PRICING.maxAmount)}.
+      <div class="flex flex-wrap gap-2">
+        <span class="pill-sand">{PRICING.platformFeeLabel} flat fee</span>
+        <span class="pill">No broker commission</span>
+      </div>
+      <h1 class="mt-5">Finance the gear.<br /><span class="text-forest">Skip the broker.</span></h1>
+      <p class="mt-5 text-lg text-ink-700 max-w-lg">
+        Transparent asset finance for established Australian businesses. Answer three questions and we pre-fill most of the application for you.
       </p>
-      <ul class="mt-6 grid gap-3 sm:grid-cols-3 text-sm">
-        <li class="card p-4">
-          <p class="num text-2xl font-semibold">{pct(lowestRate())}</p>
-          <p class="text-ink-500">lender base rate p.a. from, 36 to 60 months</p>
-        </li>
-        <li class="card p-4">
-          <p class="num text-2xl font-semibold">{PRICING.platformFeeLabel}</p>
-          <p class="text-ink-500">our entire fee, on any size deal</p>
-        </li>
-        <li class="card p-4">
-          <p class="num text-2xl font-semibold">24 mo</p>
-          <p class="text-ink-500">minimum ABN age, GST registered</p>
-        </li>
-      </ul>
-      <p class="mt-4 text-xs text-ink-500">Rates verified {longDate(RATES.verifiedOn)}. Indicative, set by the lender on application.</p>
-      <div class="mt-6 flex flex-wrap gap-3">
-        <a href="#quote" class="btn-primary">Get a quote</a>
-        <a href="/lender-policies" class="btn-ghost">Check lender policy</a>
+      <dl class="mt-8 grid grid-cols-3 gap-4 max-w-md">
+        <div><dt class="sr-only">Questions to start</dt><dd class="font-display text-3xl">3</dd><dd class="text-xs text-ink-600">questions to start</dd></div>
+        <div><dt class="sr-only">Time to full application</dt><dd class="font-display text-3xl">~4 min</dd><dd class="text-xs text-ink-600">to a full application</dd></div>
+        <div><dt class="sr-only">Total fee</dt><dd class="font-display text-3xl">{PRICING.platformFeeLabel}</dd><dd class="text-xs text-ink-600">total fee, disclosed up front</dd></div>
+      </dl>
+    </div>
+    <QuickStart client:load />
+  </section>
+
+  <!-- How it works -->
+  <section class="band-forest mt-10 py-16">
+    <div class="container-x">
+      <h2>Most of the form fills itself.</h2>
+      <p class="mt-3 max-w-xl text-ink-200">You give us three answers. We do the data entry, then ask only what we can't look up.</p>
+      <ol class="mt-10 grid gap-8 md:grid-cols-3">
+        {steps.map((s) => (
+          <li>
+            <span class="step-badge">{s.n}</span>
+            <h3 class="mt-4">{s.t}</h3>
+            <p class="mt-2 text-sm text-ink-200 leading-relaxed">{s.d}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- The fee -->
+  <section id="fee" class="container-x mt-20 grid gap-10 md:grid-cols-[1fr_1fr] md:items-center scroll-mt-24">
+    <div>
+      <h2>One fee. Written down before you start.</h2>
+      <p class="mt-4 text-ink-700">
+        Brokers are usually paid by the lender, and that cost sits inside your rate where you can't see it.
+        We charge {PRICING.platformFeeLabel}, we tell you first, and we don't take commission on top.
+      </p>
+      <p class="mt-3 text-sm text-ink-600">On {money(100_000)} over five years at the same {pct(ex.ratePct)} lender rate, a typical {pct(PRICING.typicalBrokerMarginPct, 0)} loading costs about <span class="num font-semibold text-ink">{money(ex.saving)}</span> more. <a href="/how-we-compare" class="underline">See the comparison</a>.</p>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="card-sand p-6">
+        <p class="eyebrow">Typical broker</p>
+        <p class="font-display text-3xl mt-3">Undisclosed</p>
+        <p class="mt-2 text-sm text-ink-700">Commission built into the rate. You rarely see the number.</p>
+      </div>
+      <div class="rounded-card bg-sage-100 border border-sage-200 p-6">
+        <p class="eyebrow text-forest">AssetMX</p>
+        <p class="font-display text-3xl mt-3">{PRICING.platformFeeLabel}</p>
+        <p class="mt-2 text-sm text-ink-700">Flat fee, disclosed up front. Nothing else from us.</p>
       </div>
     </div>
-    <QuoteCalculator client:visible />
   </section>
 
-  <!-- Fit check -->
-  <section class="container-x mt-12 grid gap-8 md:grid-cols-[1fr_1fr]">
-    <div>
-      <p class="eyebrow">Is it for you?</p>
-      <h2 class="mt-2">Built for businesses that fit bank low-doc policy</h2>
-      <p class="mt-3 text-ink-600">
-        Good businesses with clean credit were paying the same loaded rates as everyone else. We built a straight-through
-        process for the ones that fit policy, and we tell you within a minute if you do not.
-      </p>
+  <!-- Who it's for -->
+  <section id="fit" class="band-sage mt-20 py-16 scroll-mt-24">
+    <div class="container-x grid gap-10 md:grid-cols-[1fr_1.2fr] md:items-start">
+      <div>
+        <h2>Built for businesses that already work.</h2>
+        <p class="mt-4 text-ink-700 max-w-sm">We keep the process short by only taking on straightforward files. If this is you, you'll move quickly. If not, we say so in the first minute.</p>
+        <p class="mt-4 text-sm"><a href="/lender-policies" class="underline">Lender low-doc policies in detail</a></p>
+      </div>
+      <ul class="grid gap-3">
+        {fit.map((f) => (
+          <li class="card p-5 flex gap-4">
+            <span class="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-forest text-canvas text-sm" aria-hidden="true">✓</span>
+            <div>
+              <p class="font-semibold text-ink">{f.t}</p>
+              <p class="mt-1 text-sm text-ink-700">{f.d}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
-    <ul class="card divide-y divide-ink-100">
-      {fit.map((f) => (
-        <li class="flex gap-3 px-5 py-3 text-sm">
-          <span class:list={['mt-0.5 shrink-0 h-5 w-5 rounded-full inline-flex items-center justify-center text-xs font-bold', f.ok ? 'bg-signal-100 text-signal-700' : 'bg-ink-100 text-ink-500']} aria-hidden="true">{f.ok ? '✓' : '–'}</span>
-          <span class={f.ok ? 'text-ink' : 'text-ink-600'}>{f.t}</span>
-        </li>
-      ))}
-    </ul>
   </section>
 
-  <!-- Products -->
+  <!-- What we finance -->
   <section class="container-x mt-20">
-    <p class="eyebrow">What we finance</p>
-    <h2 class="mt-2">Same {PRICING.platformFeeLabel} fee across every asset type</h2>
-    <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <h2>What we finance</h2>
+    <p class="mt-3 text-ink-700 max-w-2xl">Income-producing assets for Australian businesses, new or used, from a dealer or a private seller. Most files are written as a chattel mortgage, so you own the asset from day one.</p>
+    <div class="mt-8 grid gap-5 md:grid-cols-3">
       {products.map((p) => (
         <a href={p.href} class="card overflow-hidden no-underline group">
-          <Image src={img(p.image)} alt={p.alt} width={640} height={420} class="h-40 w-full object-cover group-hover:opacity-95" loading="lazy" />
-          <div class="p-4">
-            <p class="font-semibold text-ink">{p.title}</p>
-            <p class="text-sm text-ink-500">{p.sub}</p>
+          <Image src={img(p.image)} alt={p.alt} width={640} height={420} class="h-44 w-full object-cover group-hover:opacity-95" loading="lazy" />
+          <div class="p-5">
+            <p class="eyebrow">{p.eyebrow}</p>
+            <h3 class="mt-1">{p.title}</h3>
+            <p class="mt-2 text-sm text-ink-700">{p.body}</p>
           </div>
         </a>
       ))}
     </div>
+    <p class="mt-4 text-sm text-ink-600">Electric vehicles for business are financed the same way. <a href="/ev-leasing" class="underline">EV finance</a>.</p>
   </section>
 
-  <!-- How it works -->
-  <section class="container-x mt-20">
-    <p class="eyebrow">How it works</p>
-    <h2 class="mt-2">Cold visitor to qualified application in minutes, not weeks</h2>
-    <ol class="mt-8 grid gap-5 md:grid-cols-3">
-      {steps.map((s) => (
-        <li class="card p-6">
-          <span class="num inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink text-white text-sm font-semibold">{s.n}</span>
-          <h3 class="mt-4">{s.t}</h3>
-          <p class="mt-2 text-sm text-ink-600">{s.d}</p>
-        </li>
-      ))}
-    </ol>
-  </section>
-
-  <!-- Worked example -->
-  <section class="container-x mt-20">
-    <p class="eyebrow">The difference, on real numbers</p>
-    <h2 class="mt-2">{money(100_000)} over 5 years, same lender rate</h2>
-    <p class="mt-3 text-ink-600 max-w-2xl">
-      Brokers typically build about {PRICING.typicalBrokerMarginPct.toFixed(0)}% commission into the rate you are shown. We show the lender base
-      rate and charge {PRICING.platformFeeLabel} separately. Both columns below are calculated by the same engine as the quote tool, at {pct(ex.ratePct)} verified {longDate(RATES.verifiedOn)}.
-    </p>
-    <div class="mt-8 table-wrap">
-      <table>
-        <thead>
-          <tr><th scope="col">Line item</th><th scope="col">Typical broker</th><th scope="col">AssetMX</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Lender base rate</td><td class="num">{pct(ex.ratePct)}</td><td class="num">{pct(ex.ratePct)}</td></tr>
-          <tr><td>Rate you are shown</td><td class="num">{pct(ex.brokerRatePct)}</td><td class="num font-semibold">{pct(ex.ratePct)}</td></tr>
-          <tr><td>Fee disclosed to you</td><td class="num">$0 (commission in the rate)</td><td class="num font-semibold">{money(PRICING.platformFee)}</td></tr>
-          <tr><td>Monthly repayment</td><td class="num">{money(ex.brokerMonthly, 2)}</td><td class="num font-semibold">{money(ex.monthly, 2)}</td></tr>
-          <tr><td>Total cost of credit</td><td class="num">{money(ex.brokerTotalCost)}</td><td class="num font-semibold">{money(ex.totalCost)}</td></tr>
-          <tr><td class="font-semibold text-ink">Difference over the term</td><td></td><td class="num font-semibold text-signal-700">{money(ex.saving)} less</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="mt-3 text-xs text-ink-500">
-      Assumes a {pct(PRICING.typicalBrokerMarginPct, 0)} broker rate loading, {money(PRICING.lenderEstablishmentFee)} lender establishment fee financed in both cases, no balloon, repayments in advance. Your figures will differ.
-      <a href="/how-we-compare" class="underline">Full comparison</a>.
-    </p>
-  </section>
-
-  <!-- Rates -->
-  <section class="container-x mt-20 grid gap-8 md:grid-cols-[1fr_1.4fr] md:items-start">
+  <!-- Rate + quote -->
+  <section id="quote" class="container-x mt-20 grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start scroll-mt-24">
     <div>
-      <p class="eyebrow">Current lender base rates</p>
-      <h2 class="mt-2">Dated, sourced, no margin added</h2>
-      <p class="mt-3 text-ink-600">Every rate on this site carries the date it was verified. If a rate is old, you will see that it is old. <a href="/rates" class="underline">Rates page</a>.</p>
+      <h2>See your real rate before you give us a single detail.</h2>
+      <p class="mt-4 text-ink-700">The lender base rate, our {PRICING.platformFeeLabel}, and the total cost of credit, side by side with the same deal through a typical broker. Every rate on this site carries the date it was verified.</p>
+      <div class="mt-6"><RateTable compact /></div>
     </div>
-    <RateTable />
+    <QuoteCalculator client:visible />
   </section>
+
+  <!-- FAQ -->
+  <div class="container-x">
+    <Faq items={faqs} intro="Straight answers about the fee, eligibility and how a business asset loan actually works." />
+  </div>
 
   <!-- Answers -->
   <section class="container-x mt-20">
     <div class="flex items-end justify-between gap-4">
       <div>
         <p class="eyebrow">Plain answers</p>
-        <h2 class="mt-2">Questions business owners actually ask</h2>
+        <h2 class="mt-2">More questions business owners ask</h2>
       </div>
       <a href="/answers" class="btn-ghost hidden sm:inline-flex">All answers</a>
     </div>
@@ -193,7 +181,7 @@ const answers = (await getCollection('answers'))
         <li class="card p-5">
           <a href={`/answers/${a.id}`} class="no-underline">
             <p class="font-semibold text-ink">{a.data.question}</p>
-            <p class="mt-2 text-sm text-ink-600 line-clamp-3">{a.data.shortAnswer}</p>
+            <p class="mt-2 text-sm text-ink-700 line-clamp-3">{a.data.shortAnswer}</p>
           </a>
         </li>
       ))}
@@ -201,28 +189,20 @@ const answers = (await getCollection('answers'))
     <a href="/answers" class="btn-ghost mt-6 sm:hidden">All answers</a>
   </section>
 
-  <!-- Story -->
-  <section class="container-x mt-20 grid gap-8 md:grid-cols-[1fr_1.4fr]">
-    <div>
-      <p class="eyebrow">Our story</p>
-      <h2 class="mt-2">Twenty years of watching good businesses subsidise bad deals</h2>
-    </div>
-    <div class="prose-mx">
-      <p>
-        From helping thousands of business clients over the past two decades, we identified a largely untouched part of the
-        market that suffers through traditional channels. Good businesses with clean credit were paying the same rates as
-        everyone else, subsidising higher-risk borrowers through opaque broker margins.
-      </p>
-      <p>
-        We are redefining how easy lending should be for great business clients. We built this system from the ground up,
-        Australian owned and run, to benefit Australian businesses. {ENTITY.brand} is a trading name of {ENTITY.legalName},
-        holder of Australian Credit Licence {ENTITY.acl}.
-      </p>
+  <!-- About -->
+  <section class="mt-20 bg-sand py-16">
+    <div class="container-x grid gap-8 md:grid-cols-[1fr_2fr]">
+      <h2>About AssetMX</h2>
+      <div class="prose-mx">
+        <p>
+          AssetMX is the asset finance arm of {ENTITY.legalName} (Australian Credit Licence {ENTITY.acl}). We arrange vehicle, truck and equipment finance for established Australian small and medium businesses, and we charge one flat {PRICING.platformFeeLabel} fee instead of taking a lender commission. Because the fee is fixed, there is no reason for us to steer you toward a higher rate or a longer term.
+        </p>
+        <p>
+          We keep the process short by working with straightforward files: businesses trading two or more years, with clean credit, buying assets for business use. Applications start with three questions on this page, are pre-filled from the Australian Business Register, and finish in a short guided chat. Nothing touches your credit file until you say so.
+        </p>
+      </div>
     </div>
   </section>
 
-  <div class="container-x">
-    <Faq items={faqs} />
-    <Cta />
-  </div>
+  <div class="container-x"><Cta /></div>
 </Base>

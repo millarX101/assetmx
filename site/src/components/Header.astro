@@ -4,7 +4,7 @@ import Logo from '@/components/Logo.astro';
 
 const products = [
   { label: 'Car finance', href: '/car-finance', hint: 'Utes, vans, cars, 4WDs' },
-  { label: 'Truck & van finance', href: '/truck-finance', hint: 'Rigid and light trucks' },
+  { label: 'Truck & van finance', href: '/truck-finance', hint: 'Rigid and light trucks, trailers' },
   { label: 'Equipment finance', href: '/equipment-finance', hint: 'Excavators, loaders, plant' },
   { label: 'EV finance', href: '/ev-leasing', hint: 'Business EVs and novated referrals' },
 ];
@@ -15,10 +15,11 @@ const learn = [
   { label: 'How we compare', href: '/how-we-compare', hint: 'AssetMX vs a broker' },
   { label: 'Guides', href: '/guides', hint: 'Long-form explainers' },
 ];
-const current = Astro.url.pathname;
-const isActive = (href: string) => current === href || current.startsWith(href + '/');
+const isHome = Astro.url.pathname === '/';
+const anchor = (id: string) => (isHome ? `#${id}` : `/#${id}`);
+const menuClass = 'invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition absolute left-0 top-full pt-2 w-72';
 ---
-<header class="sticky top-0 z-40 border-b border-ink-200 bg-white/90 backdrop-blur">
+<header class="sticky top-0 z-40 border-b border-ink-200/70 bg-canvas/90 backdrop-blur">
   <div class="container-x flex h-16 items-center justify-between gap-6">
     <a href="/" class="flex items-center no-underline" aria-label="AssetMX home">
       <Logo />
@@ -26,14 +27,14 @@ const isActive = (href: string) => current === href || current.startsWith(href +
 
     <nav class="hidden md:flex items-center gap-1 text-sm font-medium" aria-label="Primary">
       <div class="group relative">
-        <button class="px-3 py-2 rounded-card text-ink-700 hover:text-ink hover:bg-ink-50 flex items-center gap-1" aria-haspopup="true">
+        <button class="px-3 py-2 rounded-pill text-ink-700 hover:text-ink hover:bg-sand flex items-center gap-1" aria-haspopup="true">
           Finance <span aria-hidden="true" class="text-ink-400">▾</span>
         </button>
-        <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition absolute left-0 top-full pt-2 w-72">
+        <div class={menuClass}>
           <ul class="card p-2">
             {products.map((p) => (
               <li>
-                <a href={p.href} class="block rounded-lg px-3 py-2 no-underline hover:bg-ink-50">
+                <a href={p.href} class="block rounded-xl px-3 py-2 no-underline hover:bg-sand">
                   <span class="block text-ink font-semibold">{p.label}</span>
                   <span class="block text-xs text-ink-500">{p.hint}</span>
                 </a>
@@ -43,14 +44,14 @@ const isActive = (href: string) => current === href || current.startsWith(href +
         </div>
       </div>
       <div class="group relative">
-        <button class="px-3 py-2 rounded-card text-ink-700 hover:text-ink hover:bg-ink-50 flex items-center gap-1" aria-haspopup="true">
+        <button class="px-3 py-2 rounded-pill text-ink-700 hover:text-ink hover:bg-sand flex items-center gap-1" aria-haspopup="true">
           Learn <span aria-hidden="true" class="text-ink-400">▾</span>
         </button>
-        <div class="invisible opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 transition absolute left-0 top-full pt-2 w-72">
+        <div class={menuClass}>
           <ul class="card p-2">
             {learn.map((p) => (
               <li>
-                <a href={p.href} class="block rounded-lg px-3 py-2 no-underline hover:bg-ink-50">
+                <a href={p.href} class="block rounded-xl px-3 py-2 no-underline hover:bg-sand">
                   <span class="block text-ink font-semibold">{p.label}</span>
                   <span class="block text-xs text-ink-500">{p.hint}</span>
                 </a>
@@ -59,15 +60,14 @@ const isActive = (href: string) => current === href || current.startsWith(href +
           </ul>
         </div>
       </div>
-      <a href="/rates" class:list={['px-3 py-2 rounded-card no-underline hover:bg-ink-50', isActive('/rates') ? 'text-ink' : 'text-ink-700']}>Rates</a>
-      <a href="/how-we-compare" class:list={['px-3 py-2 rounded-card no-underline hover:bg-ink-50', isActive('/how-we-compare') ? 'text-ink' : 'text-ink-700']}>Compare</a>
-      <a href="/contact" class:list={['px-3 py-2 rounded-card no-underline hover:bg-ink-50', isActive('/contact') ? 'text-ink' : 'text-ink-700']}>Contact</a>
+      <a href={anchor('fee')} class="px-3 py-2 rounded-pill no-underline text-ink-700 hover:text-ink hover:bg-sand">The fee</a>
+      <a href={anchor('fit')} class="px-3 py-2 rounded-pill no-underline text-ink-700 hover:text-ink hover:bg-sand">Who it's for</a>
+      <a href={anchor('faq')} class="px-3 py-2 rounded-pill no-underline text-ink-700 hover:text-ink hover:bg-sand">FAQ</a>
     </nav>
 
     <div class="hidden md:flex items-center gap-2">
-      <a href={APP_LINKS.admin} class="btn-ghost py-2" rel="nofollow">Log in</a>
-      <a href="/#quote" class="btn-ghost py-2">Get a quote</a>
-      <a href={APP_LINKS.quote} class="btn-primary py-2">Apply now</a>
+      <a href={APP_LINKS.admin} class="px-3 py-2 text-sm font-medium text-ink-600 hover:text-ink no-underline" rel="nofollow">Log in</a>
+      <a href={APP_LINKS.quote} class="btn-sage py-2.5">Start application</a>
     </div>
 
     <details class="md:hidden relative">
@@ -78,11 +78,12 @@ const isActive = (href: string) => current === href || current.startsWith(href +
         <p class="eyebrow px-2 pt-1">Learn</p>
         <ul class="mb-2">{learn.map((p) => <li><a href={p.href} class="block px-2 py-2 no-underline text-ink font-medium">{p.label}</a></li>)}</ul>
         <ul class="mb-3 border-t border-ink-100 pt-2">
+          <li><a href={anchor('fee')} class="block px-2 py-2 no-underline text-ink font-medium">The fee</a></li>
+          <li><a href={anchor('fit')} class="block px-2 py-2 no-underline text-ink font-medium">Who it's for</a></li>
           <li><a href="/contact" class="block px-2 py-2 no-underline text-ink font-medium">Contact</a></li>
           <li><a href={APP_LINKS.admin} class="block px-2 py-2 no-underline text-ink-600" rel="nofollow">Log in</a></li>
         </ul>
-        <a href="/#quote" class="btn-ghost w-full mb-2">Get a quote</a>
-        <a href={APP_LINKS.quote} class="btn-primary w-full">Apply now</a>
+        <a href={APP_LINKS.quote} class="btn-primary w-full">Start application</a>
       </div>
     </details>
   </div>

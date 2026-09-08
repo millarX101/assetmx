@@ -2,22 +2,22 @@
 import { APP_LINKS, PRICING } from '@/data/entity';
 interface Props { title?: string; body?: string; primary?: { label: string; href: string }; class?: string }
 const {
-  title = 'See your real rate in about 60 seconds',
-  body = `Lender base rate plus a flat ${PRICING.platformFeeLabel} fee. No credit check until you submit an application.`,
-  primary = { label: 'Get a quote', href: '/#quote' },
+  title = 'Ready? Three questions, then we take it from there.',
+  body = `One flat ${PRICING.platformFeeLabel} fee, disclosed before you start. Nothing touches your credit file until you say so.`,
+  primary = { label: 'Start application', href: APP_LINKS.quote },
   class: cls = '',
 } = Astro.props;
 ---
-<section class:list={['mt-16 rounded-card bg-ink text-white p-8 md:p-12', cls]}>
+<section class:list={['mt-16 rounded-card bg-sand p-8 md:p-12', cls]}>
   <div class="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
     <div>
-      <h2 class="text-white">{title}</h2>
-      <p class="mt-3 text-ink-300 max-w-xl">{body}</p>
-      <p class="mt-3 text-xs text-ink-400">ABN 24+ months · GST registered · Fits bank low-doc policy</p>
+      <h2>{title}</h2>
+      <p class="mt-3 text-ink-700 max-w-xl">{body}</p>
+      <p class="mt-3 text-xs text-ink-500">Trading 2+ years · Clean credit · Vehicles, trucks or equipment for business use</p>
     </div>
     <div class="flex flex-col sm:flex-row gap-3">
       <a href={primary.href} class="btn-primary">{primary.label}</a>
-      <a href={APP_LINKS.quote} class="btn-ghost border-white/20 text-white hover:bg-white/10 hover:border-white/40">Apply online</a>
+      <a href="/#quote" class="btn-ghost">See your rate</a>
     </div>
   </div>
 </section>

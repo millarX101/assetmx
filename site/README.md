@@ -6,7 +6,7 @@ The React application (quote-to-settlement, admin) stays in the repo root and is
 
 ## Principles baked into the code
 
-- **Zero client JavaScript** except the quote island (`src/islands/QuoteCalculator.tsx`, loaded `client:visible` on the home page). Everything else is raw HTML a crawler can read.
+- **Zero client JavaScript** except two home-page islands: the three-question quick start (`src/islands/QuickStart.tsx`) and the quote calculator (`src/islands/QuoteCalculator.tsx`). Everything else is raw HTML a crawler can read.
 - **One source of truth for entity data.** Name, ABN, licence, fee and limits live in `src/data/entity.ts`. Never retype them.
 - **Every rate is dated.** Rates live in `src/data/rates.ts` with `verifiedOn`. Change the date when you re-verify the panel. The footer, the rates page, the quote island and every worked example read from it.
 - **Answer first.** Content collection `answers` (20 pages) puts a standalone `shortAnswer` in frontmatter, rendered as the first block and emitted as FAQPage JSON-LD.
@@ -53,7 +53,11 @@ Two Netlify sites from one repo:
 
 Enable **Netlify Forms** on the public site: the contact form posts as plain HTML (`name="contact"`) and needs no JavaScript. Add a form notification to info@assetmx.com.au.
 
-Environment variables for the public site (optional): `PUBLIC_APP_URL` (defaults to https://app.assetmx.com.au).
+Environment variables for the public site: `PUBLIC_APP_URL` (optional, defaults to https://app.assetmx.com.au), and `PUBLIC_SUPABASE_URL` + `PUBLIC_SUPABASE_ANON_KEY` (same values as the app) so the quick start can run the ABN lookup and show the fit check on the page. Without them the ABN is passed through and looked up in the chat.
+
+## Brand
+
+Tokens live in `src/styles/global.css`: cream `#F5EAD8`, sand `#EBDDC5`, forest `#3D472B`, sage `#CCDBB2`, ink `#201E1D`. Display type is Caprasimo, body is Figtree (both Google Fonts). Source mockup: "Modern Finance Application Funnel" (Sep 2026).
 
 ## Monthly maintenance
 

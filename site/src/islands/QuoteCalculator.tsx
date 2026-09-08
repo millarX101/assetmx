@@ -1,5 +1,5 @@
 /**
- * The ONLY client-side JavaScript on the public site.
+ * One of two client islands on the public site (with QuickStart).
  * Instant, transparent quote: lender base rate by term + flat $800 fee,
  * with a like-for-like broker comparison. Hands off to the app with the
  * inputs in the query string (cross-origin, so no localStorage).
@@ -40,7 +40,7 @@ export default function QuoteCalculator({ compact = false }: { compact?: boolean
   return (
     <div className="card p-5 md:p-6 text-ink" id="quote">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-lg font-semibold">Your indicative quote</h2>
+        <h2 className="font-sans text-lg font-semibold">Your indicative quote</h2>
         <span className="pill">Rates verified {longDate(RATES.verifiedOn)}</span>
       </div>
 
@@ -52,7 +52,7 @@ export default function QuoteCalculator({ compact = false }: { compact?: boolean
         </span>
         <input
           type="range"
-          className="mt-2 w-full accent-[#00C48C]"
+          className="mt-2 w-full accent-[#3D472B]"
           min={PRICING.minAmount}
           max={PRICING.maxAmount}
           step={5_000}
@@ -78,7 +78,7 @@ export default function QuoteCalculator({ compact = false }: { compact?: boolean
               aria-checked={term === t}
               onClick={() => setTerm(t)}
               className={`rounded-lg border px-2 py-2 text-sm font-medium transition ${
-                term === t ? 'border-ink bg-ink text-white' : 'border-ink-200 bg-white hover:border-ink-400'
+                term === t ? 'border-forest bg-forest text-canvas' : 'border-ink-300 bg-paper hover:border-forest'
               }`}
             >
               {t / 12} yr
@@ -97,7 +97,7 @@ export default function QuoteCalculator({ compact = false }: { compact?: boolean
         </span>
         <input
           type="range"
-          className="mt-2 w-full accent-[#00C48C]"
+          className="mt-2 w-full accent-[#3D472B]"
           min={0}
           max={cap}
           step={5}
@@ -115,7 +115,7 @@ export default function QuoteCalculator({ compact = false }: { compact?: boolean
       <label className="mt-5 flex items-center gap-3 text-sm">
         <input
           type="checkbox"
-          className="h-4 w-4 accent-[#00C48C]"
+          className="h-4 w-4 accent-[#3D472B]"
           checked={financeFee}
           onChange={(e) => setFinanceFee(e.target.checked)}
         />
@@ -126,9 +126,9 @@ export default function QuoteCalculator({ compact = false }: { compact?: boolean
       </label>
 
       {/* Result */}
-      <div className="mt-6 rounded-card bg-ink text-white p-5">
+      <div className="mt-6 rounded-card bg-forest text-canvas p-5">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-xs uppercase tracking-[0.12em] text-ink-300">Repayment</span>
+          <span className="text-xs uppercase tracking-[0.12em] text-sage">Repayment</span>
           <div className="flex gap-1 rounded-lg bg-white/10 p-0.5 text-xs" role="radiogroup" aria-label="Repayment frequency">
             {(['weekly', 'fortnightly', 'monthly'] as Freq[]).map((f) => (
               <button
@@ -137,7 +137,7 @@ export default function QuoteCalculator({ compact = false }: { compact?: boolean
                 role="radio"
                 aria-checked={freq === f}
                 onClick={() => setFreq(f)}
-                className={`rounded-md px-2 py-1 capitalize ${freq === f ? 'bg-white text-ink' : 'text-ink-200 hover:text-white'}`}
+                className={`rounded-md px-2 py-1 capitalize ${freq === f ? 'bg-canvas text-forest' : 'text-sage-200 hover:text-canvas'}`}
               >
                 {f}
               </button>
@@ -145,34 +145,34 @@ export default function QuoteCalculator({ compact = false }: { compact?: boolean
           </div>
         </div>
         <p className="num mt-2 text-4xl font-semibold leading-none">{money(repay, 2)}</p>
-        <p className="mt-2 text-sm text-ink-300">
-          Lender base rate <span className="num font-semibold text-white">{q.ratePct.toFixed(2)}% p.a.</span> · no margin added
+        <p className="mt-2 text-sm text-sage-200">
+          Lender base rate <span className="num font-semibold text-canvas">{q.ratePct.toFixed(2)}% p.a.</span> · no margin added
         </p>
 
-        <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-white/10 pt-4 text-sm">
-          <dt className="text-ink-300">Amount financed</dt>
+        <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 border-t border-canvas/15 pt-4 text-sm">
+          <dt className="text-sage-200">Amount financed</dt>
           <dd className="num text-right">{money(q.amountFinanced)}</dd>
-          <dt className="text-ink-300">Lender establishment fee</dt>
+          <dt className="text-sage-200">Lender establishment fee</dt>
           <dd className="num text-right">{money(q.lenderEstablishmentFee)}</dd>
-          <dt className="text-ink-300">AssetMX flat fee</dt>
+          <dt className="text-sage-200">AssetMX flat fee</dt>
           <dd className="num text-right">{money(q.platformFee)} {financeFee ? '' : '(upfront)'}</dd>
-          <dt className="text-ink-300">Total interest</dt>
+          <dt className="text-sage-200">Total interest</dt>
           <dd className="num text-right">{money(q.totalInterest)}</dd>
-          <dt className="text-ink-300">Total cost of credit</dt>
-          <dd className="num text-right font-semibold text-white">{money(q.totalCost)}</dd>
+          <dt className="text-sage-200">Total cost of credit</dt>
+          <dd className="num text-right font-semibold text-canvas">{money(q.totalCost)}</dd>
         </dl>
       </div>
 
       {!compact && (
-        <div className="mt-4 rounded-card border border-ink-200 bg-ink-50 p-4 text-sm">
+        <div className="mt-4 card-sand p-4 text-sm">
           <p className="font-semibold">Same deal through a typical broker</p>
-          <p className="mt-1 text-ink-600">
+          <p className="mt-1 text-ink-700">
             Brokers typically build about {PRICING.typicalBrokerMarginPct.toFixed(0)}% commission into the rate. At{' '}
             <span className="num font-semibold text-ink">{q.brokerRatePct.toFixed(2)}%</span> the {freq} repayment would be about{' '}
             <span className="num font-semibold text-ink">{money(brokerRepay, 2)}</span>, and the total cost about{' '}
             <span className="num font-semibold text-ink">{money(q.brokerTotalCost)}</span>.
           </p>
-          <p className="mt-2 text-signal-700 font-semibold num">
+          <p className="mt-2 text-forest font-semibold num">
             Estimated difference: {money(q.saving)} over {term / 12} years.
           </p>
         </div>

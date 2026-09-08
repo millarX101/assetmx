@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { ChatMessageData } from '@/components/chat/ChatMessage';
 import {
   getStep,
@@ -35,20 +35,25 @@ export interface ChatState {
 const TYPING_DELAY = 800; // ms between bot messages
 const STORAGE_KEY = 'assetmx_chat_progress';
 const CALCULATOR_TO_CHAT_KEY = 'assetmx_calculator_quote';
+// ABN handed over by the public site quick-start; submitted as the first chat answer.
+let pendingSeedAbn: string | null = null;
 
 // Load calculator data if coming from quote calculator
-function loadCalculatorData(): { formData: QuoteInput; quote: QuoteResult; payFeeUpfront: boolean } | null {
+function loadCalculatorData(): { formData: QuoteInput; quote: QuoteResult; payFeeUpfront: boolean; seedAbn?: string } | null {
   try {
     // Public site quote island (assetmx.com.au) hands off via the query string,
     // because localStorage is not shared across origins.
     const params = new URLSearchParams(window.location.search);
     const amount = Number(params.get('amount'));
-    const term = Number(params.get('term'));
+    const term = Number(params.get('term')) || 60;
+    const assetParam = params.get('asset');
+    const assetType: QuoteInput['assetType'] = assetParam === 'truck' || assetParam === 'equipment' ? assetParam : 'vehicle';
+    const seedAbn = (params.get('abn') || '').replace(/[^0-9]/g, '');
     if (amount >= 5000 && amount <= 500000 && term >= 12 && term <= 84) {
       const balloonPercentage = Math.max(0, Math.min(Number(params.get('balloon') ?? 0) || 0, getMaxBalloon(term)));
       const financePlatformFee = params.get('fee') !== 'upfront';
       const formData: QuoteInput = {
-        assetType: 'vehicle',
+        assetType,
         assetCondition: 'new',
         loanAmount: amount,
         termMonths: term,
@@ -58,7 +63,7 @@ function loadCalculatorData(): { formData: QuoteInput; quote: QuoteResult; payFe
       const quote = calculateQuote(formData) as unknown as QuoteResult;
       // Strip the params so a refresh does not re-seed the chat
       window.history.replaceState({}, '', window.location.pathname);
-      return { formData, quote, payFeeUpfront: !financePlatformFee };
+      return { formData, quote, payFeeUpfront: !financePlatformFee, seedAbn: seedAbn.length === 11 ? seedAbn : undefined };
     }
     const data = localStorage.getItem(CALCULATOR_TO_CHAT_KEY);
     if (data) {
@@ -189,6 +194,7 @@ export function useChatApplication() {
       clearSavedState();
 
       const { formData, quote } = calculatorData;
+      if (calculatorData.seedAbn) pendingSeedAbn = calculatorData.seedAbn;
       const startStep = getStep('greeting')!;
 
       // Pre-fill application with calculator data
@@ -1156,6 +1162,17 @@ export function useChatApplication() {
       await handleUserInput(input);
     }
   }, [state.currentStepId, handleResumeChoice, handleUserInput]);
+
+  // Auto-submit the ABN from the public site quick-start as the first answer
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current || !pendingSeedAbn || state.currentStepId !== 'greeting') return;
+    seededRef.current = true;
+    const abn = pendingSeedAbn;
+    pendingSeedAbn = null;
+    const t = setTimeout(() => { void handleInput(abn); }, 1500);
+    return () => clearTimeout(t);
+  }, [handleInput, state.currentStepId]);
 
   // Reset the chat
   const resetChat = useCallback(() => {
