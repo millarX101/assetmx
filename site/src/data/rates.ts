@@ -8,8 +8,8 @@ export const RATES = {
   verifiedOn: '2026-09-08',
   source: 'AssetMX lender panel rate sheets',
   byTerm: [
-    { termMonths: 12, ratePct: 8.49 },
-    { termMonths: 24, ratePct: 7.49 },
+    { termMonths: 12, ratePct: 9.10 },
+    { termMonths: 24, ratePct: 8.10 },
     { termMonths: 36, ratePct: 7.50 },
     { termMonths: 48, ratePct: 7.50 },
     { termMonths: 60, ratePct: 7.50 },
