@@ -29,7 +29,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { formatCurrency, formatPercentage } from '@/lib/calculator';
 import { Search, Download, Eye, Clock } from 'lucide-react';
-import type { Lead, LeadStatus } from '@/types/database';
+import type { FlwupStatus, Lead, LeadStatus } from '@/types/database';
 
 const statusColors: Record<LeadStatus, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'info'> = {
   new: 'info',
@@ -45,6 +45,16 @@ const statusLabels: Record<LeadStatus, string> = {
   qualified: 'Qualified',
   converted: 'Converted',
   lost: 'Lost',
+};
+
+// Whether FLWUP has this lead. A null status means the database webhook never
+// reached the sync function — that row needs replaying, and hiding it behind a
+// dash would make the one failure that matters look like nothing happened.
+const flwupBadge: Record<FlwupStatus, { label: string; variant: 'success' | 'secondary' | 'warning' | 'destructive' }> = {
+  created: { label: 'In FLWUP', variant: 'success' },
+  duplicate: { label: 'In FLWUP (existing)', variant: 'secondary' },
+  skipped: { label: 'No contact details', variant: 'warning' },
+  error: { label: 'FLWUP rejected', variant: 'destructive' },
 };
 
 export function AdminLeads() {
@@ -279,6 +289,7 @@ export function AdminLeads() {
                     <TableHead>Loan Details</TableHead>
                     <TableHead>Rate</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>FLWUP</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -323,6 +334,20 @@ export function AdminLeads() {
                         <Badge variant={statusColors[lead.status]}>
                           {statusLabels[lead.status]}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {lead.flwup_status ? (
+                          <Badge
+                            variant={flwupBadge[lead.flwup_status].variant}
+                            title={lead.flwup_error ?? lead.flwup_deal_id ?? undefined}
+                          >
+                            {flwupBadge[lead.flwup_status].label}
+                          </Badge>
+                        ) : (
+                          <Badge variant="warning" title="Webhook never fired — replay via flwup-sync">
+                            Not synced
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button

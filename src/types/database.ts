@@ -28,7 +28,15 @@ export interface Lead {
   reason: string | null;
   source: string | null;
   consent_to_share: boolean;
+  // FLWUP sync outcome, written by supabase/functions/flwup-sync.
+  // null = webhook never fired (replay it); see the function's README.
+  flwup_deal_id: string | null;
+  flwup_status: FlwupStatus | null;
+  flwup_synced_at: string | null;
+  flwup_error: string | null;
 }
+
+export type FlwupStatus = 'created' | 'duplicate' | 'skipped' | 'error';
 
 export interface RateConfig {
   id: string;
