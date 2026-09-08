@@ -135,7 +135,7 @@ export function ChatApplication() {
               <div key={message.id} className="mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <ChatSummaryCard
                   data={getApplicationSummary()}
-                  onEdit={() => selectOption(`Need to change something`)}
+                  onEdit={() => selectOption('Edit details')}
                 />
               </div>
             );

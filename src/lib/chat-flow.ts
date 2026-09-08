@@ -2,6 +2,7 @@
 // Each step represents a point in the conversation
 
 import { validateABN, cleanABN, type ABNSearchResult } from './abn-lookup';
+import { getMaxBalloon, PLATFORM_FEE, LENDER_ESTABLISHMENT_FEE } from './calculator';
 import type { ApplicationData } from '@/types/application';
 
 export type InputType = 'text' | 'select' | 'number' | 'date' | 'email' | 'phone' | 'confirm' | 'abn_select' | 'file_upload';
@@ -13,7 +14,7 @@ export interface ChatStep {
   messages: string[] | ((data: ChatFlowData) => string[]);
   inputType: InputType;
   options?: string[] | ((data: ChatFlowData) => string[]);
-  field?: string;  // Dot notation path e.g. 'business.abn', 'directors.0.firstName'
+  field?: string;  // Dot notation path e.g. 'business.abn', 'directors.directors.0.firstName'
   placeholder?: string;
   validate?: (value: string, data: ChatFlowData) => string | null;  // Returns error message or null
   action?: ChatAction;
@@ -73,6 +74,9 @@ export interface ChatFlowData {
   }[];
   // Flag indicating user came from calculator with pre-filled data
   fromCalculator?: boolean;
+  // Set once the application row has been inserted - guards against double submission
+  submittedApplicationId?: string;
+  submissionError?: string;
 }
 
 // Helper to format currency
@@ -83,6 +87,18 @@ const formatMoney = (amount: number): string => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+};
+
+// Term (in months) currently selected, defaulting to 60 until the applicant chooses
+const currentTermMonths = (data: ChatFlowData): number => {
+  const term = Number(data.application.loan?.termMonths);
+  return term > 0 ? term : 60;
+};
+
+// Human label for the current term, e.g. "5 years"
+const termLabel = (data: ChatFlowData): string => {
+  const years = Math.round(currentTermMonths(data) / 12);
+  return `${years} year${years === 1 ? '' : 's'}`;
 };
 
 // Helper to format date for display
@@ -134,6 +150,19 @@ const yearsSince = (dateStr: string): number => {
   return Math.floor(years);
 };
 
+// Calculate whole months since a date (used for the ABN/GST age messages)
+const monthsSince = (dateStr: string): number => {
+  const date = parseDate(dateStr);
+  if (!date) {
+    console.warn('[Chat] monthsSince: Invalid date string:', dateStr);
+    return 0;
+  }
+  const now = new Date();
+  let months = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
+  if (now.getDate() < date.getDate()) months -= 1;
+  return Math.max(0, months);
+};
+
 // Validation helpers
 const validateEmail = (email: string): string | null => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -152,9 +181,10 @@ const validatePhone = (phone: string): string | null => {
 };
 
 const validateAmount = (value: string): string | null => {
-  const amount = parseFloat(value.replace(/[,$]/g, ''));
-  if (isNaN(amount) || amount <= 0) {
-    return "Enter amount as a number (e.g. 75000).";
+  // Accepts the formats the placeholders advertise: 75000, 75k, 75,000, $75 000
+  const amount = parseAmount(value);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return "Enter amount as a number (e.g. 75000 or 75k).";
   }
   if (amount < 5000) {
     return "Minimum finance amount: $5,000.";
@@ -163,6 +193,15 @@ const validateAmount = (value: string): string | null => {
     return "For amounts over $500k, contact us directly.";
   }
   return null;
+};
+
+// Map the address-duration answer to a number of months
+export const addressAnswerToMonths = (answer: string): number => {
+  const a = answer.toLowerCase();
+  if (a.includes('less than 6')) return 3;
+  if (a.includes('6-12')) return 9;
+  if (a.includes('1-2')) return 18;
+  return 24; // "2+ years"
 };
 
 // Parse amount from natural input (handles "75k", "$75,000", "75000" etc)
@@ -187,7 +226,7 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: [
       "I'm the AssetMX Express Assistant.",
       "I'll check your eligibility and guide you through the application.",
-      "Because I handle the heavy lifting, we can offer faster approvals and lower fees.",
+      "Because it is all online, there is one flat $800 fee and no commission built into your rate - you see the lender's base rate as it is.",
       "Let's start - what's your business name?"
     ],
     inputType: 'text',
@@ -314,12 +353,13 @@ export const CHAT_FLOW: ChatStep[] = [
       // Check eligibility - ABN 2+ years
       if (!data.abnLookup) return 'abn_retry';
 
-      // If we have a registration date, check the 2 year requirement
-      // If no date is available (API didn't return it), skip this check
-      if (data.abnLookup.abnRegisteredDate) {
-        const abnYears = yearsSince(data.abnLookup.abnRegisteredDate);
-        if (abnYears < 2) return 'abn_too_young';
+      // Trading history is a hard requirement - if the register gave us no date we cannot
+      // verify it, so fail closed rather than letting the applicant through unchecked.
+      if (!data.abnLookup.abnRegisteredDate) {
+        return 'abn_unverified';
       }
+      const abnYears = yearsSince(data.abnLookup.abnRegisteredDate);
+      if (abnYears < 2) return 'abn_too_young';
 
       // Check GST registration
       if (!data.abnLookup.gstRegistered) return 'no_gst_warning';
@@ -330,6 +370,24 @@ export const CHAT_FLOW: ChatStep[] = [
         if (gstYears < 2) return 'gst_too_young';
       }
       return 'eligibility_pass';
+    },
+  },
+
+  {
+    id: 'abn_unverified',
+    messages: [
+      "We could not confirm your trading history from the register.",
+      "We need to verify this manually before we can continue online.",
+      "Leave your details and our team will check it for you?"
+    ],
+    inputType: 'select',
+    options: ["Yes, take my details", "No thanks"],
+    nextStep: (answer, data) => {
+      if (answer.toLowerCase().includes('no')) {
+        return 'end_saved';
+      }
+      data.lead = { ...(data.lead || {}), reason: 'Could not verify ABN trading history from the register' };
+      return 'lead_capture_asset_type';
     },
   },
 
@@ -349,8 +407,7 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'abn_too_young',
     messages: (data) => {
-      const years = data.abnLookup ? yearsSince(data.abnLookup.abnRegisteredDate) : 0;
-      const months = Math.round(years * 12);
+      const months = data.abnLookup ? monthsSince(data.abnLookup.abnRegisteredDate) : 0;
       return [
         `Your ABN is ${months} months old.`,
         "AssetMX Express requires 2+ years ABN registration.",
@@ -364,8 +421,7 @@ export const CHAT_FLOW: ChatStep[] = [
         return 'end_saved';
       }
       // Auto-set reason for disqualification
-      const years = data.abnLookup ? yearsSince(data.abnLookup.abnRegisteredDate) : 0;
-      const months = Math.round(years * 12);
+      const months = data.abnLookup ? monthsSince(data.abnLookup.abnRegisteredDate) : 0;
       data.lead = { ...(data.lead || {}), reason: `ABN only ${months} months old (need 2+ years)` };
       return 'lead_capture_asset_type';
     },
@@ -374,8 +430,7 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'gst_too_young',
     messages: (data) => {
-      const gstYears = data.abnLookup?.gstRegisteredDate ? yearsSince(data.abnLookup.gstRegisteredDate) : 0;
-      const gstMonths = Math.round(gstYears * 12);
+      const gstMonths = data.abnLookup?.gstRegisteredDate ? monthsSince(data.abnLookup.gstRegisteredDate) : 0;
       return [
         `GST registration: ${gstMonths} months.`,
         "AssetMX Express requires 2+ years GST registration.",
@@ -389,8 +444,7 @@ export const CHAT_FLOW: ChatStep[] = [
         return 'end_saved';
       }
       // Auto-set reason for disqualification
-      const gstYears = data.abnLookup?.gstRegisteredDate ? yearsSince(data.abnLookup.gstRegisteredDate) : 0;
-      const gstMonths = Math.round(gstYears * 12);
+      const gstMonths = data.abnLookup?.gstRegisteredDate ? monthsSince(data.abnLookup.gstRegisteredDate) : 0;
       data.lead = { ...(data.lead || {}), reason: `GST registration only ${gstMonths} months (need 2+ years)` };
       return 'lead_capture_asset_type';
     },
@@ -417,11 +471,20 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'eligibility_pass',
-    messages: [
-      "✓ ABN check: Passed",
-      "✓ GST check: Passed",
-      "You meet AssetMX Express business requirements. Now let's check the asset."
-    ],
+    // Only tick the checks that actually ran against register data
+    messages: (data) => {
+      const lines: string[] = [];
+      if (data.abnLookup?.abnRegisteredDate) {
+        lines.push(`✓ ABN check: Passed (${monthsSince(data.abnLookup.abnRegisteredDate)} months trading)`);
+      }
+      if (data.abnLookup?.gstRegistered) {
+        lines.push(data.abnLookup.gstRegisteredDate
+          ? `✓ GST check: Passed (registered ${monthsSince(data.abnLookup.gstRegisteredDate)} months)`
+          : "✓ GST check: Registered for GST");
+      }
+      lines.push("You meet AssetMX Express business requirements. Now let's check the asset.");
+      return lines;
+    },
     inputType: 'confirm',
     options: [],
     nextStep: 'eligibility_asset_type',
@@ -459,8 +522,8 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'ev_use_type',
     messages: [
       "All the hype around EVs is novated leasing - but did you know switching to an EV for your business vehicle has huge benefits too?",
-      "• Business use: Green discounts, GST credits, depreciation - same $800 flat fee",
-      "• Personal use: Novated leasing through millarX (FBT exempt until 2027)",
+      "• Business use: GST credits and depreciation, with the same flat $800 fee.",
+      "• Personal use: novated leasing through millarX - FBT concessions may apply to eligible EVs, and the millarX team will confirm what applies to you.",
       "Which applies to you?"
     ],
     inputType: 'select',
@@ -513,7 +576,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'ev_novated_complete',
     messages: [
       "Details captured.",
-      "The millarX team will be in touch within 24 hours to discuss your novated lease options.",
+      "The millarX team will be in touch within one business day to discuss your novated lease options.",
       "They'll explain FBT exemptions, salary packaging setup, and running cost bundles."
     ],
     inputType: 'confirm',
@@ -543,13 +606,13 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_asset_age',
     messages: [
-      "AssetMX Express finances assets up to 3 years old only.",
-      "Is your asset under 3 years old?"
+      "The asset needs to be no more than 15 years old at the end of the loan term.",
+      "How old is the asset now?"
     ],
     inputType: 'select',
-    options: ["Yes, under 3 years", "No, it's older"],
+    options: ["Under 10 years", "10 to 15 years", "Over 15 years"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('older') || answer.toLowerCase().includes('no')) {
+      if (answer.toLowerCase().includes('over')) {
         return 'eligibility_older_asset';
       }
       return 'eligibility_property';
@@ -559,7 +622,7 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_older_asset',
     messages: [
-      "Assets over 3 years old don't qualify for AssetMX Express.",
+      "Assets over 15 years old sit outside our low-doc lender policy.",
       "Leave your details for manual review?"
     ],
     inputType: 'select',
@@ -569,7 +632,7 @@ export const CHAT_FLOW: ChatStep[] = [
         return 'end_saved';
       }
       // Auto-set reason for disqualification
-      data.lead = { ...(data.lead || {}), reason: 'Asset too old (over 3 years)' };
+      data.lead = { ...(data.lead || {}), reason: 'Asset too old (over 15 years)' };
       return 'lead_capture_asset_type';
     },
   },
@@ -631,11 +694,11 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_loan_amount',
     messages: [
-      "AssetMX Express covers loans from $10,000 to $150,000.",
+      "We finance from $5,000 to $500,000.",
       "What's your loan amount?"
     ],
     inputType: 'select',
-    options: ["$10k - $50k", "$50k - $100k", "$100k - $150k", "Over $150k"],
+    options: ["$5k - $50k", "$50k - $150k", "$150k - $500k", "Over $500k"],
     nextStep: (answer) => {
       if (answer.toLowerCase().includes('over')) {
         return 'eligibility_over_150k';
@@ -647,8 +710,8 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'eligibility_over_150k',
     messages: [
-      "Loans over $150,000 don't qualify for AssetMX Express.",
-      "Leave details for manual assessment?"
+      "Amounts over $500,000 sit outside our low-doc lender policy.",
+      "Leave your details and we will assess it manually?"
     ],
     inputType: 'select',
     options: ["Yes, take my details", "No thanks"],
@@ -657,7 +720,7 @@ export const CHAT_FLOW: ChatStep[] = [
         return 'end_saved';
       }
       // Auto-set reason for disqualification
-      data.lead = { ...(data.lead || {}), reason: 'Loan amount over $150k' };
+      data.lead = { ...(data.lead || {}), reason: 'Loan amount over $500k' };
       return 'lead_capture_asset_type';
     },
   },
@@ -782,11 +845,11 @@ export const CHAT_FLOW: ChatStep[] = [
       const consented = data.lead?.consentToShare;
       if (consented) {
         return [
-          "Great! Our team or one of our trusted partners will be in touch within 24 hours to discuss your options."
+          "Great! Our team or one of our trusted partners will be in touch within one business day to discuss your options."
         ];
       }
       return [
-        "No problem. Our team will contact you within 24 hours."
+        "No problem. Our team will contact you within one business day."
       ];
     },
     inputType: 'select',
@@ -946,12 +1009,15 @@ export const CHAT_FLOW: ChatStep[] = [
       if (!quote) {
         return [
           `Price: ${formatMoney(price)}`,
-          "Calculating estimate..."
+          "I can't price that just yet - we'll confirm the numbers at the review step.",
+          "Continue to full application?"
         ];
       }
       return [
         `Price: ${formatMoney(price)}`,
-        `Indicative repayment: ~${formatMoney(quote.monthlyRepayment)}/month over 5 years (~${formatMoney(quote.weeklyRepayment || quote.monthlyRepayment / 4.33)}/week) at ${quote.indicativeRate.toFixed(2)}% p.a.`,
+        `Indicative repayment: ~${formatMoney(quote.monthlyRepayment)}/month (~${formatMoney(quote.weeklyRepayment || quote.monthlyRepayment / 4.33)}/week) at ${quote.indicativeRate.toFixed(2)}% p.a. lender base rate over ${termLabel(data)}.`,
+        `That includes the flat ${formatMoney(PLATFORM_FEE)} AssetMX fee and the ${formatMoney(LENDER_ESTABLISHMENT_FEE)} lender establishment fee financed into the loan.`,
+        "Indicative only - not an offer of credit.",
         "Continue to full application?"
       ];
     },
@@ -985,7 +1051,7 @@ export const CHAT_FLOW: ChatStep[] = [
       "Email address?"
     ],
     inputType: 'email',
-    field: 'directors.0.email',
+    field: 'directors.directors.0.email',
     placeholder: "your@email.com",
     validate: validateEmail,
     nextStep: 'director_phone',
@@ -995,7 +1061,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'director_phone',
     messages: ["Mobile number?"],
     inputType: 'phone',
-    field: 'directors.0.phone',
+    field: 'directors.directors.0.phone',
     placeholder: "04XX XXX XXX",
     validate: validatePhone,
     nextStep: 'director_assets',
@@ -1020,7 +1086,7 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: ["Do you own your home?"],
     inputType: 'select',
     options: ["Yes", "No"],
-    field: 'directors.0.ownsProperty',
+    field: 'directors.directors.0.ownsProperty',
     nextStep: (answer) => {
       if (answer.toLowerCase() === 'yes') {
         return 'asset_property_value';
@@ -1033,7 +1099,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'asset_property_value',
     messages: ["Estimated home value?"],
     inputType: 'number',
-    field: 'directors.0.propertyValue',
+    field: 'directors.directors.0.propertyValue',
     placeholder: "e.g. 800000",
     nextStep: 'asset_property_mortgage',
   },
@@ -1042,7 +1108,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'asset_property_mortgage',
     messages: ["Outstanding mortgage balance?"],
     inputType: 'number',
-    field: 'directors.0.mortgageBalance',
+    field: 'directors.directors.0.mortgageBalance',
     placeholder: "e.g. 400000 (enter 0 if paid off)",
     nextStep: 'asset_investment_property',
   },
@@ -1053,7 +1119,7 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: ["Any investment properties?"],
     inputType: 'select',
     options: ["Yes", "No"],
-    field: 'directors.0.hasInvestmentProperty',
+    field: 'directors.directors.0.hasInvestmentProperty',
     nextStep: (answer) => {
       if (answer.toLowerCase() === 'yes') {
         return 'asset_investment_value';
@@ -1066,7 +1132,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'asset_investment_value',
     messages: ["Total investment property value?"],
     inputType: 'number',
-    field: 'directors.0.investmentPropertyValue',
+    field: 'directors.directors.0.investmentPropertyValue',
     placeholder: "e.g. 600000",
     nextStep: 'asset_investment_mortgage',
   },
@@ -1075,7 +1141,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'asset_investment_mortgage',
     messages: ["Outstanding investment mortgage balance?"],
     inputType: 'number',
-    field: 'directors.0.investmentMortgageBalance',
+    field: 'directors.directors.0.investmentMortgageBalance',
     placeholder: "e.g. 450000 (enter 0 if paid off)",
     nextStep: 'asset_vehicles',
   },
@@ -1085,10 +1151,10 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'asset_vehicles',
     messages: ["Total value of vehicles you own?"],
     inputType: 'number',
-    field: 'directors.0.vehiclesValue',
+    field: 'directors.directors.0.vehiclesValue',
     placeholder: "e.g. 45000 (enter 0 if none)",
     nextStep: (answer) => {
-      const value = Number(answer) || 0;
+      const value = parseAmount(answer) || 0;
       if (value > 0) {
         return 'asset_vehicles_loan';
       }
@@ -1100,7 +1166,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'asset_vehicles_loan',
     messages: ["Outstanding car loan balance?"],
     inputType: 'number',
-    field: 'directors.0.vehicleLoanBalance',
+    field: 'directors.directors.0.vehicleLoanBalance',
     placeholder: "e.g. 20000 (enter 0 if paid off)",
     nextStep: 'liability_credit_cards',
   },
@@ -1110,7 +1176,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'liability_credit_cards',
     messages: ["Total credit card limit? (all cards combined)"],
     inputType: 'number',
-    field: 'directors.0.creditCardLimit',
+    field: 'directors.directors.0.creditCardLimit',
     placeholder: "e.g. 15000 (enter 0 if none)",
     nextStep: 'credit_card_outstanding',
   },
@@ -1120,11 +1186,11 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'credit_card_outstanding',
     messages: ["How much is currently outstanding on your credit cards?"],
     inputType: 'number',
-    field: 'directors.0.creditCardOutstanding',
+    field: 'directors.directors.0.creditCardOutstanding',
     placeholder: "e.g. 5000 (enter 0 if fully paid)",
     skipIf: (data) => {
-      const directors = data.application.directors as unknown as Array<{ creditCardLimit?: number }>;
-      return !directors?.[0]?.creditCardLimit || Number(directors[0].creditCardLimit) === 0;
+      const director = data.application.directors?.directors?.[0];
+      return !director?.creditCardLimit || Number(director.creditCardLimit) === 0;
     },
     nextStep: 'monthly_mortgage_payment',
   },
@@ -1134,11 +1200,11 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'monthly_mortgage_payment',
     messages: ["What's your monthly mortgage payment?"],
     inputType: 'number',
-    field: 'directors.0.monthlyMortgagePayment',
+    field: 'directors.directors.0.monthlyMortgagePayment',
     placeholder: "e.g. 2500 (enter 0 if none)",
     skipIf: (data) => {
-      const directors = data.application.directors as unknown as Array<{ ownsProperty?: boolean; mortgageBalance?: number }>;
-      return !directors?.[0]?.ownsProperty || !directors?.[0]?.mortgageBalance || Number(directors[0].mortgageBalance) === 0;
+      const director = data.application.directors?.directors?.[0];
+      return !director?.ownsProperty || !director?.mortgageBalance || Number(director.mortgageBalance) === 0;
     },
     nextStep: 'monthly_vehicle_payment',
   },
@@ -1147,11 +1213,11 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'monthly_vehicle_payment',
     messages: ["What's your monthly vehicle loan payment?"],
     inputType: 'number',
-    field: 'directors.0.monthlyVehicleLoanPayment',
+    field: 'directors.directors.0.monthlyVehicleLoanPayment',
     placeholder: "e.g. 600 (enter 0 if none)",
     skipIf: (data) => {
-      const directors = data.application.directors as unknown as Array<{ vehicleLoanBalance?: number }>;
-      return !directors?.[0]?.vehicleLoanBalance || Number(directors[0].vehicleLoanBalance) === 0;
+      const director = data.application.directors?.directors?.[0];
+      return !director?.vehicleLoanBalance || Number(director.vehicleLoanBalance) === 0;
     },
     nextStep: 'monthly_credit_card_payment',
   },
@@ -1160,11 +1226,11 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'monthly_credit_card_payment',
     messages: ["What's your typical monthly credit card payment?"],
     inputType: 'number',
-    field: 'directors.0.monthlyCreditCardPayment',
+    field: 'directors.directors.0.monthlyCreditCardPayment',
     placeholder: "e.g. 500 (minimum payment)",
     skipIf: (data) => {
-      const directors = data.application.directors as unknown as Array<{ creditCardLimit?: number }>;
-      return !directors?.[0]?.creditCardLimit || Number(directors[0].creditCardLimit) === 0;
+      const director = data.application.directors?.directors?.[0];
+      return !director?.creditCardLimit || Number(director.creditCardLimit) === 0;
     },
     nextStep: 'income_salary',
   },
@@ -1174,7 +1240,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'income_salary',
     messages: ["Now for income. What's your annual salary/wages? (before tax)"],
     inputType: 'number',
-    field: 'directors.0.annualSalary',
+    field: 'directors.directors.0.annualSalary',
     placeholder: "e.g. 85000",
     nextStep: 'income_other',
   },
@@ -1183,7 +1249,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'income_other',
     messages: ["Any other regular income? (dividends, rental, etc.)"],
     inputType: 'number',
-    field: 'directors.0.otherIncome',
+    field: 'directors.directors.0.otherIncome',
     placeholder: "e.g. 10000 per year (enter 0 if none)",
     nextStep: 'living_expenses',
   },
@@ -1192,7 +1258,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'living_expenses',
     messages: ["Estimate your monthly living expenses (food, utilities, insurance, etc.)"],
     inputType: 'number',
-    field: 'directors.0.monthlyLivingExpenses',
+    field: 'directors.directors.0.monthlyLivingExpenses',
     placeholder: "e.g. 3000",
     nextStep: 'director_net_position',
   },
@@ -1201,22 +1267,7 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'director_net_position',
     messages: (data) => {
-      const directors = data.application.directors as unknown as Array<{
-        propertyValue?: number;
-        mortgageBalance?: number;
-        investmentPropertyValue?: number;
-        investmentMortgageBalance?: number;
-        vehiclesValue?: number;
-        vehicleLoanBalance?: number;
-        creditCardLimit?: number;
-        annualSalary?: number;
-        otherIncome?: number;
-        monthlyMortgagePayment?: number;
-        monthlyVehicleLoanPayment?: number;
-        monthlyCreditCardPayment?: number;
-        monthlyLivingExpenses?: number;
-      }>;
-      const d = directors?.[0];
+      const d = data.application.directors?.directors?.[0];
 
       const totalAssets =
         (Number(d?.propertyValue) || 0) +
@@ -1260,7 +1311,8 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'more_directors',
     messages: (data) => {
       const entityType = data.abnLookup?.entityType?.toLowerCase() || '';
-      if (entityType.includes('sole trader') || entityType.includes('individual')) {
+      // mapEntityType returns the enum value 'sole_trader' (underscore), not 'sole trader'
+      if (entityType.includes('sole_trader') || entityType.includes('sole trader') || entityType.includes('individual')) {
         return ["Sole trader - no additional directors required."];
       }
       return ["Any additional directors or guarantors on this application?"];
@@ -1268,14 +1320,16 @@ export const CHAT_FLOW: ChatStep[] = [
     inputType: 'select',
     options: (data) => {
       const entityType = data.abnLookup?.entityType?.toLowerCase() || '';
-      if (entityType.includes('sole trader') || entityType.includes('individual')) {
+      // mapEntityType returns the enum value 'sole_trader' (underscore), not 'sole trader'
+      if (entityType.includes('sole_trader') || entityType.includes('sole trader') || entityType.includes('individual')) {
         return ["Continue"];
       }
       return ["Just me", "Yes, add another"];
     },
     nextStep: (answer, data) => {
       const entityType = data.abnLookup?.entityType?.toLowerCase() || '';
-      if (entityType.includes('sole trader') || entityType.includes('individual')) {
+      // mapEntityType returns the enum value 'sole_trader' (underscore), not 'sole trader'
+      if (entityType.includes('sole_trader') || entityType.includes('sole trader') || entityType.includes('individual')) {
         return 'loan_term';
       }
       if (answer.toLowerCase().includes('another') || answer.toLowerCase().includes('yes')) {
@@ -1307,7 +1361,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'additional_director_email_request',
     messages: ["What's their email address? We'll send them a quick form to complete."],
     inputType: 'email',
-    field: 'directors.1.email',
+    field: 'directors.directors.1.email',
     placeholder: "their@email.com",
     validate: validateEmail,
     nextStep: 'additional_director_email_sent',
@@ -1331,7 +1385,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'additional_director_email',
     messages: ["Their email address?"],
     inputType: 'email',
-    field: 'directors.1.email',
+    field: 'directors.directors.1.email',
     placeholder: "their@email.com",
     validate: validateEmail,
     nextStep: 'additional_director_property_owner',
@@ -1343,7 +1397,7 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: ["Do they own property in Australia?"],
     inputType: 'select',
     options: ["Yes", "No", "Not sure"],
-    field: 'directors.1.ownsProperty',
+    field: 'directors.directors.1.ownsProperty',
     nextStep: 'additional_director_done',
   },
 
@@ -1374,10 +1428,10 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'balloon_preference',
     messages: (data) => {
-      const termMonths = data.application.loan?.termMonths || 60;
+      const termMonths = currentTermMonths(data);
       const termYears = Math.ceil(termMonths / 12);
-      // Max balloon based on term: 1yr=60%, 2yr=55%, 3yr=50%, 4yr=40%, 5yr=30%
-      const maxBalloon = termYears === 1 ? 60 : termYears === 2 ? 55 : termYears === 3 ? 50 : termYears === 4 ? 40 : 30;
+      // Single source of truth for balloon caps (calculator.ts MAX_BALLOON_BY_TERM)
+      const maxBalloon = getMaxBalloon(termMonths);
       return [
         "Do you want a balloon payment at the end?",
         `(For a ${termYears} year term, max balloon is ${maxBalloon}%)`
@@ -1385,19 +1439,12 @@ export const CHAT_FLOW: ChatStep[] = [
     },
     inputType: 'select',
     options: (data) => {
-      const termMonths = data.application.loan?.termMonths || 60;
-      const termYears = Math.ceil(termMonths / 12);
-      // Max balloon based on term: 1yr=60%, 2yr=55%, 3yr=50%, 4yr=40%, 5yr=30%
-      const maxBalloon = termYears === 1 ? 60 : termYears === 2 ? 55 : termYears === 3 ? 50 : termYears === 4 ? 40 : 30;
+      const maxBalloon = getMaxBalloon(currentTermMonths(data));
 
       const options = ["No balloon - own it outright"];
-      if (maxBalloon >= 10) options.push("10% balloon");
-      if (maxBalloon >= 20) options.push("20% balloon");
-      if (maxBalloon >= 30) options.push("30% balloon");
-      if (maxBalloon >= 40) options.push("40% balloon");
-      if (maxBalloon >= 50) options.push("50% balloon");
-      if (maxBalloon >= 55) options.push("55% balloon");
-      if (maxBalloon >= 60) options.push("60% balloon");
+      for (const pct of [10, 20, 30, 40, 50, 60, 65]) {
+        if (pct <= maxBalloon) options.push(`${pct}% balloon`);
+      }
       options.push("What's a balloon?");
       return options;
     },
@@ -1413,10 +1460,7 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'balloon_explain',
     messages: (data) => {
-      const termMonths = data.application.loan?.termMonths || 60;
-      const termYears = Math.ceil(termMonths / 12);
-      // Max balloon based on term: 1yr=60%, 2yr=55%, 3yr=50%, 4yr=40%, 5yr=30%
-      const maxBalloon = termYears === 1 ? 60 : termYears === 2 ? 55 : termYears === 3 ? 50 : termYears === 4 ? 40 : 30;
+      const maxBalloon = getMaxBalloon(currentTermMonths(data));
       return [
         "Good question!",
         "A balloon is a lump sum you pay at the end of the loan.",
@@ -1427,10 +1471,7 @@ export const CHAT_FLOW: ChatStep[] = [
     },
     inputType: 'select',
     options: (data) => {
-      const termMonths = data.application.loan?.termMonths || 60;
-      const termYears = Math.ceil(termMonths / 12);
-      // Max balloon based on term: 1yr=60%, 2yr=55%, 3yr=50%, 4yr=40%, 5yr=30%
-      const maxBalloon = termYears === 1 ? 60 : termYears === 2 ? 55 : termYears === 3 ? 50 : termYears === 4 ? 40 : 30;
+      const maxBalloon = getMaxBalloon(currentTermMonths(data));
       return ["No balloon - own it outright", `Lower payments (${maxBalloon}% balloon)`];
     },
     field: 'loan.balloonPercentage',
@@ -1456,6 +1497,23 @@ export const CHAT_FLOW: ChatStep[] = [
     inputType: 'number',
     field: 'loan.depositAmount',
     placeholder: "e.g. 10000",
+    validate: (value, data) => {
+      const deposit = parseAmount(value);
+      if (!Number.isFinite(deposit)) {
+        return "Enter the deposit as a number (e.g. 10000 or 10k).";
+      }
+      if (deposit < 0) {
+        return "Deposit can't be less than zero.";
+      }
+      const price = Number(data.application.asset?.assetPriceIncGst) || 0;
+      const maxDeposit = price - 5000;
+      if (price > 0 && deposit > maxDeposit) {
+        return maxDeposit <= 0
+          ? `We finance a minimum of ${formatMoney(5000)}, so we can't take a deposit on a ${formatMoney(price)} asset.`
+          : `We finance a minimum of ${formatMoney(5000)}, so on a ${formatMoney(price)} asset the most you can put in is ${formatMoney(maxDeposit)}.`;
+      }
+      return null;
+    },
     nextStep: 'final_review',
   },
 
@@ -1484,7 +1542,8 @@ export const CHAT_FLOW: ChatStep[] = [
     inputType: 'select',
     options: ["Business details", "Asset details", "Personal details", "Loan setup"],
     nextStep: (answer) => {
-      if (answer.toLowerCase().includes('business')) return 'greeting';
+      // Re-enter the business section without wiping the application (D-2)
+      if (answer.toLowerCase().includes('business')) return 'abn_manual_entry';
       if (answer.toLowerCase().includes('asset')) return 'asset_condition';
       if (answer.toLowerCase().includes('personal')) return 'director_intro';
       if (answer.toLowerCase().includes('loan')) return 'loan_term';
@@ -1528,24 +1587,10 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: ["How long at your current address?"],
     inputType: 'select',
     options: ["Less than 6 months", "6-12 months", "1-2 years", "2+ years"],
-    field: 'directors.0.addressYearsMonths',
-    nextStep: (answer, data) => {
-      // Map answer to months and store
-      let months = 24; // default to 2+ years
-      if (answer.toLowerCase().includes('less than 6')) {
-        months = 3;
-      } else if (answer.toLowerCase().includes('6-12')) {
-        months = 9;
-      } else if (answer.toLowerCase().includes('1-2')) {
-        months = 18;
-      }
-
-      // Store the months value
-      const directors = data.application.directors as unknown as { directors?: Array<{ addressMonths?: number }> };
-      if (directors?.directors?.[0]) {
-        directors.directors[0].addressMonths = months;
-      }
-
+    // Stored as a number of months via mapOptionToValue (see addressMonths mapping below)
+    field: 'directors.directors.0.addressMonths',
+    nextStep: (answer) => {
+      const months = addressAnswerToMonths(answer);
       // If less than 2 years, need previous address
       if (months < 24) {
         return 'previous_address';
@@ -1559,7 +1604,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'previous_address',
     messages: ["Previous address? (full address)"],
     inputType: 'text',
-    field: 'directors.0.previousAddress',
+    field: 'directors.directors.0.previousAddress',
     placeholder: "e.g. 123 Smith St, Richmond VIC 3121",
     nextStep: 'affordability_notice',
   },
@@ -1569,7 +1614,7 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'affordability_notice',
     messages: [
       "Almost done!",
-      "After you submit, Westpac will email you an affordability declaration to sign electronically.",
+      "After you submit, your lender will email you an affordability declaration to sign electronically.",
       "This confirms you can comfortably afford the proposed repayments.",
       "Please check your email and complete it promptly to avoid delays."
     ],
@@ -1580,18 +1625,27 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'submission_complete',
-    messages: [
-      "Application submitted successfully!",
-      "What happens next:",
-      "1. Check your email for the privacy consent and affordability declaration - please sign both",
-      "2. We'll review your application",
-      "3. Response within 15 minutes (business hours)",
-      "You'll receive updates via email."
-    ],
+    // The submit_application action runs before these messages render (see processStepMessages),
+    // so the copy can report the real outcome instead of assuming success.
+    messages: (data) => {
+      if (data.submittedApplicationId) {
+        return [
+          `Application submitted. Reference ${data.submittedApplicationId}.`,
+          "What happens next:",
+          "1. Check your email for the privacy consent and affordability declaration - please sign both",
+          "2. We'll review your application",
+          "3. Conditional approval is typically the same business day for in-policy applications.",
+          "You'll receive updates via email."
+        ];
+      }
+      return [
+        "Something went wrong sending your application. Nothing has been lost - tap Retry to send it again.",
+      ];
+    },
     inputType: 'confirm',
-    options: ["Done"],
+    options: (data) => (data.submittedApplicationId ? [] : ["Retry"]),
     action: 'submit_application',
-    nextStep: 'end_complete',
+    nextStep: (_answer, data) => (data.submittedApplicationId ? 'end_complete' : 'submission_complete'),
   },
 
   // ========== END STATES ==========
@@ -1669,6 +1723,11 @@ export function mapOptionToValue(option: string, field: string): string | number
     if (option.includes('5 year')) return 60;
   }
 
+  // Address duration mapping (stored as months)
+  if (field.endsWith('.addressMonths')) {
+    return addressAnswerToMonths(option);
+  }
+
   // Balloon mapping
   if (field === 'loan.balloonPercentage') {
     if (option.toLowerCase().includes('no balloon') || option.toLowerCase().includes('own it')) return 0;
@@ -1683,93 +1742,117 @@ export function mapOptionToValue(option: string, field: string): string | number
   return option;
 }
 
-// Get step number for progress (rough estimate)
-export function getStepProgress(stepId: string): { current: number; total: number } {
-  const progressMap: Record<string, number> = {
-    // Business lookup
-    'greeting': 1,
-    'abn_search_results': 2,
-    'abn_confirm_lookup': 2,
-    'abn_manual_entry': 2,
-    'abn_manual_lookup': 2,
-    'abn_result': 3,
-    'abn_retry': 3,
-    'abn_too_young': 3,
-    'gst_too_young': 3,
-    'no_gst_warning': 3,
-    'eligibility_pass': 4,
-    // Eligibility pre-qualification
-    'eligibility_asset_type': 4,
-    'eligibility_fixed_asset': 4,
-    'eligibility_asset_age': 5,
-    'eligibility_older_asset': 5,
-    'eligibility_property': 5,
-    'eligibility_deposit': 5,
-    'eligibility_no_security': 5,
-    'eligibility_loan_amount': 6,
-    'eligibility_over_150k': 6,
-    'eligibility_credit_check': 6,
-    'eligibility_credit_issues': 6,
-    'eligibility_qualified': 7,
-    // Lead capture
-    'lead_capture_asset_type': 4,
-    'lead_capture_amount': 4,
-    'lead_capture_name': 4,
-    'lead_capture_phone': 4,
-    'lead_capture_email': 4,
-    'lead_capture_consent': 4,
-    'lead_capture_complete': 4,
-    'end_lead_captured': 4,
-    // Asset details
-    'asset_type_confirmed': 8,
-    'asset_purchased_check': 8,
-    'asset_upload_quote': 8,
-    'asset_make': 8,
-    'asset_model': 8,
-    'asset_year': 8,
-    'asset_supplier': 8,
-    'asset_condition': 8,
-    'asset_price': 9,
-    'show_estimate': 10,
-    // Director details (simplified - name/DOB/address from licence)
-    'director_intro': 11,
-    'director_phone': 12,
-    'director_assets': 13,
-    'asset_property': 13,
-    'asset_property_value': 13,
-    'asset_property_mortgage': 13,
-    'asset_investment_property': 14,
-    'asset_investment_value': 14,
-    'asset_investment_mortgage': 14,
-    'asset_vehicles': 14,
-    'asset_vehicles_loan': 14,
-    'liability_credit_cards': 15,
-    'director_net_position': 15,
-    'more_directors': 15,
-    'additional_director_method': 16,
-    'additional_director_email_request': 16,
-    'additional_director_email_sent': 16,
-    'additional_director_email': 16,
-    'additional_director_property_owner': 16,
-    'additional_director_done': 16,
-    // Loan setup
-    'loan_term': 18,
-    'balloon_preference': 19,
-    'balloon_explain': 19,
-    'deposit_question': 20,
-    'deposit_amount': 20,
-    // Final
-    'final_review': 21,
-    'privacy_consent': 22,
-    'document_upload': 23,
-    'address_duration': 24,
-    'previous_address': 24,
-    'affordability_notice': 25,
-    'submission_complete': 26,
-  };
+// Get step number for progress. Every step on a main path has an entry, so the bar
+// never snaps back to 1; the total is derived from the map rather than hard-coded.
+const PROGRESS_MAP: Record<string, number> = {
+  // Business lookup
+  'greeting': 1,
+  'abn_search_results': 2,
+  'abn_confirm_lookup': 2,
+  'abn_manual_entry': 2,
+  'abn_manual_lookup': 2,
+  'abn_result': 3,
+  'abn_retry': 3,
+  'abn_too_young': 3,
+  'abn_unverified': 3,
+  'gst_too_young': 3,
+  'no_gst_warning': 3,
+  // Eligibility pre-qualification
+  'eligibility_pass': 4,
+  'eligibility_asset_type': 4,
+  'eligibility_fixed_asset': 4,
+  'ev_use_type': 4,
+  'ev_novated_capture': 5,
+  'ev_novated_phone': 5,
+  'ev_novated_email': 5,
+  'ev_novated_complete': 5,
+  'eligibility_asset_age': 5,
+  'eligibility_older_asset': 5,
+  'eligibility_property': 5,
+  'eligibility_deposit': 5,
+  'eligibility_no_security': 5,
+  'eligibility_loan_amount': 6,
+  'eligibility_over_150k': 6,
+  'eligibility_credit_check': 6,
+  'eligibility_credit_issues': 6,
+  'eligibility_qualified': 7,
+  // Lead capture
+  'lead_capture_asset_type': 4,
+  'lead_capture_amount': 4,
+  'lead_capture_name': 5,
+  'lead_capture_phone': 5,
+  'lead_capture_email': 5,
+  'lead_capture_consent': 6,
+  'lead_capture_complete': 6,
+  // Asset details
+  'asset_type_confirmed': 8,
+  'asset_purchased_check': 8,
+  'asset_upload_quote': 8,
+  'asset_make': 8,
+  'asset_model': 8,
+  'asset_year': 8,
+  'asset_supplier': 8,
+  'asset_condition': 8,
+  'asset_price': 9,
+  'show_estimate': 10,
+  'save_for_later': 10,
+  // Director details (name/DOB/address come from the licence)
+  'director_intro': 11,
+  'director_phone': 12,
+  'director_assets': 13,
+  'asset_property': 13,
+  'asset_property_value': 13,
+  'asset_property_mortgage': 13,
+  'asset_investment_property': 14,
+  'asset_investment_value': 14,
+  'asset_investment_mortgage': 14,
+  'asset_vehicles': 14,
+  'asset_vehicles_loan': 14,
+  'liability_credit_cards': 15,
+  'credit_card_outstanding': 15,
+  // Monthly commitments
+  'monthly_mortgage_payment': 16,
+  'monthly_vehicle_payment': 16,
+  'monthly_credit_card_payment': 16,
+  // Income and expenses
+  'income_salary': 17,
+  'income_other': 17,
+  'living_expenses': 17,
+  'director_net_position': 18,
+  'more_directors': 18,
+  'additional_director_method': 19,
+  'additional_director_email_request': 19,
+  'additional_director_email_sent': 19,
+  'additional_director_email': 19,
+  'additional_director_property_owner': 19,
+  'additional_director_done': 19,
+  // Loan setup
+  'loan_term': 20,
+  'balloon_preference': 21,
+  'balloon_explain': 21,
+  'deposit_question': 22,
+  'deposit_amount': 22,
+  // Final
+  'final_review': 23,
+  'edit_choice': 23,
+  'privacy_consent': 24,
+  'document_upload': 25,
+  'address_duration': 26,
+  'previous_address': 26,
+  'affordability_notice': 27,
+  'submission_complete': 28,
+  // End states
+  'end_complete': 29,
+  'end_saved': 29,
+  'end_lead_captured': 29,
+  'end_ineligible': 29,
+};
 
+const PROGRESS_TOTAL = Math.max(...Object.values(PROGRESS_MAP));
+
+export function getStepProgress(stepId: string): { current: number; total: number } {
   return {
-    current: progressMap[stepId] || 1,
-    total: 26,
+    current: PROGRESS_MAP[stepId] || 1,
+    total: PROGRESS_TOTAL,
   };
 }
