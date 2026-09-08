@@ -10,9 +10,9 @@ export const RATES = {
   byTerm: [
     { termMonths: 12, ratePct: 8.49 },
     { termMonths: 24, ratePct: 7.49 },
-    { termMonths: 36, ratePct: 7.25 },
-    { termMonths: 48, ratePct: 7.25 },
-    { termMonths: 60, ratePct: 7.25 },
+    { termMonths: 36, ratePct: 7.50 },
+    { termMonths: 48, ratePct: 7.50 },
+    { termMonths: 60, ratePct: 7.50 },
   ],
   maxBalloonByTerm: { 12: 65, 24: 60, 36: 50, 48: 40, 60: 30, 72: 30, 84: 30 } as Record<number, number>,
 } as const;
