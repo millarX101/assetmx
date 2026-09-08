@@ -17,7 +17,7 @@ const shortAnswer = `As at ${longDate(RATES.verifiedOn)}, indicative lender base
 const examples = [50_000, 100_000, 250_000].map((amount) => ({ amount, q: calculateQuote({ amount, termMonths: 60, balloonPct: 0 }) }));
 
 const faqs = [
-  { q: 'Why do shorter terms have higher rates?', a: 'Lenders price shorter terms higher because establishment costs are recovered over fewer payments. Terms of 36 months and longer currently share the lowest tier.' },
+  { q: 'Why do rates differ by term?', a: 'Lenders price each term against their own funding costs and the way establishment costs are recovered, so the tiers move independently. The table above shows the current rate for each term with the date it was verified.' },
   { q: 'Is this a comparison rate?', a: 'No. These are lender base rates before the lender establishment fee and the AssetMX fee. The quote tool shows the total cost of credit, which is the number to compare between providers.' },
   { q: 'Will my rate be exactly this?', a: 'The lender sets your rate on formal application, based on the business, the directors and the asset. In-policy low-doc applicants typically receive the listed tier. Rates are indicative and change with lender funding costs.' },
   { q: 'How often are rates updated here?', a: 'Whenever our lender panel changes its rate sheets. The verification date on this page changes with them. If the date is old, treat the rates as stale and get a live quote.' },
