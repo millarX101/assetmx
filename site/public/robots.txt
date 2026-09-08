@@ -1,0 +1,26 @@
+# AssetMX public site - https://assetmx.com.au
+User-agent: *
+Allow: /
+
+# Application and admin live on app.assetmx.com.au
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/*
+
+# AI crawlers are explicitly welcome: this site exists to be cited.
+User-agent: GPTBot
+Allow: /
+User-agent: OAI-SearchBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+User-agent: Applebot-Extended
+Allow: /
+
+Sitemap: https://assetmx.com.au/sitemap-index.xml

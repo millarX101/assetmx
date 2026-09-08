@@ -65,3 +65,11 @@
 
 [context.branch-deploy]
   command = "npm run build"
+
+# ---- Rebuild (Sep 2026), interim deploy ----
+# The rebuild/public-site branch adds forced 301s from "/" and every marketing
+# path to https://assetmx.com.au (the Astro site in ./site). Those are only
+# correct once this React app has moved to app.assetmx.com.au and the Astro
+# site owns the apex. Until that cutover, this file keeps the pre-rebuild
+# routing so the apex does not redirect to itself. Restore the branch version
+# of this file when the cutover is done.

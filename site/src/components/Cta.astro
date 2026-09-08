@@ -1,0 +1,23 @@
+---
+import { APP_LINKS, PRICING } from '@/data/entity';
+interface Props { title?: string; body?: string; primary?: { label: string; href: string }; class?: string }
+const {
+  title = 'Ready? Three questions, then we take it from there.',
+  body = `One flat ${PRICING.platformFeeLabel} fee, disclosed before you start. Nothing touches your credit file until you say so.`,
+  primary = { label: 'Start application', href: APP_LINKS.quote },
+  class: cls = '',
+} = Astro.props;
+---
+<section class:list={['mt-16 rounded-card bg-sand p-8 md:p-12', cls]}>
+  <div class="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+    <div>
+      <h2>{title}</h2>
+      <p class="mt-3 text-ink-700 max-w-xl">{body}</p>
+      <p class="mt-3 text-xs text-ink-500">Trading 2+ years · Clean credit · Vehicles, trucks or equipment for business use</p>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <a href={primary.href} class="btn-primary">{primary.label}</a>
+      <a href="/#quote" class="btn-ghost">See your rate</a>
+    </div>
+  </div>
+</section>

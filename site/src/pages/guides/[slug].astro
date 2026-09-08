@@ -1,0 +1,56 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import AnswerBox from '@/components/AnswerBox.astro';
+import Cta from '@/components/Cta.astro';
+import { ENTITY } from '@/data/entity';
+import { article, breadcrumbs } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('guides');
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+const d = entry.data;
+const path = `/guides/${entry.id}`;
+const url = `${ENTITY.siteUrl}${path}`;
+const published = d.published.toISOString().slice(0, 10);
+const updated = d.updated.toISOString().slice(0, 10);
+const toc = headings.filter((h) => h.depth === 2);
+const answers = await getCollection('answers');
+const related = d.related.map((s) => answers.find((a) => a.id === s)).filter(Boolean);
+const schema = [
+  breadcrumbs([{ name: 'Home', url: ENTITY.siteUrl + '/' }, { name: 'Guides', url: ENTITY.siteUrl + '/guides' }, { name: d.title, url }]),
+  article({ url, headline: d.title, description: d.description, published, modified: updated }),
+];
+---
+<Base title={d.title} description={d.description} path={path} ogType="article" pageType="Article" schema={schema} dateModified={updated}>
+  <article class="container-x pt-8">
+    <Breadcrumbs items={[{ name: 'Guides', href: '/guides' }, { name: d.title, href: path }]} />
+    <p class="eyebrow mt-6">Guide</p>
+    <h1 class="mt-2 max-w-3xl">{d.title}</h1>
+    <div class="mt-8 grid gap-8 lg:grid-cols-[1fr_280px] lg:items-start">
+      <div>
+        <AnswerBox answer={d.summary} updated={updated} label="Summary" />
+        <div class="prose-mx mt-8 max-w-none"><Content /></div>
+      </div>
+      <div class="space-y-5 lg:sticky lg:top-24">
+        {toc.length > 0 && (
+          <nav class="card p-5 text-sm" aria-label="On this page">
+            <p class="eyebrow">On this page</p>
+            <ol class="mt-3 space-y-1.5">{toc.map((h) => <li><a href={`#${h.slug}`} class="text-ink-700 hover:text-ink no-underline">{h.text}</a></li>)}</ol>
+          </nav>
+        )}
+        {related.length > 0 && (
+          <aside class="card p-5 text-sm">
+            <p class="eyebrow">Related answers</p>
+            <ul class="mt-3 space-y-2">{related.map((r) => r && <li><a href={`/answers/${r.id}`} class="text-ink hover:text-signal-700 no-underline">{r.data.question}</a></li>)}</ul>
+          </aside>
+        )}
+      </div>
+    </div>
+    <Cta />
+  </article>
+</Base>

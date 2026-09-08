@@ -1,0 +1,48 @@
+---
+import ProductPage from '@/components/ProductPage.astro';
+---
+<ProductPage
+  path="/equipment-finance"
+  productName="Equipment finance"
+  category="Plant and equipment finance (chattel mortgage)"
+  title="Equipment finance Australia | Low-doc, lender rate plus $800 flat fee"
+  description="Low-doc equipment finance for excavators, loaders, earthmoving and trade equipment. Lender base rate shown separately, flat $800 fee, no broker mark-up. ABN 24+ months, GST registered."
+  eyebrow="Equipment finance"
+  h1="Low-doc equipment finance"
+  h1Accent="for established SMEs"
+  intro="Plumbers, builders, landscapers, earthmovers: stop paying inflated hire costs. Own the machine, claim the deductions your accountant advises, and pay the lender's base rate plus a flat $800."
+  shortAnswer="AssetMX arranges low-doc equipment finance from $5,000 to $500,000 on excavators, loaders, earthmoving and trade equipment for GST-registered businesses trading 24 months or more, at the lender's base rate plus a flat $800 fee."
+  heroImage="hero-excavator.jpg"
+  heroAlt="CAT excavator working on a construction site"
+  example={{ label: 'Example excavator', amount: 120_000, termMonths: 60, balloonPct: 0 }}
+  cardsTitle="Equipment we finance"
+  cardsIntro="From mini excavators to road-registered plant, the same transparent pricing for all mobile equipment."
+  cards={[
+    { title: 'Excavators', image: 'excavators.jpg', alt: 'Excavator digging on site', body: 'CAT, Komatsu, Hitachi, Kubota, from mini excavators to 30-tonne machines.', points: ['All sizes and brands', 'Attachments on the invoice can be included'] },
+    { title: 'Loaders and skid steers', image: 'loaders.jpg', alt: 'Wheel loader moving material', body: 'Wheel loaders, skid steers and compact track loaders.', points: ['New and used machines', 'Fast conditional approval when in policy'] },
+    { title: 'Earthmoving', image: 'earthmoving.jpg', alt: 'Bulldozer on an earthmoving site', body: 'Dozers, graders, rollers and scrapers.', points: ['Small operators welcome', 'Sole traders and companies'] },
+  ]}
+  alsoFinance={[
+    { name: 'Cranes', note: 'All types' }, { name: 'Forklifts', note: 'Electric and diesel' }, { name: 'Generators', note: 'All sizes' }, { name: 'Compressors', note: 'Industrial' },
+    { name: 'Concrete gear', note: 'Pumps and mixers' }, { name: 'Scaffolding', note: 'Systems and access' }, { name: 'Welding gear', note: 'Industrial' }, { name: 'Trailers', note: 'Plant and equipment' },
+  ]}
+  whyTitle="Why tradies and contractors choose AssetMX"
+  why={[
+    { t: 'Transparent savings', d: 'Equipment brokers typically load the rate by 1 to 2%. We charge a flat $800 and show the lender base rate as it is.' },
+    { t: 'Get back to work', d: 'No callbacks, no paper. Quote, fit check and upload from your phone. Conditional approval is typically same business day for in-policy deals.' },
+    { t: 'We understand equipment', d: 'Built by people who know equipment values, depreciation, and what lenders want to see from construction businesses.' },
+  ]}
+  faqs={[
+    { q: 'Do I need financial statements for equipment finance?', a: 'Not for in-policy low-doc applications up to $500,000. Lenders rely on ABN age, GST registration, credit history and bank statements.' },
+    { q: 'Can I finance used equipment from a private seller?', a: 'Yes. A $250 inspection fee may apply and the equipment must be no older than 15 years at the end of the term.' },
+    { q: 'Is equipment finance tax deductible?', a: 'Interest and depreciation on the business-use share are generally deductible under a chattel mortgage. Instant asset write-off thresholds change each financial year, so check the current ATO rules with your accountant.' },
+    { q: 'Can I include attachments and delivery?', a: 'Yes, when they are itemised on the supplier invoice.' },
+  ]}
+  related={[
+    { label: 'Equipment finance without financials', href: '/answers/equipment-finance-without-financial-statements' },
+    { label: 'Is asset finance tax deductible?', href: '/answers/is-asset-finance-tax-deductible' },
+    { label: 'What is a balloon payment?', href: '/answers/what-is-a-balloon-payment' },
+    { label: 'Lender low-doc policies', href: '/lender-policies' },
+  ]}
+  updated="2026-09-08"
+/>

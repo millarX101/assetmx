@@ -14,38 +14,55 @@ export default {
       },
     },
     extend: {
-      // MillarX Brand Fonts
+      // AssetMX brand (Sep 2026): Caprasimo display, Figtree body
       fontFamily: {
-        display: ['DM Serif Display', 'serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        display: ['Caprasimo', 'Georgia', 'serif'],
+        sans: ['Figtree', 'system-ui', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       colors: {
-        // MillarX Brand Colors
+        // AssetMX brand: cream / forest / sage / ink.
+        // The legacy `purple` scale is remapped to forest greens so existing
+        // class names keep working; `pink` -> rust accents; `teal` -> sage.
         purple: {
-          50: '#FDF4FF',
-          100: '#FAE8FF',
-          200: '#F5D0FE',
-          300: '#E879F9',
-          400: '#D946EF',
-          500: '#C026D3',
-          600: '#A21CAF',
-          700: '#86198F',
-          800: '#701A75',
-          900: '#4A044E',
+          50: '#F0FAE1',
+          100: '#E1EECC',
+          200: '#CCDBB2',
+          300: '#AEBF92',
+          400: '#7F9466',
+          500: '#56633F',
+          600: '#3D472B',
+          700: '#333C24',
+          800: '#272E1B',
+          900: '#1B2012',
         },
         pink: {
-          400: '#F472B6',
-          500: '#EC4899',
-          600: '#DB2777',
+          400: '#C9862B',
+          500: '#8A4A1F',
+          600: '#643312',
         },
         teal: {
-          400: '#2DD4BF',
-          500: '#14B8A6',
-          600: '#0D9488',
+          400: '#CCDBB2',
+          500: '#AEBF92',
+          600: '#7F9466',
         },
-        ivory: '#FAFAF9',
-        cream: '#F5F5F4',
+        forest: { DEFAULT: '#3D472B', 700: '#333C24', 800: '#272E1B' },
+        sage: { DEFAULT: '#CCDBB2', 100: '#F0FAE1', 200: '#E1EECC', 300: '#AEBF92' },
+        sand: '#EBDDC5',
+        ink: {
+          DEFAULT: '#201E1D',
+          800: '#2E2B25',
+          700: '#474238',
+          600: '#645C50',
+          500: '#7D7365',
+          400: '#A39A8C',
+          300: '#C9C0B1',
+          200: '#DCD3C4',
+          100: '#EEE7DB',
+          50: '#F9F4ED',
+        },
+        ivory: '#F9F4ED',
+        cream: '#F5EAD8',
         // shadcn/ui CSS variable colors
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -87,9 +104,9 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       boxShadow: {
-        'soft': '0 2px 15px -3px rgba(0,0,0,0.07), 0 10px 20px -2px rgba(0,0,0,0.04)',
-        'card': '0 4px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
-        'glow': '0 0 40px -10px rgba(134, 25, 143, 0.3)',
+        'soft': '0 2px 15px -3px rgba(32,30,29,0.06), 0 10px 20px -2px rgba(32,30,29,0.04)',
+        'card': '0 4px 25px -5px rgba(32,30,29,0.10), 0 10px 10px -5px rgba(32,30,29,0.04)',
+        'glow': '0 0 40px -10px rgba(61, 71, 43, 0.3)',
       },
       keyframes: {
         "accordion-down": {

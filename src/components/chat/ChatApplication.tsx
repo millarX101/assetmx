@@ -26,6 +26,7 @@ export function ChatApplication() {
     progress,
     sendMessage,
     selectOption,
+    filesUploaded,
     startChat,
     resetChat,
     getApplicationSummary,
@@ -35,12 +36,12 @@ export function ChatApplication() {
   const getRequiredDocs = () => {
     if (currentStepId === 'asset_upload_quote') {
       return [
-        { id: 'quote_invoice', label: "Quote or Tax Invoice", description: "Upload your dealer quote or tax invoice" },
+        { id: 'quote_invoice', label: "Quote or tax invoice", description: "Photo or PDF. I will read the make, model, supplier and price from it." },
       ];
     }
     // Default: document upload step for driver's licence
     return [
-      { id: 'drivers_licence', label: "Driver's Licence (front)", description: "Clear photo of your licence" },
+      { id: 'drivers_licence', label: "Driver licence (front)", description: "Clear photo, no glare. I will read your name, date of birth and address." },
     ];
   };
 
@@ -90,20 +91,20 @@ export function ChatApplication() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-slate-50">
+    <div className="flex flex-col h-[100dvh] bg-cream">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
+      <header className="bg-cream/95 backdrop-blur border-b border-ink-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <Link to="/" className="text-slate-400 hover:text-slate-600 transition-colors">
+          <Link to="/" className="text-ink-500 hover:text-ink transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-brand flex items-center justify-center">
-              <span className="text-white text-sm font-bold">A</span>
+            <div className="w-8 h-8 rounded-full bg-sage flex items-center justify-center">
+              <span className="text-forest font-display text-sm">A</span>
             </div>
             <div>
-              <div className="font-semibold text-slate-800 text-sm">AssetMX</div>
-              <div className="text-xs text-green-600">Online</div>
+              <div className="font-display text-ink text-base leading-none">AssetMX</div>
+              <div className="text-xs text-ink-500 mt-0.5">Guided application</div>
             </div>
           </div>
         </div>
@@ -114,7 +115,7 @@ export function ChatApplication() {
             hasStartedRef.current = false;
             resetChat();
           }}
-          className="text-slate-400 hover:text-slate-600"
+          className="text-ink-500 hover:text-ink"
         >
           <RotateCcw className="h-4 w-4" />
         </Button>
@@ -135,7 +136,7 @@ export function ChatApplication() {
               <div key={message.id} className="mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <ChatSummaryCard
                   data={getApplicationSummary()}
-                  onEdit={() => selectOption(`Need to change something`)}
+                  onEdit={() => selectOption('Edit details')}
                 />
               </div>
             );
@@ -165,8 +166,8 @@ export function ChatApplication() {
         <ChatFileUpload
           requiredDocs={getRequiredDocs()}
           onComplete={(files) => {
-            // Mark files as uploaded and proceed
-            selectOption(`Uploaded ${files.length} documents`);
+            // Record the files in the application, then advance (extraction runs on the next step)
+            filesUploaded(files);
           }}
           onSkip={() => {
             selectOption('Skip for now');
@@ -192,14 +193,14 @@ export function ChatApplication() {
 
       {/* Completed State */}
       {isComplete && (
-        <div className="p-4 bg-white border-t border-slate-200">
+        <div className="p-4 bg-cream border-t border-ink-200">
           <div className="flex flex-col gap-3">
             <Link to="/">
               <Button variant="outline" className="w-full">
                 Back to Home
               </Button>
             </Link>
-            <Button onClick={resetChat} variant="ghost" className="w-full text-slate-500">
+            <Button onClick={resetChat} variant="ghost" className="w-full text-ink-600">
               Start New Application
             </Button>
           </div>

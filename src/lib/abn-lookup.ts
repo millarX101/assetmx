@@ -128,8 +128,9 @@ export async function lookupABN(abn: string): Promise<ABNLookupResult | null> {
     const { data, error } = await callEdgeFunction('abn-lookup', { abn: clean });
 
     if (error || !data) {
-      console.warn('ABN lookup edge function error, falling back to mock:', error);
-      return getMockABNResult(clean);
+      // Never fabricate register data in production - a fake trading history would pass the gate
+      console.warn('ABN lookup edge function error:', error);
+      return import.meta.env.DEV ? getMockABNResult(clean) : null;
     }
 
     if (!data.found) {
@@ -162,8 +163,8 @@ export async function lookupABN(abn: string): Promise<ABNLookupResult | null> {
 
     return result;
   } catch (err) {
-    console.warn('ABN lookup failed, falling back to mock:', err);
-    return getMockABNResult(clean);
+    console.warn('ABN lookup failed:', err);
+    return import.meta.env.DEV ? getMockABNResult(clean) : null;
   }
 }
 

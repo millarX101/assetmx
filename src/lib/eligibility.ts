@@ -3,6 +3,7 @@
 // Clean rejections with clear explanations
 
 import type { ApplicationData, EligibilityResult, EligibilityCheck } from '@/types/application';
+import { getMaxBalloon } from './calculator';
 
 /**
  * Calculate months between two dates
@@ -114,21 +115,22 @@ export function checkEligibility(application: ApplicationData): EligibilityResul
     failReasons.push(`Loan term must be between 12 and 84 months. You've selected ${termMonths} months.`);
   }
 
-  // 6. Balloon Percentage
+  // 6. Balloon Percentage - cap depends on the term (calculator.ts MAX_BALLOON_BY_TERM)
   const balloonPct = application.loan.balloonPercentage;
-  const balloonOk = balloonPct >= 0 && balloonPct <= 50;
+  const maxBalloonPct = getMaxBalloon(termMonths);
+  const balloonOk = balloonPct >= 0 && balloonPct <= maxBalloonPct;
 
   checks.balloonPercentage = {
     passed: balloonOk,
     value: balloonPct,
-    required: '0-50%',
+    required: `0-${maxBalloonPct}%`,
     message: balloonOk
       ? `Balloon of ${balloonPct}% is acceptable`
-      : `Balloon/residual must be between 0% and 50%`,
+      : `Balloon/residual must be between 0% and ${maxBalloonPct}% for a ${termMonths} month term`,
   };
 
   if (!checks.balloonPercentage.passed) {
-    failReasons.push(`Maximum balloon/residual is 50%. You've selected ${balloonPct}%.`);
+    failReasons.push(`Maximum balloon/residual is ${maxBalloonPct}% for a ${termMonths} month term. You've selected ${balloonPct}%.`);
   }
 
   // 7. At least one director
@@ -228,8 +230,9 @@ export function quickEligibilityCheck(
   if (termMonths > 84) {
     issues.push('Maximum term is 84 months');
   }
-  if (balloonPercentage > 50) {
-    issues.push('Maximum balloon/residual is 50%');
+  const maxBalloon = getMaxBalloon(termMonths);
+  if (balloonPercentage > maxBalloon) {
+    issues.push(`Maximum balloon/residual is ${maxBalloon}% for a ${termMonths} month term`);
   }
 
   return {

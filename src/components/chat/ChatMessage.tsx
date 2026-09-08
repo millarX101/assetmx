@@ -22,7 +22,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
   if (isSystem) {
     return (
       <div className="flex justify-center my-4">
-        <div className="bg-slate-100 text-slate-500 text-xs px-3 py-1 rounded-full">
+        <div className="bg-sand text-ink-600 text-xs px-3 py-1 rounded-full">
           {message.content}
         </div>
       </div>
@@ -39,8 +39,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
       {/* Bot Avatar */}
       {isBot && (
         <div className="flex-shrink-0 mr-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-brand flex items-center justify-center">
-            <span className="text-white text-sm font-bold">A</span>
+          <div className="w-8 h-8 rounded-full bg-sage flex items-center justify-center">
+            <span className="text-forest font-display text-sm">A</span>
           </div>
         </div>
       )}
@@ -50,8 +50,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
         className={cn(
           'max-w-[80%] px-4 py-3 rounded-2xl whitespace-pre-wrap',
           isUser
-            ? 'bg-gradient-brand text-white rounded-br-md'
-            : 'bg-white border border-slate-200 text-slate-800 rounded-bl-md shadow-sm'
+            ? 'bg-forest text-cream rounded-br-md'
+            : 'bg-sand text-ink rounded-bl-md'
         )}
       >
         {message.isTyping ? (
@@ -69,9 +69,9 @@ export function ChatMessage({ message }: ChatMessageProps) {
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-1 py-1 px-1">
-      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-      <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" />
+      <span className="w-2 h-2 bg-ink-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+      <span className="w-2 h-2 bg-ink-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+      <span className="w-2 h-2 bg-ink-400 rounded-full animate-bounce" />
     </div>
   );
 }

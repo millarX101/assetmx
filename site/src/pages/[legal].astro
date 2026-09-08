@@ -1,0 +1,25 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import { ENTITY, longDate } from '@/data/entity';
+import { breadcrumbs } from '@/lib/schema';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('legal');
+  return entries.map((entry) => ({ params: { legal: entry.id }, props: { entry } }));
+}
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const d = entry.data;
+const path = `/${entry.id}`;
+const updated = d.updated.toISOString().slice(0, 10);
+---
+<Base title={d.title} description={d.description} path={path} dateModified={updated} schema={[breadcrumbs([{ name: 'Home', url: ENTITY.siteUrl + '/' }, { name: d.title, url: ENTITY.siteUrl + path }])]}>
+  <article class="container-x pt-8 max-w-3xl">
+    <Breadcrumbs items={[{ name: d.title, href: path }]} />
+    <h1 class="mt-6">{d.title}</h1>
+    <p class="mt-3 text-sm text-ink-500">Last updated {longDate(updated)}. {ENTITY.brand} is a trading name of {ENTITY.legalName}, ABN {ENTITY.abn}, Australian Credit Licence {ENTITY.acl}.</p>
+    <div class="prose-mx mt-8"><Content /></div>
+  </article>
+</Base>

@@ -1,0 +1,31 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Cta from '@/components/Cta.astro';
+import { ENTITY, longDate } from '@/data/entity';
+import { breadcrumbs } from '@/lib/schema';
+const guides = (await getCollection('guides')).sort((a, b) => b.data.updated.getTime() - a.data.updated.getTime());
+const title = 'Guides to asset finance in Australia';
+const description = 'Long-form explainers on how asset finance is priced, why advertised rates mislead, and how business car finance works, written by AssetMX.';
+---
+<Base title={title} description={description} path="/guides" pageType="CollectionPage" schema={[breadcrumbs([{ name: 'Home', url: ENTITY.siteUrl + '/' }, { name: 'Guides', url: ENTITY.siteUrl + '/guides' }])]}>
+  <section class="container-x pt-8">
+    <Breadcrumbs items={[{ name: 'Guides', href: '/guides' }]} />
+    <p class="eyebrow mt-6">Guides</p>
+    <h1 class="mt-2">Longer reads on how asset finance really works</h1>
+    <p class="mt-4 text-lg text-ink-600 max-w-2xl">For quick answers, see <a href="/answers" class="underline">Answers</a>. These are the explainers behind them.</p>
+    <ul class="mt-10 grid gap-5 md:grid-cols-3">
+      {guides.map((g) => (
+        <li class="card p-6">
+          <a href={`/guides/${g.id}`} class="no-underline">
+            <h2 class="text-xl">{g.data.title}</h2>
+            <p class="mt-3 text-sm text-ink-600">{g.data.description}</p>
+            <p class="mt-4 text-xs text-ink-500">Updated {longDate(g.data.updated.toISOString().slice(0, 10))}</p>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <Cta />
+  </section>
+</Base>

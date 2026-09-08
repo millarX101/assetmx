@@ -49,16 +49,16 @@ export const BROKER_MARGIN = 2.00; // What brokers typically add to hide commiss
 // Base rates by term (from lender rate sheets)
 // Default fallback rates if database unavailable
 export const DEFAULT_RATES: Record<number, number> = {
-  12: 8.49,  // 1 year
-  24: 7.49,  // 2 years
-  36: 6.89,  // 3 years
-  48: 6.89,  // 4 years
-  60: 6.89,  // 5 years
+  12: 9.10,  // 1 year
+  24: 8.10,  // 2 years
+  36: 7.50,  // 3 years
+  48: 7.50,  // 4 years
+  60: 7.50,  // 5 years
 };
 
 // Legacy constants for backwards compatibility
-export const BASE_RATE_SHORT = 6.89; // 3-5 years (default)
-export const BASE_RATE_LONG = 8.49;  // 1 year
+export const BASE_RATE_SHORT = 7.50; // 3-5 years (default)
+export const BASE_RATE_LONG = 9.10;  // 1 year
 
 // Rate cache to avoid excessive database calls
 let rateCache: { rates: Record<number, number>; timestamp: number } | null = null;

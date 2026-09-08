@@ -1,0 +1,98 @@
+---
+import Base from '@/layouts/Base.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import AnswerBox from '@/components/AnswerBox.astro';
+import Faq from '@/components/Faq.astro';
+import Cta from '@/components/Cta.astro';
+import { ENTITY, PRICING, money, pct, longDate } from '@/data/entity';
+import { RATES } from '@/data/rates';
+import { calculateQuote } from '@/lib/calculator';
+import { breadcrumbs, faqPage } from '@/lib/schema';
+
+const title = 'AssetMX vs a finance broker: the real cost difference';
+const description = 'How AssetMX compares to a traditional asset finance broker on price, disclosure, speed and process. Flat $800 fee versus 1 to 2% commission loaded into your rate.';
+const shortAnswer = `A broker is typically paid 1 to 2% commission built into your interest rate, worth roughly $3,000 to $6,000 on a $100,000 deal, sometimes plus an origination fee. AssetMX charges a flat ${PRICING.platformFeeLabel}, shows the lender base rate unchanged, and runs the process online.`;
+const ex = calculateQuote({ amount: 100_000, termMonths: 60, balloonPct: 0 });
+
+const rows = [
+  ['How they are paid', 'Commission of typically 1 to 2% built into your rate, sometimes plus an origination fee (the existing market example is $990)', `Flat ${PRICING.platformFeeLabel} fee, shown separately, financed or paid upfront`],
+  ['Rate you are shown', 'Lender base rate plus the commission loading', 'Lender base rate, unchanged'],
+  ['Incentive', 'Higher rate or bigger loan means more commission', 'Same fee on every deal from $5,000 to $500,000'],
+  ['Process', 'Phone calls, emailed forms, chasing documents', 'Quote, fit check, upload and e-sign online'],
+  ['Decision speed', 'Days to weeks depending on the broker and lender', 'Conditional approval typically same business day when in policy'],
+  ['Who it suits', 'Complex deals, impaired credit, new ABNs, people who want a relationship manager', 'Established, GST-registered businesses with clean credit who fit bank low-doc policy'],
+  ['Where the money goes', 'Between the lender, the aggregator and the broker, invisibly', 'To the lender at the base rate, and one disclosed fee to AssetMX'],
+];
+
+const faqs = [
+  { q: 'Is a broker ever the better choice?', a: 'Yes. If your ABN is under 24 months, you are not GST registered, your credit file is impaired, or the deal is unusual, a broker with lender relationships can place it where a low-doc process cannot. AssetMX tells you this in the fit check rather than wasting your time.' },
+  { q: 'Do you receive any commission from lenders?', a: `No. Our only remuneration is the ${PRICING.platformFeeLabel} fee, disclosed in our Credit Guide. Any lender green-rate discount is passed on in full.` },
+  { q: 'Same lenders as a broker?', a: 'Largely yes. Banks and non-bank asset financiers accredit both brokers and platforms. The difference is what is added to the rate, not who funds the loan.' },
+  { q: 'Can I see the numbers for my own deal?', a: 'Yes. The quote tool on the home page shows the lender rate, our fee, the total cost of credit and the same deal with a typical broker loading, side by side.' },
+];
+const schema = [
+  breadcrumbs([{ name: 'Home', url: ENTITY.siteUrl + '/' }, { name: 'How we compare', url: ENTITY.siteUrl + '/how-we-compare' }]),
+  faqPage([{ q: 'How does AssetMX compare to a finance broker?', a: shortAnswer }, ...faqs]),
+];
+---
+<Base title={title} description={description} path="/how-we-compare" schema={schema}>
+  <section class="container-x pt-8">
+    <Breadcrumbs items={[{ name: 'How we compare', href: '/how-we-compare' }]} />
+    <p class="eyebrow mt-6">How we compare</p>
+    <h1 class="mt-2 max-w-3xl">We are changing the goal posts</h1>
+    <p class="mt-4 text-lg text-ink-600 max-w-2xl">SME lending should not be this hard. Phone tag, endless paperwork, fees buried in the rate. We built AssetMX to fix that for the businesses that fit policy.</p>
+    <div class="mt-6 max-w-3xl"><AnswerBox answer={shortAnswer} updated="2026-09-08" /></div>
+  </section>
+
+  <section class="container-x mt-12">
+    <h2>Side by side</h2>
+    <div class="mt-6 table-wrap">
+      <table>
+        <thead><tr><th scope="col"></th><th scope="col">Traditional broker</th><th scope="col">AssetMX</th></tr></thead>
+        <tbody>
+          {rows.map(([k, a, b]) => (
+            <tr>
+              <th scope="row" class="font-medium text-ink bg-transparent border-b border-ink-100">{k}</th>
+              <td class="text-ink-600">{a}</td>
+              <td class="text-ink font-medium">{b}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="container-x mt-16 grid gap-8 md:grid-cols-[1fr_1.2fr] md:items-start">
+    <div>
+      <p class="eyebrow">The numbers</p>
+      <h2 class="mt-2">{money(100_000)} asset, 5 years, same lender</h2>
+      <p class="mt-3 text-ink-600">Lender base rate {pct(ex.ratePct)} (verified {longDate(RATES.verifiedOn)}), {money(PRICING.lenderEstablishmentFee)} establishment fee financed in both cases, no balloon, repayments in advance.</p>
+      <p class="mt-4 num text-3xl font-semibold text-signal-700">{money(ex.saving)} less over the term</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col"></th><th scope="col">Broker at +{pct(PRICING.typicalBrokerMarginPct, 0)}</th><th scope="col">AssetMX</th></tr></thead>
+        <tbody>
+          <tr><th scope="row" class="font-medium bg-transparent border-b border-ink-100">Rate shown</th><td class="num">{pct(ex.brokerRatePct)}</td><td class="num font-semibold">{pct(ex.ratePct)}</td></tr>
+          <tr><th scope="row" class="font-medium bg-transparent border-b border-ink-100">Disclosed fee</th><td class="num">$0</td><td class="num font-semibold">{money(PRICING.platformFee)}</td></tr>
+          <tr><th scope="row" class="font-medium bg-transparent border-b border-ink-100">Monthly</th><td class="num">{money(ex.brokerMonthly, 2)}</td><td class="num font-semibold">{money(ex.monthly, 2)}</td></tr>
+          <tr><th scope="row" class="font-medium bg-transparent border-b border-ink-100">Total cost of credit</th><td class="num">{money(ex.brokerTotalCost)}</td><td class="num font-semibold">{money(ex.totalCost)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="container-x mt-16 prose-mx max-w-3xl">
+    <h2 class="mt-0">Why we built AssetMX</h2>
+    <p>We have seen too many business owners get a raw deal. Tradies who just want to buy an excavator and get back to work. Delivery drivers who need a van yesterday. Small business owners who do not have time to sit on hold.</p>
+    <p>The traditional finance model is built around brokers, not businesses. Brokers make money by loading your rate. The higher they push it, the more commission they earn, and you never see that cost because it is hidden in your interest payments.</p>
+    <p><strong>{PRICING.platformFeeLabel} flat fee.</strong> That is our entire margin. We make the same whether you borrow {money(50_000)} or {money(500_000)}, so we have no incentive to push you into a bigger loan or a higher rate.</p>
+    <p><strong>Online, end to end.</strong> Because your time is worth money. Quote, fit check, upload and e-sign from your phone. If you fit policy, conditional approval is typically the same business day.</p>
+    <p><strong>Honest about fit.</strong> If you do not fit bank low-doc policy, we say so in the first minute and point you to a broker. That is the deal.</p>
+  </section>
+
+  <div class="container-x">
+    <Faq items={faqs} />
+    <Cta />
+  </div>
+</Base>

@@ -1,0 +1,44 @@
+---
+import ProductPage from '@/components/ProductPage.astro';
+---
+<ProductPage
+  path="/truck-finance"
+  productName="Truck and van finance"
+  category="Commercial vehicle finance (chattel mortgage)"
+  title="Truck finance Australia | Low-doc, lender rate plus $800 flat fee"
+  description="Low-doc truck and van finance for rigid trucks, light trucks and commercial vans. Lender base rate shown separately, flat $800 fee, no hidden broker commission."
+  eyebrow="Truck and van finance"
+  h1="Truck finance"
+  h1Accent="without hidden broker fees"
+  intro="Delivery operators, tradies, removalists and couriers: get moving with the lender's base rate and a flat $800 fee. Small rigid trucks to commercial vans, same price for all."
+  shortAnswer="AssetMX arranges low-doc finance on rigid trucks, light trucks and commercial vans from $5,000 to $500,000 for GST-registered businesses trading 24 months or more, charging a flat $800 fee with the lender's base rate shown separately."
+  heroImage="hero-truck.jpg"
+  heroAlt="Isuzu rigid truck used for business deliveries"
+  example={{ label: 'Example rigid truck', amount: 85_000, termMonths: 60, balloonPct: 0 }}
+  cardsTitle="Trucks and vans we finance"
+  cardsIntro="Light commercial to medium rigid, with bodies and fitouts included on the invoice."
+  cards={[
+    { title: 'Small rigid trucks', image: 'rigid-trucks.jpg', alt: 'Small rigid truck for local deliveries', body: 'Isuzu, Hino, Fuso, UD. Reliable workhorses for local deliveries and trades.', points: ['Tray, tipper and pantech bodies', 'Body and fitout financed with the truck'] },
+    { title: 'Commercial vans', image: 'vans.jpg', alt: 'Commercial van for business use', body: 'Transit, Sprinter, HiAce, Crafter for tradies, couriers and deliveries.', points: ['All sizes and configurations', 'Fitout included'] },
+    { title: 'Light trucks', image: 'light-trucks.jpg', alt: 'Light truck with service body', body: 'Cab chassis, tray backs and service bodies for any business.', points: ['New and used', 'Asset up to 15 years old at end of term'] },
+  ]}
+  whyTitle="Why operators choose AssetMX"
+  why={[
+    { t: 'Transparent savings', d: 'Brokers typically build 1 to 2% into the rate. We charge $800 flat and show the lender base rate as it is.' },
+    { t: 'Fast turnaround', d: 'In-policy low-doc applications usually get conditional approval the same business day, with settlement once the invoice and signed documents are in.' },
+    { t: 'We get business', d: 'Built for operators who need reliable vehicles to keep jobs moving. No complicated process, no salespeople.' },
+  ]}
+  faqs={[
+    { q: 'Can I finance the body and fitout with the truck?', a: 'Yes, when they are on the supplier invoice. The whole invoice amount can be financed up to $500,000.' },
+    { q: 'Do you finance trucks over 4.5 tonnes GVM?', a: 'Yes, rigid trucks are within scope. Prime movers and trailers are assessed case by case against lender policy. Ask us before you commit to a purchase.' },
+    { q: 'Can a sole trader get truck finance?', a: 'Yes, provided the ABN has been active for 24 months, the business is GST registered and the truck is for business use.' },
+    { q: 'What about private sales?', a: 'Private-sale trucks can be financed. A $250 inspection fee may apply and the lender pays the seller directly at settlement.' },
+  ]}
+  related={[
+    { label: 'Private sale asset finance', href: '/answers/private-sale-asset-finance' },
+    { label: 'How long does approval take?', href: '/answers/how-long-does-asset-finance-approval-take' },
+    { label: 'Lender low-doc policies', href: '/lender-policies' },
+    { label: 'Current rates', href: '/rates' },
+  ]}
+  updated="2026-09-08"
+/>

@@ -1,0 +1,62 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+import Cta from '@/components/Cta.astro';
+import { ENTITY } from '@/data/entity';
+import { breadcrumbs } from '@/lib/schema';
+
+const entries = (await getCollection('answers')).sort((a, b) => a.data.question.localeCompare(b.data.question));
+const categories: Record<string, string> = {
+  eligibility: 'Eligibility',
+  pricing: 'Pricing and fees',
+  products: 'Products and structures',
+  process: 'Process and documents',
+  comparison: 'Comparisons',
+  tax: 'Tax',
+  'end-of-term': 'End of term',
+};
+const grouped = Object.keys(categories).map((key) => ({
+  key,
+  label: categories[key],
+  items: entries.filter((e) => e.data.category === key),
+})).filter((g) => g.items.length > 0);
+
+const title = 'Answers: low-doc asset finance in Australia, explained plainly';
+const description = 'Direct answers to the questions Australian business owners ask about low-doc asset finance: eligibility, rates, fees, balloons, tax, approval times and what happens at the end of the term.';
+const schema = [
+  breadcrumbs([{ name: 'Home', url: ENTITY.siteUrl + '/' }, { name: 'Answers', url: ENTITY.siteUrl + '/answers' }]),
+  {
+    '@type': 'ItemList',
+    name: title,
+    itemListElement: entries.map((e, i) => ({ '@type': 'ListItem', position: i + 1, name: e.data.question, url: `${ENTITY.siteUrl}/answers/${e.id}` })),
+  },
+];
+---
+<Base title={title} description={description} path="/answers" pageType="CollectionPage" schema={schema}>
+  <section class="container-x pt-8">
+    <Breadcrumbs items={[{ name: 'Answers', href: '/answers' }]} />
+    <p class="eyebrow mt-6">Answers</p>
+    <h1 class="mt-2 max-w-3xl">Low-doc asset finance, answered plainly</h1>
+    <p class="mt-4 text-lg text-ink-600 max-w-2xl">
+      Each page answers one question first, then explains. Every rate carries its verification date and every page names the
+      entity behind it: {ENTITY.brand}, {ENTITY.legalName}, Australian Credit Licence {ENTITY.acl}.
+    </p>
+  </section>
+  {grouped.map((g) => (
+    <section class="container-x mt-12">
+      <h2 id={g.key} class="scroll-mt-24">{g.label}</h2>
+      <ul class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {g.items.map((e) => (
+          <li class="card p-5">
+            <a href={`/answers/${e.id}`} class="no-underline">
+              <p class="font-semibold text-ink">{e.data.question}</p>
+              <p class="mt-2 text-sm text-ink-600 line-clamp-3">{e.data.shortAnswer}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+  <div class="container-x"><Cta /></div>
+</Base>

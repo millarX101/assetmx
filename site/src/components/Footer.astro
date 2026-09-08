@@ -1,0 +1,75 @@
+---
+import { ENTITY, APP_LINKS, PRICING, longDate } from '@/data/entity';
+import { RATES } from '@/data/rates';
+import Logo from '@/components/Logo.astro';
+const year = new Date().getFullYear();
+const cols = [
+  {
+    title: 'Finance',
+    links: [
+      ['Car finance', '/car-finance'],
+      ['Truck & van finance', '/truck-finance'],
+      ['Equipment finance', '/equipment-finance'],
+      ['EV finance', '/ev-leasing'],
+      ['Start application', APP_LINKS.quote],
+    ],
+  },
+  {
+    title: 'Learn',
+    links: [
+      ['Answers', '/answers'],
+      ['Current rates', '/rates'],
+      ['Lender low-doc policies', '/lender-policies'],
+      ['Guides', '/guides'],
+      ['How we compare', '/how-we-compare'],
+    ],
+  },
+  {
+    title: 'Company',
+    links: [
+      ['Contact', '/contact'],
+      ['Credit guide', '/credit-guide'],
+      ['Privacy policy', '/privacy'],
+      ['Terms of service', '/terms'],
+      ['Log in', APP_LINKS.admin],
+    ],
+  },
+];
+---
+<footer class="mt-24 bg-forest-800 text-ink-300">
+  <div class="container-x py-14 grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+    <div>
+      <Logo light />
+      <p class="mt-4 text-sm leading-relaxed max-w-xs text-ink-200">
+        Vehicle, truck and equipment finance for established Australian businesses. One flat {PRICING.platformFeeLabel} fee, disclosed before you start. No lender commission.
+      </p>
+      <p class="mt-4 text-xs text-ink-400">
+        Rates on this site verified {longDate(RATES.verifiedOn)} against {RATES.source}.
+      </p>
+    </div>
+    {cols.map((c) => (
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-sage">{c.title}</p>
+        <ul class="mt-3 space-y-2 text-sm">
+          {c.links.map(([label, href]) => (
+            <li><a href={href} class="no-underline text-ink-200 hover:text-canvas">{label}</a></li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+  <div class="border-t border-white/10">
+    <div class="container-x py-6 text-xs leading-relaxed text-ink-400 space-y-2">
+      <p>
+        <span class="text-canvas">{ENTITY.brand}</span> is a trading name of {ENTITY.legalName}.
+        ABN {ENTITY.abn} | Australian Credit Licence {ENTITY.acl}. Email <a href={`mailto:${ENTITY.email}`} class="hover:text-canvas">{ENTITY.email}</a>.
+      </p>
+      <p>
+        Indicative figures are estimates only and not an offer of credit. Credit is provided by various lenders. Approval subject to lender criteria. Not all applications will be approved.
+        Terms, conditions, fees and charges apply. Please read our <a href="/credit-guide" class="underline hover:text-canvas">Credit Guide</a> before applying.
+        Information on this site is general in nature and is not financial, tax or legal advice.
+      </p>
+      <p>© {year} {ENTITY.legalName}. All rights reserved.</p>
+    </div>
+  </div>
+</footer>

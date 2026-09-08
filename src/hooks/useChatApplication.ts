@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { ChatMessageData } from '@/components/chat/ChatMessage';
 import {
   getStep,
@@ -9,7 +9,9 @@ import {
   type ChatFlowData,
 } from '@/lib/chat-flow';
 import { lookupABN, cleanABN, searchABNByName } from '@/lib/abn-lookup';
-import { calculateQuote } from '@/lib/calculator';
+import { calculateQuote, getMaxBalloon } from '@/lib/calculator';
+import { assist } from '@/hooks/useChatAI';
+import { extractDocument } from '@/lib/doc-extract';
 import type { ApplicationData, AssetType, AssetCondition } from '@/types/application';
 import { createEmptyApplication } from '@/types/application';
 import { supabase, isSupabaseConfigured, getSupabaseUrl, getSupabaseAnonKey } from '@/lib/supabase';
@@ -32,13 +34,67 @@ export interface ChatState {
   progress: { current: number; total: number };
 }
 
+// Actions executed before their step's messages render, so the copy can report the result
+const PRE_RENDER_ACTIONS: string[] = ['calculate_quote', 'submit_application', 'extract_asset', 'extract_licence'];
+
 const TYPING_DELAY = 800; // ms between bot messages
 const STORAGE_KEY = 'assetmx_chat_progress';
 const CALCULATOR_TO_CHAT_KEY = 'assetmx_calculator_quote';
+// Step the chat should open on when the public site handed over an ABN.
+let pendingSeedStepId: string | null = null;
+
+interface HandoffData {
+  formData?: QuoteInput;
+  quote?: QuoteResult;
+  payFeeUpfront?: boolean;
+  seedAbn?: string;
+  assetType?: QuoteInput['assetType'];
+}
+
+// The hand-off can only be read once (it strips the query string), and React StrictMode
+// runs the state initialiser twice in dev - so cache the first result.
+let handoffCache: HandoffData | null | undefined;
+function loadCalculatorData(): HandoffData | null {
+  if (handoffCache !== undefined) return handoffCache;
+  handoffCache = readHandoffData();
+  return handoffCache;
+}
 
 // Load calculator data if coming from quote calculator
-function loadCalculatorData(): { formData: QuoteInput; quote: QuoteResult; payFeeUpfront: boolean } | null {
+function readHandoffData(): HandoffData | null {
   try {
+    // Public site quote island (assetmx.com.au) hands off via the query string,
+    // because localStorage is not shared across origins.
+    const params = new URLSearchParams(window.location.search);
+    const amount = Number(params.get('amount'));
+    const term = Number(params.get('term')) || 60;
+    // The ABN and asset type are parsed independently of the quote params - the quick start
+    // omits the amount when the visitor answers "not sure yet", and the verified ABN still matters.
+    const assetParam = params.get('asset');
+    const assetType: QuoteInput['assetType'] = assetParam === 'truck' || assetParam === 'equipment' ? assetParam : 'vehicle';
+    const cleanedAbn = (params.get('abn') || '').replace(/[^0-9]/g, '');
+    const seedAbn = cleanedAbn.length === 11 ? cleanedAbn : undefined;
+    if (amount >= 5000 && amount <= 500000 && term >= 12 && term <= 84) {
+      const balloonPercentage = Math.max(0, Math.min(Number(params.get('balloon') ?? 0) || 0, getMaxBalloon(term)));
+      const financePlatformFee = params.get('fee') !== 'upfront';
+      const formData: QuoteInput = {
+        assetType,
+        assetCondition: 'new',
+        loanAmount: amount,
+        termMonths: term,
+        balloonPercentage,
+        financePlatformFee,
+      };
+      const quote = calculateQuote(formData) as unknown as QuoteResult;
+      // Strip the params so a refresh does not re-seed the chat
+      window.history.replaceState({}, '', window.location.pathname);
+      return { formData, quote, payFeeUpfront: !financePlatformFee, seedAbn, assetType };
+    }
+    if (seedAbn) {
+      // No usable quote, but the visitor verified an ABN on the public site - keep it.
+      window.history.replaceState({}, '', window.location.pathname);
+      return { seedAbn, assetType: assetParam ? assetType : undefined };
+    }
     const data = localStorage.getItem(CALCULATOR_TO_CHAT_KEY);
     if (data) {
       // Clear it so we don't use it again on refresh
@@ -92,20 +148,31 @@ function setNestedValue(obj: Record<string, unknown>, path: string, value: unkno
     const isNextKeyNumeric = !isNaN(Number(nextKey));
     const isCurrentKeyNumeric = !isNaN(Number(key));
 
-    if (isCurrentKeyNumeric) {
-      // Current key is an array index
+    if (isCurrentKeyNumeric && Array.isArray(current)) {
+      // Current key is an index into an existing array - create the element if missing
       const index = Number(key);
       const arr = current as unknown as unknown[];
-      if (!arr[index]) {
+      if (arr[index] === undefined || arr[index] === null) {
         // Next key determines if we need an array or object
+        arr[index] = isNextKeyNumeric ? [] : {};
+      }
+      current = arr[index] as Record<string, unknown>;
+    } else if (isCurrentKeyNumeric) {
+      // Numeric key but the parent is not an array (or is missing) - treat it as an index anyway
+      const index = Number(key);
+      const arr = current as unknown as unknown[];
+      if (arr[index] === undefined || arr[index] === null) {
         arr[index] = isNextKeyNumeric ? [] : {};
       }
       current = arr[index] as Record<string, unknown>;
     } else {
       // Current key is an object property
-      if (!current[key]) {
+      if (current[key] === undefined || current[key] === null) {
         // Next key determines if we need an array or object
         current[key] = isNextKeyNumeric ? [] : {};
+      } else if (isNextKeyNumeric && !Array.isArray(current[key])) {
+        // The path expects an array here (e.g. directors.directors.0.email) - promote it
+        current[key] = [];
       }
       current = current[key] as Record<string, unknown>;
     }
@@ -113,7 +180,7 @@ function setNestedValue(obj: Record<string, unknown>, path: string, value: unkno
 
   // Set the final value
   const lastKey = keys[keys.length - 1];
-  const isLastKeyNumeric = !isNaN(Number(lastKey));
+  const isLastKeyNumeric = lastKey !== '' && !isNaN(Number(lastKey));
   if (isLastKeyNumeric) {
     (current as unknown as unknown[])[Number(lastKey)] = value;
   } else {
@@ -167,23 +234,33 @@ export function useChatApplication() {
       // Clear any existing saved state since we're starting fresh from calculator
       clearSavedState();
 
-      const { formData, quote } = calculatorData;
-      const startStep = getStep('greeting')!;
+      const { formData, quote, seedAbn } = calculatorData;
+
+      // A verified ABN means we can skip the business-name search entirely
+      const startStepId = seedAbn ? 'abn_manual_lookup' : 'greeting';
+      const startStep = getStep(startStepId)!;
 
       // Pre-fill application with calculator data
       const prefilledApp = createEmptyApplication();
-      prefilledApp.asset.assetType = formData.assetType;
-      prefilledApp.asset.assetCondition = formData.assetCondition;
-      prefilledApp.asset.assetPriceIncGst = formData.loanAmount; // Approximate - they'll confirm
-      prefilledApp.loan.loanAmount = formData.loanAmount;
-      prefilledApp.loan.termMonths = formData.termMonths;
-      prefilledApp.loan.balloonPercentage = formData.balloonPercentage;
-      prefilledApp.loan.balloonAmount = quote.balloonAmount;
+      if (formData && quote) {
+        prefilledApp.asset.assetType = formData.assetType;
+        prefilledApp.asset.assetCondition = formData.assetCondition;
+        prefilledApp.asset.assetPriceIncGst = formData.loanAmount; // Approximate - they'll confirm
+        prefilledApp.loan.loanAmount = formData.loanAmount;
+        prefilledApp.loan.termMonths = formData.termMonths;
+        prefilledApp.loan.balloonPercentage = formData.balloonPercentage;
+        prefilledApp.loan.balloonAmount = quote.balloonAmount;
+      } else if (calculatorData.assetType) {
+        prefilledApp.asset.assetType = calculatorData.assetType;
+      }
+      if (seedAbn) {
+        prefilledApp.business.abn = seedAbn;
+      }
 
       const flowData: ChatFlowData = {
         application: prefilledApp,
         currentDirectorIndex: 0,
-        quote: {
+        quote: formData && quote ? {
           indicativeRate: quote.indicativeRate,
           monthlyRepayment: quote.monthlyRepayment,
           totalInterest: quote.totalInterest,
@@ -191,18 +268,25 @@ export function useChatApplication() {
           totalFeesFinanced: 0,
           totalFeesUpfront: 0,
           totalCost: quote.totalRepayments,
-        },
+        } : undefined,
         fromCalculator: true,
       };
 
       // Start with a welcome message that acknowledges the quote
-      const assetTypeLabel = formData.assetType === 'vehicle' ? 'vehicle' : formData.assetType === 'truck' ? 'truck' : 'equipment';
-      const welcomeMessages = [
-        `Welcome back! I see you've got a quote for ${assetTypeLabel} finance.`,
-        `$${formData.loanAmount.toLocaleString()} over ${formData.termMonths} months at ${quote.indicativeRate.toFixed(2)}% p.a.`,
-        "Let's get your application started. First, I need to verify your business.",
-        "What's your business name or ABN?"
-      ];
+      const welcomeMessages: string[] = [];
+      if (formData && quote) {
+        const assetTypeLabel = formData.assetType === 'vehicle' ? 'vehicle' : formData.assetType === 'truck' ? 'truck' : 'equipment';
+        welcomeMessages.push(`Welcome back! I see you've got a quote for ${assetTypeLabel} finance.`);
+        welcomeMessages.push(`$${formData.loanAmount.toLocaleString()} over ${formData.termMonths} months at ${quote.indicativeRate.toFixed(2)}% p.a.`);
+      }
+      welcomeMessages.push("Let's get your application started. First, I need to verify your business.");
+      if (seedAbn) {
+        // The lookup step is kicked off from an effect on mount (pendingSeedStepId)
+        welcomeMessages.push(`Using the ABN you gave us: ${seedAbn}.`);
+        pendingSeedStepId = startStepId;
+      } else {
+        welcomeMessages.push("What's your business name or ABN?");
+      }
 
       const initialOptions = typeof startStep.options === 'function'
         ? startStep.options(flowData)
@@ -216,15 +300,15 @@ export function useChatApplication() {
           timestamp: new Date(),
           type: 'bot' as const,
         })),
-        currentStepId: 'greeting',
+        currentStepId: startStepId,
         flowData,
         isTyping: false,
         isComplete: false,
-        isWaitingForInput: true,
+        isWaitingForInput: !seedAbn,
         currentInputType: startStep.inputType,
         currentOptions: initialOptions,
         currentPlaceholder: startStep.placeholder || '',
-        progress: getStepProgress('greeting'),
+        progress: getStepProgress(startStepId),
       };
     }
 
@@ -312,115 +396,8 @@ export function useChatApplication() {
     setState(prev => ({ ...prev, isTyping: show }));
   }, []);
 
-  // Process the current step's messages
-  const processStepMessages = useCallback(async (step: ChatStep, flowData: ChatFlowData, autoProgressCallback?: (stepId: string, data: ChatFlowData) => Promise<void>) => {
-    debugLog('STEP', `Processing step: ${step.id}`, { inputType: step.inputType, hasAction: !!step.action });
-
-    const messages = typeof step.messages === 'function'
-      ? step.messages(flowData)
-      : step.messages;
-
-    debugLog('STEP', `Messages to display: ${messages.length}`, messages);
-
-    // Display messages with typing delay
-    for (const message of messages) {
-      if (message === '📋 SUMMARY_CARD') {
-        // Special case - summary card will be handled separately
-        addBotMessage(message);
-        continue;
-      }
-
-      showTyping(true);
-      await new Promise(resolve => setTimeout(resolve, TYPING_DELAY));
-      showTyping(false);
-      addBotMessage(message);
-    }
-
-    // Get options - can be static array or dynamic function
-    const options = typeof step.options === 'function'
-      ? step.options(flowData)
-      : (step.options || []);
-
-    debugLog('STEP', `Options resolved: ${options.length}`, options);
-
-    // Auto-progress for steps with actions but no user input required (empty options)
-    // Don't auto-progress if step requires text input (user needs to enter data first)
-    const requiresTextInput = step.inputType === 'text' || step.inputType === 'number' ||
-                              step.inputType === 'email' || step.inputType === 'phone' ||
-                              step.inputType === 'date';
-
-    // Also auto-progress for 'confirm' inputType with no options (info-only steps)
-    const isInfoOnlyStep = step.inputType === 'confirm' && options.length === 0 && !step.action && step.nextStep;
-
-    if ((step.action && options.length === 0 && !requiresTextInput && autoProgressCallback) ||
-        (isInfoOnlyStep && autoProgressCallback)) {
-      debugLog('AUTO', `Auto-progressing step ${step.id}${step.action ? ` with action: ${step.action}` : ' (info-only step)'}`);
-      // Execute the action
-      let updatedData = { ...flowData };
-
-      switch (step.action) {
-        case 'abn_lookup': {
-          const abn = cleanABN(updatedData.application.business?.abn || '');
-          try {
-            const result = await lookupABN(abn);
-            debugLog('ABN', 'Lookup result received', result);
-            if (result) {
-              debugLog('ABN', 'abnRegisteredDate value:', result.abnRegisteredDate);
-              updatedData.abnLookup = {
-                entityName: result.entityName,
-                entityType: result.entityType,
-                abnStatus: result.abnStatus,
-                abnRegisteredDate: result.abnRegisteredDate || '',
-                gstRegistered: result.gstRegistered,
-                gstRegisteredDate: result.gstRegisteredDate,
-                state: result.state,
-                postcode: result.postcode,
-              };
-              debugLog('ABN', 'Stored abnLookup:', updatedData.abnLookup);
-              // Update application with lookup data
-              updatedData.application = {
-                ...updatedData.application,
-                business: {
-                  ...(updatedData.application.business || {}),
-                  abn: updatedData.application.business?.abn || '',
-                  entityName: result.entityName,
-                  entityType: result.entityType as ApplicationData['business']['entityType'],
-                  gstRegistered: result.gstRegistered,
-                  businessState: result.state || '',
-                  abnRegisteredDate: result.abnRegisteredDate || '',
-                  businessAddress: '',
-                  businessPostcode: result.postcode || '',
-                },
-              };
-            }
-          } catch (error) {
-            console.error('ABN lookup failed:', error);
-          }
-          break;
-        }
-        // Other actions can be added here if needed
-      }
-
-      // Move to next step automatically
-      const nextStepId = typeof step.nextStep === 'function'
-        ? step.nextStep('', updatedData)
-        : step.nextStep;
-
-      debugLog('AUTO', `Auto-progressing to next step: ${nextStepId}`);
-      await autoProgressCallback(nextStepId, updatedData);
-      return;
-    }
-
-    // Update state with input expectations
-    debugLog('STEP', `Waiting for input`, { inputType: step.inputType, options });
-    setState(prev => ({
-      ...prev,
-      isWaitingForInput: true,
-      currentInputType: step.inputType,
-      currentOptions: options,
-      currentPlaceholder: step.placeholder || '',
-    }));
-  }, [addBotMessage, showTyping]);
+  // Guards against a second insert while one is already in flight
+  const submittingRef = useRef(false);
 
   // Execute step action (ABN lookup, quote calculation, etc.)
   const executeAction = useCallback(async (action: string, flowData: ChatFlowData, userInput?: string): Promise<ChatFlowData> => {
@@ -429,6 +406,14 @@ export function useChatApplication() {
 
     switch (action) {
       case 'abn_search': {
+        // An 11-digit ABN typed at the greeting is looked up directly, not searched as a name
+        const typed = cleanABN(flowData.application.business?.businessName || userInput || '');
+        if (typed.length === 11) {
+          updatedData.application = setNestedValue(updatedData.application as Record<string, unknown>, 'business.abn', typed) as Partial<ApplicationData>;
+          updatedData.abnSearchResults = [];
+          const looked = await executeAction('abn_lookup', updatedData);
+          return looked;
+        }
         // Search for businesses by name
         const businessName = flowData.application.business?.businessName || userInput || '';
         if (businessName && businessName.trim().length >= 2) {
@@ -485,22 +470,120 @@ export function useChatApplication() {
         break;
       }
 
+      case 'extract_asset': {
+        // Prefer the uploaded quote; fall back to the free-text description via Claude.
+        const quoteDocs = (flowData.uploadedDocuments || []).filter(d => /quote|invoice/i.test(d.id));
+        if (quoteDocs.length > 0) {
+          const res = await extractDocument('quote', quoteDocs.map(d => d.id));
+          const f = res?.fields as Record<string, unknown> | undefined;
+          if (f && f.found) {
+            updatedData.extracted = {
+              ...(updatedData.extracted || {}),
+              asset: {
+                make: (f.make as string) || undefined,
+                model: (f.model as string) || undefined,
+                year: typeof f.year === 'number' ? f.year : undefined,
+                supplierName: (f.supplierName as string) || undefined,
+                priceIncGst: typeof f.priceIncGst === 'number' ? f.priceIncGst : undefined,
+                priceExGst: typeof f.priceExGst === 'number' ? f.priceExGst : undefined,
+                gst: typeof f.gst === 'number' ? f.gst : undefined,
+                condition: (f.condition as string) || undefined,
+                description: (f.description as string) || undefined,
+              },
+            };
+          }
+          break;
+        }
+        const description = flowData.application.asset?.assetDescription;
+        if (description) {
+          const res = await assist({
+            step: { id: 'parse_asset', question: 'Describe the asset', inputType: 'asset_description' },
+            userText: description,
+            context: { assetType: flowData.application.asset?.assetType },
+          });
+          if (res?.value) {
+            try {
+              const f = JSON.parse(res.value) as Record<string, unknown>;
+              updatedData.extracted = {
+                ...(updatedData.extracted || {}),
+                asset: {
+                  make: (f.make as string) || undefined,
+                  model: (f.model as string) || undefined,
+                  year: typeof f.year === 'number' ? f.year : undefined,
+                  supplierName: (f.supplierName as string) || undefined,
+                  priceIncGst: typeof f.priceIncGst === 'number' ? f.priceIncGst : undefined,
+                  condition: (f.condition as string) || undefined,
+                  description,
+                },
+              };
+            } catch {
+              // leave extracted unset; the flow asks the missing fields
+            }
+          }
+        }
+        break;
+      }
+
+      case 'extract_licence': {
+        const licenceDocs = (flowData.uploadedDocuments || []).filter(d => /licence|license/i.test(d.id));
+        if (licenceDocs.length > 0) {
+          const res = await extractDocument('licence', licenceDocs.map(d => d.id));
+          const f = res?.fields as Record<string, unknown> | undefined;
+          if (f && f.found) {
+            updatedData.extracted = {
+              ...(updatedData.extracted || {}),
+              licence: {
+                fullName: (f.fullName as string) || undefined,
+                firstName: (f.firstName as string) || undefined,
+                lastName: (f.lastName as string) || undefined,
+                dateOfBirth: (f.dateOfBirth as string) || undefined,
+                address: (f.address as string) || undefined,
+                licenceNumber: (f.licenceNumber as string) || undefined,
+                state: (f.state as string) || undefined,
+                expiry: (f.expiry as string) || undefined,
+              },
+            };
+          }
+        }
+        break;
+      }
+
       case 'calculate_quote': {
         const asset = flowData.application.asset;
         const loan = flowData.application.loan;
         if (asset?.assetPriceIncGst) {
+          // Use whatever the applicant has actually chosen so far; fall back to the
+          // defaults only when the value has not been collected yet.
+          const termMonths = Number(loan?.termMonths) > 0 ? Number(loan?.termMonths) : 60;
+          const rawBalloon = Number(loan?.balloonPercentage);
+          const balloonPercentage = Math.max(0, Math.min(Number.isFinite(rawBalloon) ? rawBalloon : 0, getMaxBalloon(termMonths)));
+          const depositAmount = Number(loan?.depositAmount) > 0 ? Number(loan?.depositAmount) : 0;
           try {
             const quote = calculateQuote({
               assetType: (asset.assetType as AssetType) || 'vehicle',
               assetCondition: (asset.assetCondition as AssetCondition) || 'new',
-              loanAmount: asset.assetPriceIncGst - (loan?.depositAmount || 0),
-              termMonths: loan?.termMonths || 60,
-              balloonPercentage: loan?.balloonPercentage || 0,
+              loanAmount: asset.assetPriceIncGst - depositAmount,
+              termMonths,
+              balloonPercentage,
             });
             updatedData.quote = {
               monthlyRepayment: quote.monthlyRepayment,
               weeklyRepayment: quote.weeklyRepayment,
               indicativeRate: quote.indicativeRate,
+              totalInterest: quote.totalInterest,
+              totalRepayments: quote.totalRepayments,
+              totalFeesFinanced: quote.totalFeesFinanced,
+              totalFeesUpfront: quote.totalFeesUpfront,
+              totalCost: quote.totalCost,
+            };
+            // Keep the derived loan figures in step with the quote
+            updatedData.application = {
+              ...updatedData.application,
+              loan: {
+                ...(updatedData.application.loan || {}),
+                loanAmount: asset.assetPriceIncGst - depositAmount,
+                balloonAmount: quote.balloonAmount,
+              } as ApplicationData['loan'],
             };
           } catch (error) {
             console.error('Quote calculation failed:', error);
@@ -697,11 +780,23 @@ export function useChatApplication() {
       }
 
       case 'submit_application': {
-        // Submit the complete application to Supabase
-        if (!isSupabaseConfigured()) {
-          console.log('Supabase not configured - skipping submission');
+        // Never submit the same application twice (page reload, Retry, re-render)
+        if (flowData.submittedApplicationId) {
+          debugLog('SUBMIT', 'Already submitted, skipping', flowData.submittedApplicationId);
           break;
         }
+        if (submittingRef.current) {
+          debugLog('SUBMIT', 'Submission already in flight, skipping');
+          break;
+        }
+
+        // Submit the complete application to Supabase
+        if (!isSupabaseConfigured()) {
+          console.error('Supabase not configured - cannot submit application');
+          updatedData.submissionError = 'Submission is not available right now.';
+          break;
+        }
+        submittingRef.current = true;
 
         const app = flowData.application;
         const business = app.business;
@@ -712,7 +807,7 @@ export function useChatApplication() {
         const abnLookup = flowData.abnLookup;
 
         try {
-          const { error: insertError } = await supabase.from('applications').insert({
+          const { data: inserted, error: insertError } = await supabase.from('applications').insert({
             // Business details
             abn: business?.abn || '',
             abn_status: abnLookup?.abnStatus || 'Active',
@@ -763,6 +858,15 @@ export function useChatApplication() {
               const investmentMortgageBalance = Number(d.investmentMortgageBalance) || 0;
               const vehicleLoanBalance = Number(d.vehicleLoanBalance) || 0;
               const creditCardLimit = Number(d.creditCardLimit) || 0;
+              const creditCardOutstanding = Number(d.creditCardOutstanding) || 0;
+
+              // Monthly commitments, income and expenses (affordability)
+              const monthlyMortgagePayment = Number(d.monthlyMortgagePayment) || 0;
+              const monthlyVehicleLoanPayment = Number(d.monthlyVehicleLoanPayment) || 0;
+              const monthlyCreditCardPayment = Number(d.monthlyCreditCardPayment) || 0;
+              const monthlyLivingExpenses = Number(d.monthlyLivingExpenses) || 0;
+              const annualSalary = Number(d.annualSalary) || 0;
+              const otherIncome = Number(d.otherIncome) || 0;
 
               const totalAssets = propertyValue + investmentPropertyValue + vehiclesValue;
               const totalLiabilities = mortgageBalance + investmentMortgageBalance + vehicleLoanBalance + creditCardLimit;
@@ -788,10 +892,23 @@ export function useChatApplication() {
                 vehiclesValue,
                 vehicleLoanBalance,
                 creditCardLimit,
+                creditCardOutstanding,
+                ownsProperty: d.ownsProperty,
+                hasInvestmentProperty: d.hasInvestmentProperty,
+                // Monthly commitments (affordability)
+                monthlyMortgagePayment,
+                monthlyVehicleLoanPayment,
+                monthlyCreditCardPayment,
+                monthlyLivingExpenses,
+                // Income
+                annualSalary,
+                otherIncome,
                 // Calculated totals
                 totalAssets,
                 totalLiabilities,
                 netPosition: totalAssets - totalLiabilities,
+                totalMonthlyPayments: monthlyMortgagePayment + monthlyVehicleLoanPayment + monthlyCreditCardPayment + monthlyLivingExpenses,
+                totalMonthlyIncome: (annualSalary + otherIncome) / 12,
               };
             }),
             primary_contact_index: app.directors?.primaryContactIndex || 0,
@@ -799,19 +916,22 @@ export function useChatApplication() {
             // Status
             status: 'submitted',
             step_completed: 5,
-          } as never);
+          } as never).select('id').single();
 
-          if (insertError) {
+          if (insertError || !inserted) {
             console.error('Failed to submit application:', insertError);
+            updatedData.submissionError = insertError?.message || 'Could not save the application.';
           } else {
-            console.log('Application submitted successfully');
+            const applicationId = (inserted as { id: string }).id;
+            updatedData.submittedApplicationId = applicationId;
+            console.log('Application submitted successfully', applicationId);
             // Clear saved progress after successful submission
             clearSavedState();
 
             // Send confirmation emails via Edge Function
             const primaryDirector = directors[0];
             const emailData = {
-              id: 'temp-' + Date.now(), // Will be replaced with actual ID from insert
+              id: applicationId,
               entityName: business?.entityName || abnLookup?.entityName || '',
               abn: business?.abn || '',
               contactName: `${primaryDirector?.firstName || ''} ${primaryDirector?.lastName || ''}`.trim(),
@@ -869,6 +989,9 @@ export function useChatApplication() {
           }
         } catch (error) {
           console.error('Application submission error:', error);
+          updatedData.submissionError = error instanceof Error ? error.message : 'Could not save the application.';
+        } finally {
+          submittingRef.current = false;
         }
         break;
       }
@@ -877,12 +1000,96 @@ export function useChatApplication() {
     return updatedData;
   }, []);
 
-  // Move to the next step
-  const moveToStep = useCallback(async (stepId: string, flowData: ChatFlowData) => {
-    debugLog('NAV', `Moving to step: ${stepId}`);
+  // Process the current step's messages
+  const processStepMessages = useCallback(async (step: ChatStep, flowData: ChatFlowData, autoProgressCallback?: (stepId: string, data: ChatFlowData) => Promise<void>): Promise<ChatFlowData> => {
+    debugLog('STEP', `Processing step: ${step.id}`, { inputType: step.inputType, hasAction: !!step.action });
 
-    // If moving to greeting from an end state, reset the chat completely
-    if (stepId === 'greeting') {
+    // D-3 / D-14: these actions must run BEFORE the step's messages render, so the copy
+    // can quote the result (the indicative estimate, the application reference).
+    let data = flowData;
+    let actionAlreadyRun = false;
+    if (step.action && PRE_RENDER_ACTIONS.includes(step.action)) {
+      debugLog('STEP', `Running action ${step.action} before rendering ${step.id}`);
+      data = await executeAction(step.action, data);
+      actionAlreadyRun = true;
+      setState(prev => ({ ...prev, flowData: data }));
+    }
+
+    const messages = typeof step.messages === 'function'
+      ? step.messages(data)
+      : step.messages;
+
+    debugLog('STEP', `Messages to display: ${messages.length}`, messages);
+
+    // Display messages with typing delay
+    for (const message of messages) {
+      if (message === '📋 SUMMARY_CARD') {
+        // Special case - summary card will be handled separately
+        addBotMessage(message);
+        continue;
+      }
+
+      showTyping(true);
+      await new Promise(resolve => setTimeout(resolve, TYPING_DELAY));
+      showTyping(false);
+      addBotMessage(message);
+    }
+
+    // Get options - can be static array or dynamic function
+    const options = typeof step.options === 'function'
+      ? step.options(data)
+      : (step.options || []);
+
+    debugLog('STEP', `Options resolved: ${options.length}`, options);
+
+    // Auto-progress for steps with actions but no user input required (empty options)
+    // Don't auto-progress if step requires text input (user needs to enter data first)
+    const requiresTextInput = step.inputType === 'text' || step.inputType === 'number' ||
+                              step.inputType === 'email' || step.inputType === 'phone' ||
+                              step.inputType === 'date';
+
+    // Also auto-progress for 'confirm' inputType with no options (info-only steps)
+    const isInfoOnlyStep = step.inputType === 'confirm' && options.length === 0 && !step.action && step.nextStep;
+
+    if ((step.action && options.length === 0 && !requiresTextInput && autoProgressCallback) ||
+        (isInfoOnlyStep && autoProgressCallback)) {
+      debugLog('AUTO', `Auto-progressing step ${step.id}${step.action ? ` with action: ${step.action}` : ' (info-only step)'}`);
+      // Execute the action (unless it already ran before the messages were rendered)
+      let updatedData = data;
+      if (step.action && !actionAlreadyRun) {
+        updatedData = await executeAction(step.action, updatedData);
+      }
+
+      // Move to next step automatically
+      const nextStepId = typeof step.nextStep === 'function'
+        ? step.nextStep('', updatedData)
+        : step.nextStep;
+
+      debugLog('AUTO', `Auto-progressing to next step: ${nextStepId}`);
+      await autoProgressCallback(nextStepId, updatedData);
+      return updatedData;
+    }
+
+    // Update state with input expectations
+    debugLog('STEP', `Waiting for input`, { inputType: step.inputType, options });
+    setState(prev => ({
+      ...prev,
+      isWaitingForInput: true,
+      currentInputType: step.inputType,
+      currentOptions: options,
+      currentPlaceholder: step.placeholder || '',
+    }));
+
+    return data;
+  }, [addBotMessage, showTyping, executeAction]);
+
+  // Move to the next step
+  const moveToStep = useCallback(async (stepId: string, flowData: ChatFlowData, options?: { reset?: boolean }) => {
+    debugLog('NAV', `Moving to step: ${stepId}`, options);
+
+    // Only wipe the application when a restart was explicitly requested. Returning to the
+    // greeting mid-flow ("try a different name", editing the business) must keep the answers.
+    if (stepId === 'greeting' && options?.reset) {
       clearSavedState();
       flowData = {
         application: createEmptyApplication(),
@@ -903,7 +1110,7 @@ export function useChatApplication() {
       const nextStepId = typeof step.nextStep === 'function'
         ? step.nextStep('', flowData)
         : step.nextStep;
-      await moveToStep(nextStepId, flowData);
+      await moveToStep(nextStepId, flowData, options);
       return;
     }
 
@@ -930,17 +1137,18 @@ export function useChatApplication() {
     };
 
     // Process step messages (with auto-progress callback for action steps)
-    await processStepMessages(step, flowData, autoProgressCallback);
+    // The returned data includes anything the step's action computed (e.g. the quote).
+    const resultData = await processStepMessages(step, flowData, autoProgressCallback);
 
     // Save state (only if not auto-progressed)
     const currentOptions = typeof step.options === 'function'
-      ? step.options(flowData)
+      ? step.options(resultData)
       : (step.options || []);
     if (!step.action || currentOptions.length > 0) {
       saveState({
         ...state,
         currentStepId: stepId,
-        flowData,
+        flowData: resultData,
       } as ChatState);
     }
   }, [processStepMessages, state]);
@@ -960,9 +1168,40 @@ export function useChatApplication() {
 
     let flowData = { ...state.flowData };
 
-    // Validate input if needed
+    // Validate input if needed. When a typed answer fails, ask Claude whether it was a
+    // differently-phrased answer, a question, or a request for a person, before re-asking.
     if (currentStep.validate) {
-      const error = currentStep.validate(input, flowData);
+      let error = currentStep.validate(input, flowData);
+      if (error && currentStep.inputType !== 'select' && currentStep.inputType !== 'abn_select') {
+        showTyping(true);
+        const stepMessages = typeof currentStep.messages === 'function' ? currentStep.messages(flowData) : currentStep.messages;
+        const ai = await assist({
+          step: {
+            id: currentStep.id,
+            question: stepMessages[stepMessages.length - 1] || '',
+            inputType: currentStep.inputType,
+            field: currentStep.field,
+          },
+          userText: input,
+          context: {
+            businessName: flowData.abnLookup?.entityName,
+            assetType: flowData.application.asset?.assetType,
+            price: flowData.application.asset?.assetPriceIncGst,
+            termMonths: flowData.application.loan?.termMonths,
+            balloonPercentage: flowData.application.loan?.balloonPercentage,
+          },
+          history: state.messages.slice(-6).map(m => ({ role: m.type === 'user' ? 'user' as const : 'assistant' as const, content: m.content })),
+        });
+        showTyping(false);
+        if (ai?.intent === 'answer' && ai.value && !currentStep.validate(ai.value, flowData)) {
+          input = ai.value;
+          error = null;
+        } else if (ai && (ai.intent === 'question' || ai.intent === 'handoff' || ai.intent === 'change') && ai.reply) {
+          addBotMessage(ai.reply);
+          setState(prev => ({ ...prev, isWaitingForInput: true }));
+          return;
+        }
+      }
       if (error) {
         debugLog('VALIDATE', `Validation failed: ${error}`);
         showTyping(true);
@@ -972,6 +1211,11 @@ export function useChatApplication() {
         setState(prev => ({ ...prev, isWaitingForInput: true }));
         return;
       }
+    }
+
+    // Consent is a compliance event: stamp the time it was given
+    if (currentStep.id === 'privacy_consent' && /agree/i.test(input)) {
+      flowData.consentAt = new Date().toISOString();
     }
 
     // Store the value if field is specified
@@ -1042,8 +1286,10 @@ export function useChatApplication() {
       }
     }
 
-    // Execute action if needed
-    if (currentStep.action) {
+    // Execute action if needed.
+    // Actions in PRE_RENDER_ACTIONS already ran before the step's messages were rendered
+    // (see processStepMessages), so running them again here would double-submit.
+    if (currentStep.action && !PRE_RENDER_ACTIONS.includes(currentStep.action)) {
       flowData = await executeAction(currentStep.action, flowData, input);
     }
 
@@ -1057,13 +1303,28 @@ export function useChatApplication() {
 
     debugLog('NAV', `Next step determined: ${nextStepId}`);
 
+    // Returning to the greeting only clears the application when the user asked to start over
+    const isRestart = nextStepId === 'greeting' &&
+      (state.currentStepId.startsWith('end_') || state.currentStepId === 'lead_capture_complete');
+
     // Move to next step
-    await moveToStep(nextStepId, flowData);
+    await moveToStep(nextStepId, flowData, { reset: isRestart });
   }, [state.currentStepId, state.flowData, addUserMessage, addBotMessage, showTyping, executeAction, moveToStep]);
 
   // Handle quick reply selection
   const handleSelectOption = useCallback((option: string) => {
     handleUserInput(option);
+  }, [handleUserInput]);
+
+  // Files uploaded at a file_upload step: record them, then advance the flow
+  const handleFilesUploaded = useCallback((files: { id: string; name: string; type: string; url: string }[]) => {
+    setState(prev => {
+      const existing = prev.flowData.uploadedDocuments || [];
+      const added = files.map(f => ({ id: f.id, name: f.name, type: f.type, url: f.url }));
+      return { ...prev, flowData: { ...prev.flowData, documentsUploaded: true, uploadedDocuments: [...existing, ...added] } };
+    });
+    // Let the state settle before the next step's pre-render action reads uploadedDocuments
+    setTimeout(() => handleUserInput(`Uploaded ${files.length} document${files.length === 1 ? '' : 's'}`), 50);
   }, [handleUserInput]);
 
   // Start or resume the chat
@@ -1136,6 +1397,22 @@ export function useChatApplication() {
     }
   }, [state.currentStepId, handleResumeChoice, handleUserInput]);
 
+  // Kick off the ABN lookup for an ABN handed over by the public site quick-start.
+  // The chat already opens on abn_manual_lookup with business.abn pre-filled; this just
+  // starts that step (nothing else drives it, because the messages are pre-seeded).
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current || !pendingSeedStepId) return;
+    seededRef.current = true;
+    const stepId = pendingSeedStepId;
+    pendingSeedStepId = null;
+    // No cleanup: React StrictMode remounts this effect in dev, and cancelling the timer
+    // there would drop the seeded lookup entirely (seededRef already blocks a second run).
+    setTimeout(() => { void moveToStep(stepId, state.flowData); }, 1200);
+    // Intentionally runs once on mount with the seeded flow data
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Reset the chat
   const resetChat = useCallback(() => {
     clearSavedState();
@@ -1181,6 +1458,7 @@ export function useChatApplication() {
     progress: state.progress,
     sendMessage: handleInput,
     selectOption: handleSelectOption,
+    filesUploaded: handleFilesUploaded,
     startChat,
     resetChat,
     getApplicationSummary,

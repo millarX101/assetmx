@@ -73,7 +73,7 @@ export function ChatInput({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white border-t border-slate-200 flex-shrink-0">
+    <form onSubmit={handleSubmit} className="flex items-center gap-2 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-cream border-t border-ink-200 flex-shrink-0">
       <input
         ref={inputRef}
         type={getInputType()}
@@ -84,10 +84,10 @@ export function ChatInput({
         placeholder={placeholder}
         disabled={disabled}
         className={cn(
-          'flex-1 px-4 py-3 rounded-full border border-slate-200',
-          'focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent',
-          'text-sm placeholder:text-slate-400',
-          'disabled:bg-slate-50 disabled:text-slate-400',
+          'flex-1 px-4 py-3 rounded-full border border-ink-300 bg-ivory text-ink',
+          'focus:outline-none focus:ring-2 focus:ring-forest focus:border-transparent',
+          'text-sm placeholder:text-ink-400',
+          'disabled:bg-sand disabled:text-ink-400',
           'transition-all duration-200'
         )}
       />
@@ -97,7 +97,7 @@ export function ChatInput({
         disabled={disabled || !value.trim()}
         className={cn(
           'rounded-full w-11 h-11 flex-shrink-0',
-          'bg-gradient-brand hover:opacity-90',
+          'bg-forest text-cream hover:bg-forest-800',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           'transition-all duration-200'
         )}

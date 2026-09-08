@@ -1,0 +1,44 @@
+---
+import ProductPage from '@/components/ProductPage.astro';
+---
+<ProductPage
+  path="/ev-leasing"
+  productName="Electric vehicle finance"
+  category="Business electric vehicle finance"
+  title="Electric vehicle finance for business | Lender rate plus $800 flat fee"
+  description="Low-doc business EV finance for Tesla, BYD and European electric vehicles. Lender green discounts passed on in full, flat $800 fee. Novated leasing referred to millarX."
+  eyebrow="Electric vehicle finance"
+  h1="Electric vehicle finance"
+  h1Accent="for business, priced straight"
+  intro="Financing an EV for your business? We treat it like any other business asset: lender base rate, any lender green discount passed on in full, and a flat $800 fee. Want a novated lease through your salary? That is our sister company millarX."
+  shortAnswer="AssetMX arranges low-doc business finance on electric vehicles from $5,000 to $500,000 for GST-registered businesses trading 24 months or more, passing on any lender green-rate discount in full and charging a flat $800 fee. Novated leases for employees are referred to millarX."
+  heroImage="hero-ev.jpg"
+  heroAlt="Tesla Model 3 electric vehicle"
+  example={{ label: 'Example electric vehicle', amount: 65_000, termMonths: 60, balloonPct: 30 }}
+  cardsTitle="Electric vehicles we finance"
+  cardsIntro="From value Chinese EVs to premium European electric vehicles."
+  cards={[
+    { title: 'Tesla', image: 'ev-tesla.jpg', alt: 'Tesla Model 3 and Model Y', body: 'Model 3, Model Y, Model S, Model X.', points: ['Balloon options by term', 'Green discount passed on where offered'] },
+    { title: 'BYD and others', image: 'ev-byd.jpg', alt: 'BYD Atto 3 electric vehicle', body: 'Atto 3, Seal, Dolphin, MG ZS EV and other value options.', points: ['Affordable entry point', 'All brands welcome'] },
+    { title: 'European EVs', image: 'ev-european.jpg', alt: 'BMW iX electric SUV', body: 'BMW iX, Mercedes EQS, Audi e-tron, Porsche Taycan.', points: ['Business-use percentage applies', 'Luxury car tax limits affect deductions'] },
+  ]}
+  whyTitle="Two clear paths to an electric vehicle"
+  why={[
+    { t: 'Business EV finance (AssetMX)', d: 'Chattel mortgage in the business name. GST on the purchase is generally claimable, interest and depreciation deductible to the business-use share. Some lenders discount EV rates by up to 0.30% and we pass that on.' },
+    { t: 'Novated lease (millarX)', d: 'For employees salary-packaging a personal EV. Eligible electric cars under the fuel-efficient luxury car tax threshold can be FBT exempt. millarX handles employer setup, packaging and running costs.' },
+    { t: 'Not sure which?', d: 'If the car is owned and used by the business, it is AssetMX. If it is your personal car paid through your salary, it is millarX. Contact us and we will point you to the right one.' },
+  ]}
+  faqs={[
+    { q: 'Are electric vehicles FBT exempt?', a: 'Eligible zero-emission electric cars first held after 1 July 2022 and under the luxury car tax threshold for fuel-efficient vehicles ($91,387 in 2024-25) can be exempt from fringe benefits tax when provided to an employee. The plug-in hybrid exemption ended 1 April 2025. Check the current ATO threshold and speak to your accountant.' },
+    { q: 'Do you pass on lender green discounts?', a: 'Yes, in full. Where a lender on our panel offers a reduced rate for electric vehicles, you get the reduced rate. Our fee stays $800.' },
+    { q: 'Can I get a novated lease through AssetMX?', a: 'No. Novated leasing is employee salary packaging and is handled by our sister company millarX. Use the contact page and we will refer you.' },
+    { q: 'Can I finance a used EV?', a: 'Yes, provided it is no older than 15 years at the end of the term. Battery warranty remaining is worth checking before you buy.' },
+  ]}
+  related={[
+    { label: 'EV FBT exemption for business', href: '/answers/electric-vehicle-fbt-exemption-for-business' },
+    { label: 'Is asset finance tax deductible?', href: '/answers/is-asset-finance-tax-deductible' },
+    { label: 'Business car finance', href: '/car-finance' },
+    { label: 'Contact us about a novated lease', href: '/contact' },
+  ]}
+  updated="2026-09-08"
+/>

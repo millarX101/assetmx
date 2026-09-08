@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+/* AssetMX brand (Sep 2026, "Modern Finance Application Funnel")
+   cream #F5EAD8 · forest #3D472B · sage #CCDBB2 · ink #201E1D
+   Caprasimo for display, Figtree for everything else. */
+@theme {
+  --font-sans: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Caprasimo", "Fraunces", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* neutrals (warm) */
+  --color-ink: #201E1D;
+  --color-ink-800: #2E2B25;
+  --color-ink-700: #474238;
+  --color-ink-600: #645C50;
+  --color-ink-500: #7D7365;
+  --color-ink-400: #A39A8C;
+  --color-ink-300: #C9C0B1;
+  --color-ink-200: #DCD3C4;
+  --color-ink-100: #EEE7DB;
+  --color-ink-50: #F9F4ED;
+
+  /* surfaces */
+  --color-canvas: #F5EAD8;
+  --color-paper: #F9F4ED;
+  --color-sand: #EBDDC5;
+
+  /* greens */
+  --color-forest: #3D472B;
+  --color-forest-700: #333C24;
+  --color-forest-800: #272E1B;
+  --color-sage: #CCDBB2;
+  --color-sage-300: #AEBF92;
+  --color-sage-200: #E1EECC;
+  --color-sage-100: #F0FAE1;
+
+  /* accents */
+  --color-rust: #643312;
+  --color-peach: #FFF2EB;
+  --color-amber: #C9862B;
+  --color-red: #B3402E;
+
+  /* compatibility aliases used across components */
+  --color-signal: #3D472B;
+  --color-signal-600: #333C24;
+  --color-signal-700: #272E1B;
+  --color-signal-100: #E1EECC;
+  --color-signal-50: #F0FAE1;
+
+  --radius-card: 16px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 1px 0 rgba(32, 30, 29, 0.04), 0 10px 30px -18px rgba(32, 30, 29, 0.25);
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    font-feature-settings: "tnum";
+  }
+  h1, h2, h3, h4 { @apply font-display font-normal text-ink; letter-spacing: -0.01em; text-wrap: balance; }
+  h1 { @apply text-[2.6rem] leading-[1.02] md:text-6xl; }
+  h2 { @apply text-3xl md:text-[2.4rem] leading-[1.08]; }
+  h3 { @apply text-xl md:text-2xl leading-tight; }
+  p { text-wrap: pretty; }
+  a { @apply underline-offset-4; }
+  strong { @apply font-semibold text-ink; }
+  .num, table td, table th { font-variant-numeric: tabular-nums; }
+  ::selection { background: var(--color-sage); }
+}
+
+@layer components {
+  .container-x { @apply mx-auto w-full max-w-6xl px-5 md:px-8; }
+
+  .prose-mx { @apply text-ink-700 leading-relaxed; }
+  .prose-mx h2 { @apply mt-12 mb-4 scroll-mt-24; }
+  .prose-mx h3 { @apply mt-8 mb-3 scroll-mt-24; }
+  .prose-mx p { @apply my-4; }
+  .prose-mx ul { @apply my-4 list-disc pl-6 space-y-1.5; }
+  .prose-mx ol { @apply my-4 list-decimal pl-6 space-y-1.5; }
+  .prose-mx a { @apply text-forest underline hover:text-forest-800; }
+  .prose-mx table { @apply my-6 w-full text-sm border-collapse; }
+  .prose-mx th { @apply text-left font-semibold text-ink bg-sand px-3 py-2 border-b border-ink-200; }
+  .prose-mx td { @apply px-3 py-2 border-b border-ink-200 align-top; }
+  .prose-mx blockquote { @apply my-6 border-l-4 border-sage-300 pl-4 text-ink-600 italic; }
+  .prose-mx hr { @apply my-10 border-ink-200; }
+  .prose-mx code { @apply font-mono text-[0.9em] bg-sand px-1 py-0.5 rounded; }
+
+  .btn, .btn-primary, .btn-ink, .btn-ghost, .btn-sage { @apply inline-flex items-center justify-center gap-2 rounded-pill px-5 py-3 text-sm font-semibold transition-colors no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2; }
+  .btn-primary { @apply bg-forest text-canvas hover:bg-forest-800; }
+  .btn-ink { @apply bg-ink text-canvas hover:bg-ink-800; }
+  .btn-sage { @apply bg-sage text-ink hover:bg-sage-300; }
+  .btn-ghost { @apply bg-transparent text-ink border border-ink-300 hover:border-ink hover:bg-paper; }
+
+  .card { @apply rounded-card bg-paper border border-ink-200 shadow-card; }
+  .card-sand { @apply rounded-card bg-sand; }
+  .eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-600; }
+  .pill { @apply inline-flex items-center rounded-pill bg-sage-200 px-3 py-1 text-xs font-medium text-forest; }
+  .pill-sand { @apply inline-flex items-center rounded-pill bg-sand px-3 py-1 text-xs font-medium text-ink-700; }
+
+  .table-wrap { @apply w-full overflow-x-auto rounded-card border border-ink-200 bg-paper; }
+  .table-wrap table { @apply w-full text-sm; }
+  .table-wrap th { @apply text-left font-semibold bg-sand px-4 py-3 border-b border-ink-200 whitespace-nowrap; }
+  .table-wrap td { @apply px-4 py-3 border-b border-ink-100 align-top; }
+  .table-wrap tr:last-child td { @apply border-b-0; }
+
+  /* dark band sections */
+  .band-forest { @apply bg-forest text-canvas; }
+  .band-forest h2, .band-forest h3 { @apply text-canvas; }
+  .band-forest .eyebrow { @apply text-sage; }
+  .band-sage { @apply bg-sage-100; }
+
+  .step-badge { @apply inline-flex h-9 w-9 items-center justify-center rounded-full bg-sage text-forest font-display text-lg; }
+}

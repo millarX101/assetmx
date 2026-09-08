@@ -1,0 +1,23 @@
+---
+/**
+ * Q&A rendered as open cards (no accordion): every answer is visible to
+ * readers and crawlers alike. The matching FAQPage JSON-LD is emitted by
+ * the page via schema.faqPage so markup and schema share one source.
+ */
+interface Props { items: { q: string; a: string }[]; title?: string; intro?: string; class?: string; id?: string }
+const { items, title = 'Questions people ask', intro, class: cls = '', id = 'faq' } = Astro.props;
+---
+<section class:list={['mt-16 grid gap-8 md:grid-cols-[1fr_1.6fr]', cls]} aria-labelledby={`${id}-heading`} id={id}>
+  <div>
+    <h2 id={`${id}-heading`}>{title}</h2>
+    {intro && <p class="mt-3 text-ink-700 max-w-sm">{intro}</p>}
+  </div>
+  <div class="grid gap-3">
+    {items.map((f) => (
+      <article class="card-sand px-5 py-4">
+        <h3 class="font-sans text-base font-semibold text-ink">{f.q}</h3>
+        <p class="mt-1.5 text-sm text-ink-700 leading-relaxed" set:html={f.a} />
+      </article>
+    ))}
+  </div>
+</section>

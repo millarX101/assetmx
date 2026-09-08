@@ -18,16 +18,22 @@ interface SummaryData {
   asset?: {
     assetType?: string;
     assetCondition?: string;
+    assetYear?: number;
+    assetMake?: string;
+    assetModel?: string;
+    supplierName?: string;
     assetPriceIncGst?: number;
     assetDescription?: string;
   };
   loan?: {
+    loanAmount?: number;
     termMonths?: number;
     balloonPercentage?: number;
     depositAmount?: number;
   };
   directors?: {
     directors?: Array<{
+      fullName?: string;
       firstName?: string;
       lastName?: string;
       email?: string;
@@ -50,38 +56,62 @@ interface ChatSummaryCardProps {
 // Format asset type for display
 const formatAssetType = (type?: string): string => {
   const labels: Record<string, string> = {
-    vehicle: 'Vehicle',
-    truck: 'Truck/Trailer',
-    equipment: 'Equipment/Machinery',
-    technology: 'Technology/Medical',
+    vehicle: 'Car, ute or van',
+    truck: 'Truck or trailer',
+    equipment: 'Equipment or machinery',
   };
-  return labels[type || ''] || type || 'Not specified';
+  return labels[type || ''] || type || 'Not provided';
 };
 
 // Format condition for display
 const formatCondition = (condition?: string): string => {
   const labels: Record<string, string> = {
-    new: 'Brand new',
+    new: 'New',
     demo: 'Demo',
-    used_0_3: 'Used (0-3 years)',
-    used_4_7: 'Used (4-7 years)',
-    used_8_plus: 'Older (8+ years)',
+    used_0_3: 'Used',
+    used_4_7: 'Used',
+    used_8_plus: 'Used',
   };
-  return labels[condition || ''] || condition || 'Not specified';
+  return labels[condition || ''] || condition || 'Not provided';
+};
+
+// "3 years", "18 months"
+const formatTerm = (months?: number): string => {
+  if (!months) return 'Not provided';
+  if (months % 12 === 0) {
+    const years = months / 12;
+    return `${years} year${years === 1 ? '' : 's'}`;
+  }
+  return `${months} months`;
+};
+
+// Year make model, falling back to the free-text description
+const formatItem = (asset?: SummaryData['asset']): string => {
+  const parts = [asset?.assetYear, asset?.assetMake, asset?.assetModel].filter(Boolean);
+  if (parts.length > 0) return parts.join(' ');
+  return asset?.assetDescription || 'Not provided';
+};
+
+const directorName = (director?: { fullName?: string; firstName?: string; lastName?: string }): string => {
+  if (!director) return 'Not provided';
+  const joined = [director.firstName, director.lastName].filter(Boolean).join(' ').trim();
+  return director.fullName || joined || 'Not provided';
 };
 
 export function ChatSummaryCard({ data, onEdit }: ChatSummaryCardProps) {
   const businessName = data.abnLookup?.entityName || data.business?.entityName || 'Your business';
-  const loanAmount = (data.asset?.assetPriceIncGst || 0) - (data.loan?.depositAmount || 0);
+  const price = data.asset?.assetPriceIncGst || 0;
+  const deposit = data.loan?.depositAmount || 0;
+  const financeAmount = data.loan?.loanAmount || Math.max(price - deposit, 0);
   const directorsList = data.directors?.directors || [];
 
   return (
-    <Card className="border-purple-200 shadow-lg overflow-hidden">
-      <CardHeader className="bg-gradient-brand text-white pb-4">
-        <CardTitle className="text-lg font-semibold">Application Summary</CardTitle>
+    <Card className="border-ink-200 bg-ivory shadow-lg overflow-hidden">
+      <CardHeader className="bg-forest text-cream pb-4">
+        <CardTitle className="text-lg font-semibold">Application summary</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {/* Business Section */}
+        {/* Business */}
         <SummarySection
           icon={<Building2 className="h-4 w-4" />}
           title="Business"
@@ -91,75 +121,77 @@ export function ChatSummaryCard({ data, onEdit }: ChatSummaryCardProps) {
           <SummaryRow label="ABN" value={data.business?.abn || 'Not provided'} />
           <SummaryRow
             label="GST registered"
-            value={data.abnLookup?.gstRegistered ? 'Yes ✓' : 'No'}
+            value={(data.abnLookup?.gstRegistered ?? data.business?.gstRegistered) ? 'Yes' : 'No'}
           />
         </SummarySection>
 
-        {/* Asset Section */}
+        {/* Asset */}
         <SummarySection
           icon={<Car className="h-4 w-4" />}
           title="Asset"
           onEdit={onEdit ? () => onEdit('asset') : undefined}
         >
+          <SummaryRow label="What" value={formatItem(data.asset)} />
           <SummaryRow label="Type" value={formatAssetType(data.asset?.assetType)} />
           <SummaryRow label="Condition" value={formatCondition(data.asset?.assetCondition)} />
-          <SummaryRow
-            label="Purchase price"
-            value={data.asset?.assetPriceIncGst ? formatCurrency(data.asset.assetPriceIncGst) : 'Not provided'}
-          />
+          <SummaryRow label="Supplier" value={data.asset?.supplierName || 'Not provided'} />
+          <SummaryRow label="Price inc GST" value={price ? formatCurrency(price) : 'Not provided'} />
         </SummarySection>
 
-        {/* Your Details Section */}
-        <SummarySection
-          icon={<User className="h-4 w-4" />}
-          title="Your Details"
-          onEdit={onEdit ? () => onEdit('personal') : undefined}
-        >
-          {directorsList.map((director, index) => (
-            <div key={index} className={index > 0 ? 'mt-3 pt-3 border-t border-slate-100' : ''}>
-              {directorsList.length > 1 && (
-                <div className="text-xs text-slate-400 mb-1">Director {index + 1}</div>
-              )}
-              <SummaryRow label="Name" value={director.firstName || 'Not provided'} />
-              <SummaryRow label="Email" value={director.email || 'Not provided'} />
-              <SummaryRow label="Phone" value={director.phone || 'Not provided'} />
-            </div>
-          ))}
-        </SummarySection>
-
-        {/* Loan Section */}
+        {/* Loan */}
         <SummarySection
           icon={<DollarSign className="h-4 w-4" />}
-          title="Loan Details"
+          title="Loan"
           onEdit={onEdit ? () => onEdit('loan') : undefined}
         >
-          <SummaryRow
-            label="Finance amount"
-            value={formatCurrency(loanAmount)}
-          />
-          <SummaryRow
-            label="Term"
-            value={data.loan?.termMonths ? `${data.loan.termMonths} months (${data.loan.termMonths / 12} years)` : '60 months'}
-          />
+          <SummaryRow label="Finance amount" value={formatCurrency(financeAmount)} />
+          <SummaryRow label="Term" value={formatTerm(data.loan?.termMonths)} />
           <SummaryRow
             label="Balloon"
             value={data.loan?.balloonPercentage ? `${data.loan.balloonPercentage}%` : 'No balloon'}
           />
-          {data.loan?.depositAmount && data.loan.depositAmount > 0 && (
-            <SummaryRow label="Deposit" value={formatCurrency(data.loan.depositAmount)} />
-          )}
+          <SummaryRow label="Deposit or trade-in" value={deposit > 0 ? formatCurrency(deposit) : 'None'} />
         </SummarySection>
 
-        {/* Quote Section */}
+        {/* Your details */}
+        <SummarySection
+          icon={<User className="h-4 w-4" />}
+          title="Your details"
+          onEdit={onEdit ? () => onEdit('personal') : undefined}
+        >
+          {directorsList.length === 0 && (
+            <SummaryRow label="Name" value="Not provided" />
+          )}
+          {directorsList.map((director, index) => (
+            <div key={index} className={index > 0 ? 'mt-3 pt-3 border-t border-ink-100' : ''}>
+              {directorsList.length > 1 && (
+                <div className="text-xs text-ink-500 mb-1">
+                  {index === 0 ? 'You' : `Director ${index + 1}`}
+                </div>
+              )}
+              <SummaryRow label="Name" value={directorName(director)} />
+              <SummaryRow label="Email" value={director.email || 'Not provided'} />
+              <SummaryRow label="Phone" value={director.phone || 'Not provided'} />
+              {index === 0 && (
+                <SummaryRow label="Address" value={director.address || 'Not provided'} />
+              )}
+            </div>
+          ))}
+        </SummarySection>
+
+        {/* Indicative repayment */}
         {data.quote && (
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 border-t border-purple-100">
+          <div className="bg-sage-100 p-4 border-t border-sage-200">
             <div className="text-center">
-              <div className="text-sm text-slate-500 mb-1">Estimated repayments</div>
-              <div className="text-2xl font-mono font-bold text-purple-700">
+              <div className="text-sm text-ink-600 mb-1">Estimated repayment</div>
+              <div className="text-2xl font-display text-forest">
                 {formatCurrency(data.quote.monthlyRepayment)}/month
               </div>
-              <div className="text-sm text-slate-500 mt-1">
-                ({formatCurrency(data.quote.weeklyRepayment || data.quote.monthlyRepayment / 4.33)}/week at {data.quote.indicativeRate.toFixed(2)}% p.a.)
+              <div className="text-sm text-ink-600 mt-1">
+                {formatCurrency(data.quote.weeklyRepayment || (data.quote.monthlyRepayment * 12) / 52)}/week at {data.quote.indicativeRate.toFixed(2)}% p.a. lender base rate
+              </div>
+              <div className="text-xs text-ink-500 mt-2">
+                Indicative only, not an offer of credit.
               </div>
             </div>
           </div>
@@ -178,9 +210,9 @@ interface SummarySectionProps {
 
 function SummarySection({ icon, title, children, onEdit }: SummarySectionProps) {
   return (
-    <div className="p-4 border-b border-slate-100 last:border-b-0">
+    <div className="p-4 border-b border-ink-100 last:border-b-0">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 text-purple-700">
+        <div className="flex items-center gap-2 text-forest">
           {icon}
           <span className="font-medium text-sm">{title}</span>
         </div>
@@ -189,7 +221,7 @@ function SummarySection({ icon, title, children, onEdit }: SummarySectionProps) 
             variant="ghost"
             size="sm"
             onClick={onEdit}
-            className="h-7 px-2 text-xs text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+            className="h-7 px-2 text-xs text-forest hover:text-forest-800 hover:bg-sage-100"
           >
             <Edit2 className="h-3 w-3 mr-1" />
             Edit
@@ -209,8 +241,8 @@ interface SummaryRowProps {
 function SummaryRow({ label, value }: SummaryRowProps) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className="text-slate-800 font-medium text-right max-w-[60%] truncate">{value}</span>
+      <span className="text-ink-600">{label}</span>
+      <span className="text-ink font-medium text-right max-w-[60%] truncate">{value}</span>
     </div>
   );
 }

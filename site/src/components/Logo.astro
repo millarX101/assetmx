@@ -1,0 +1,11 @@
+---
+interface Props { light?: boolean; class?: string }
+const { light = false, class: cls = '' } = Astro.props;
+---
+<span class:list={['inline-flex items-center gap-2', cls]}>
+  <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+    <rect width="30" height="30" rx="9" fill={light ? '#CCDBB2' : '#3D472B'} />
+    <path d="M8.5 21.5 L15 8 L21.5 21.5 M11.2 16.6 H18.8" stroke={light ? '#272E1B' : '#F5EAD8'} stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  </svg>
+  <span class:list={['font-display text-xl leading-none', light ? 'text-canvas' : 'text-ink']}>AssetMX</span>
+</span>
