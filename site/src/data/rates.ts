@@ -10,9 +10,9 @@ export const RATES = {
   byTerm: [
     { termMonths: 12, ratePct: 8.49 },
     { termMonths: 24, ratePct: 7.49 },
-    { termMonths: 36, ratePct: 6.89 },
-    { termMonths: 48, ratePct: 6.89 },
-    { termMonths: 60, ratePct: 6.89 },
+    { termMonths: 36, ratePct: 7.25 },
+    { termMonths: 48, ratePct: 7.25 },
+    { termMonths: 60, ratePct: 7.25 },
   ],
   maxBalloonByTerm: { 12: 65, 24: 60, 36: 50, 48: 40, 60: 30, 72: 30, 84: 30 } as Record<number, number>,
 } as const;
@@ -20,11 +20,12 @@ export const RATES = {
 export const lowestRate = () => Math.min(...RATES.byTerm.map((r) => r.ratePct));
 
 export function rateForTerm(termMonths: number): number {
-  const exact = RATES.byTerm.find((r) => r.termMonths === termMonths);
+  const tiers = [...RATES.byTerm].sort((a, b) => a.termMonths - b.termMonths);
+  const exact = tiers.find((r) => r.termMonths === termMonths);
   if (exact) return exact.ratePct;
-  if (termMonths <= 12) return 8.49;
-  if (termMonths < 36) return 7.49;
-  return 6.89;
+  // Nearest tier at or below the requested term; shortest tier for anything shorter.
+  const below = tiers.filter((r) => r.termMonths < termMonths).pop();
+  return (below ?? tiers[0]).ratePct;
 }
 
 export function maxBalloon(termMonths: number): number {

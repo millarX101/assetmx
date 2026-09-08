@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateQuote, pmt } from './calculator';
+import { rateForTerm } from '@/data/rates';
 
 describe('pmt', () => {
   it('matches a plain amortising loan when balloon is 0', () => {
@@ -18,7 +19,7 @@ describe('pmt', () => {
 describe('calculateQuote', () => {
   it('uses the term-based lender rate and itemises fees', () => {
     const q = calculateQuote({ amount: 100_000, termMonths: 60, balloonPct: 30 });
-    expect(q.ratePct).toBe(6.89);
+    expect(q.ratePct).toBe(rateForTerm(60));
     expect(q.amountFinanced).toBe(101_300);
     expect(q.platformFee).toBe(800);
     expect(q.balloon).toBe(30_000);
