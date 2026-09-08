@@ -10,6 +10,8 @@ import {
 } from '@/lib/chat-flow';
 import { lookupABN, cleanABN, searchABNByName } from '@/lib/abn-lookup';
 import { calculateQuote, getMaxBalloon } from '@/lib/calculator';
+import { assist } from '@/hooks/useChatAI';
+import { extractDocument } from '@/lib/doc-extract';
 import type { ApplicationData, AssetType, AssetCondition } from '@/types/application';
 import { createEmptyApplication } from '@/types/application';
 import { supabase, isSupabaseConfigured, getSupabaseUrl, getSupabaseAnonKey } from '@/lib/supabase';
@@ -33,7 +35,7 @@ export interface ChatState {
 }
 
 // Actions executed before their step's messages render, so the copy can report the result
-const PRE_RENDER_ACTIONS: string[] = ['calculate_quote', 'submit_application'];
+const PRE_RENDER_ACTIONS: string[] = ['calculate_quote', 'submit_application', 'extract_asset', 'extract_licence'];
 
 const TYPING_DELAY = 800; // ms between bot messages
 const STORAGE_KEY = 'assetmx_chat_progress';
@@ -404,6 +406,14 @@ export function useChatApplication() {
 
     switch (action) {
       case 'abn_search': {
+        // An 11-digit ABN typed at the greeting is looked up directly, not searched as a name
+        const typed = cleanABN(flowData.application.business?.businessName || userInput || '');
+        if (typed.length === 11) {
+          updatedData.application = setNestedValue(updatedData.application as Record<string, unknown>, 'business.abn', typed) as Partial<ApplicationData>;
+          updatedData.abnSearchResults = [];
+          const looked = await executeAction('abn_lookup', updatedData);
+          return looked;
+        }
         // Search for businesses by name
         const businessName = flowData.application.business?.businessName || userInput || '';
         if (businessName && businessName.trim().length >= 2) {
@@ -456,6 +466,84 @@ export function useChatApplication() {
           }
         } catch (error) {
           console.error('ABN lookup failed:', error);
+        }
+        break;
+      }
+
+      case 'extract_asset': {
+        // Prefer the uploaded quote; fall back to the free-text description via Claude.
+        const quoteDocs = (flowData.uploadedDocuments || []).filter(d => /quote|invoice/i.test(d.id));
+        if (quoteDocs.length > 0) {
+          const res = await extractDocument('quote', quoteDocs.map(d => d.id));
+          const f = res?.fields as Record<string, unknown> | undefined;
+          if (f && f.found) {
+            updatedData.extracted = {
+              ...(updatedData.extracted || {}),
+              asset: {
+                make: (f.make as string) || undefined,
+                model: (f.model as string) || undefined,
+                year: typeof f.year === 'number' ? f.year : undefined,
+                supplierName: (f.supplierName as string) || undefined,
+                priceIncGst: typeof f.priceIncGst === 'number' ? f.priceIncGst : undefined,
+                priceExGst: typeof f.priceExGst === 'number' ? f.priceExGst : undefined,
+                gst: typeof f.gst === 'number' ? f.gst : undefined,
+                condition: (f.condition as string) || undefined,
+                description: (f.description as string) || undefined,
+              },
+            };
+          }
+          break;
+        }
+        const description = flowData.application.asset?.assetDescription;
+        if (description) {
+          const res = await assist({
+            step: { id: 'parse_asset', question: 'Describe the asset', inputType: 'asset_description' },
+            userText: description,
+            context: { assetType: flowData.application.asset?.assetType },
+          });
+          if (res?.value) {
+            try {
+              const f = JSON.parse(res.value) as Record<string, unknown>;
+              updatedData.extracted = {
+                ...(updatedData.extracted || {}),
+                asset: {
+                  make: (f.make as string) || undefined,
+                  model: (f.model as string) || undefined,
+                  year: typeof f.year === 'number' ? f.year : undefined,
+                  supplierName: (f.supplierName as string) || undefined,
+                  priceIncGst: typeof f.priceIncGst === 'number' ? f.priceIncGst : undefined,
+                  condition: (f.condition as string) || undefined,
+                  description,
+                },
+              };
+            } catch {
+              // leave extracted unset; the flow asks the missing fields
+            }
+          }
+        }
+        break;
+      }
+
+      case 'extract_licence': {
+        const licenceDocs = (flowData.uploadedDocuments || []).filter(d => /licence|license/i.test(d.id));
+        if (licenceDocs.length > 0) {
+          const res = await extractDocument('licence', licenceDocs.map(d => d.id));
+          const f = res?.fields as Record<string, unknown> | undefined;
+          if (f && f.found) {
+            updatedData.extracted = {
+              ...(updatedData.extracted || {}),
+              licence: {
+                fullName: (f.fullName as string) || undefined,
+                firstName: (f.firstName as string) || undefined,
+                lastName: (f.lastName as string) || undefined,
+                dateOfBirth: (f.dateOfBirth as string) || undefined,
+                address: (f.address as string) || undefined,
+                licenceNumber: (f.licenceNumber as string) || undefined,
+                state: (f.state as string) || undefined,
+                expiry: (f.expiry as string) || undefined,
+              },
+            };
+          }
         }
         break;
       }
@@ -1080,9 +1168,40 @@ export function useChatApplication() {
 
     let flowData = { ...state.flowData };
 
-    // Validate input if needed
+    // Validate input if needed. When a typed answer fails, ask Claude whether it was a
+    // differently-phrased answer, a question, or a request for a person, before re-asking.
     if (currentStep.validate) {
-      const error = currentStep.validate(input, flowData);
+      let error = currentStep.validate(input, flowData);
+      if (error && currentStep.inputType !== 'select' && currentStep.inputType !== 'abn_select') {
+        showTyping(true);
+        const stepMessages = typeof currentStep.messages === 'function' ? currentStep.messages(flowData) : currentStep.messages;
+        const ai = await assist({
+          step: {
+            id: currentStep.id,
+            question: stepMessages[stepMessages.length - 1] || '',
+            inputType: currentStep.inputType,
+            field: currentStep.field,
+          },
+          userText: input,
+          context: {
+            businessName: flowData.abnLookup?.entityName,
+            assetType: flowData.application.asset?.assetType,
+            price: flowData.application.asset?.assetPriceIncGst,
+            termMonths: flowData.application.loan?.termMonths,
+            balloonPercentage: flowData.application.loan?.balloonPercentage,
+          },
+          history: state.messages.slice(-6).map(m => ({ role: m.type === 'user' ? 'user' as const : 'assistant' as const, content: m.content })),
+        });
+        showTyping(false);
+        if (ai?.intent === 'answer' && ai.value && !currentStep.validate(ai.value, flowData)) {
+          input = ai.value;
+          error = null;
+        } else if (ai && (ai.intent === 'question' || ai.intent === 'handoff' || ai.intent === 'change') && ai.reply) {
+          addBotMessage(ai.reply);
+          setState(prev => ({ ...prev, isWaitingForInput: true }));
+          return;
+        }
+      }
       if (error) {
         debugLog('VALIDATE', `Validation failed: ${error}`);
         showTyping(true);
@@ -1092,6 +1211,11 @@ export function useChatApplication() {
         setState(prev => ({ ...prev, isWaitingForInput: true }));
         return;
       }
+    }
+
+    // Consent is a compliance event: stamp the time it was given
+    if (currentStep.id === 'privacy_consent' && /agree/i.test(input)) {
+      flowData.consentAt = new Date().toISOString();
     }
 
     // Store the value if field is specified
@@ -1190,6 +1314,17 @@ export function useChatApplication() {
   // Handle quick reply selection
   const handleSelectOption = useCallback((option: string) => {
     handleUserInput(option);
+  }, [handleUserInput]);
+
+  // Files uploaded at a file_upload step: record them, then advance the flow
+  const handleFilesUploaded = useCallback((files: { id: string; name: string; type: string; url: string }[]) => {
+    setState(prev => {
+      const existing = prev.flowData.uploadedDocuments || [];
+      const added = files.map(f => ({ id: f.id, name: f.name, type: f.type, url: f.url }));
+      return { ...prev, flowData: { ...prev.flowData, documentsUploaded: true, uploadedDocuments: [...existing, ...added] } };
+    });
+    // Let the state settle before the next step's pre-render action reads uploadedDocuments
+    setTimeout(() => handleUserInput(`Uploaded ${files.length} document${files.length === 1 ? '' : 's'}`), 50);
   }, [handleUserInput]);
 
   // Start or resume the chat
@@ -1323,6 +1458,7 @@ export function useChatApplication() {
     progress: state.progress,
     sendMessage: handleInput,
     selectOption: handleSelectOption,
+    filesUploaded: handleFilesUploaded,
     startChat,
     resetChat,
     getApplicationSummary,

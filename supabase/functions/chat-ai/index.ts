@@ -80,7 +80,7 @@ const RESULT_SCHEMA = {
     value: {
       type: ['string', 'null'],
       description:
-        'Canonical value for the current step when intent is answer, else null. number: digits only, no symbols (e.g. 50000). date: YYYY-MM-DD. select or confirm: exactly one of the option values. abn: 11 digits. phone: digits only. email: lowercase. text: cleaned text.',
+        'Canonical value for the current step when intent is answer, else null. number: digits only, no symbols (e.g. 50000). date: YYYY-MM-DD. select or confirm: exactly one of the option values. abn: 11 digits. phone: digits only. email: lowercase. text: cleaned text. asset_description: a JSON object string with keys make, model, year (integer), supplierName, priceIncGst (number, AUD), condition (new|demo|used); use null for anything not stated, never guess.',
     },
     reply: {
       type: 'string',
@@ -123,6 +123,9 @@ Deno.serve(async (req) => {
     `CURRENT STEP: ${body.step.id}`,
     `QUESTION ASKED: ${body.step.question}`,
     `EXPECTED INPUT: ${body.step.inputType}${body.step.field ? ` (stores to ${body.step.field})` : ''}`,
+    body.step.inputType === 'asset_description'
+      ? 'The customer is describing the vehicle or equipment they want to finance in a sentence. Intent is answer; value is the JSON object string described in the schema. Prices like "68k drive-away" mean 68000 including GST.'
+      : '',
     body.step.options?.length
       ? `OPTIONS (value = label): ${body.step.options.map((o) => `${o.value} = ${o.label}`).join('; ')}`
       : '',
