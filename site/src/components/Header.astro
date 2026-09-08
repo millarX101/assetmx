@@ -66,7 +66,8 @@ const isActive = (href: string) => current === href || current.startsWith(href +
 
     <div class="hidden md:flex items-center gap-2">
       <a href={APP_LINKS.admin} class="btn-ghost py-2" rel="nofollow">Log in</a>
-      <a href="/#quote" class="btn-primary py-2">Get a quote</a>
+      <a href="/#quote" class="btn-ghost py-2">Get a quote</a>
+      <a href={APP_LINKS.quote} class="btn-primary py-2">Apply now</a>
     </div>
 
     <details class="md:hidden relative">
@@ -80,7 +81,8 @@ const isActive = (href: string) => current === href || current.startsWith(href +
           <li><a href="/contact" class="block px-2 py-2 no-underline text-ink font-medium">Contact</a></li>
           <li><a href={APP_LINKS.admin} class="block px-2 py-2 no-underline text-ink-600" rel="nofollow">Log in</a></li>
         </ul>
-        <a href="/#quote" class="btn-primary w-full">Get a quote</a>
+        <a href="/#quote" class="btn-ghost w-full mb-2">Get a quote</a>
+        <a href={APP_LINKS.quote} class="btn-primary w-full">Apply now</a>
       </div>
     </details>
   </div>
