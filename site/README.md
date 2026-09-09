@@ -11,6 +11,9 @@ The React application (quote-to-settlement, admin) stays in the repo root and is
 - **Every rate is dated.** Rates live in `src/data/rates.ts` with `verifiedOn`. Change the date when you re-verify the panel. The footer, the rates page, the quote island and every worked example read from it.
 - **Answer first.** Content collection `answers` (20 pages) puts a standalone `shortAnswer` in frontmatter, rendered as the first block and emitted as FAQPage JSON-LD.
 - **JSON-LD everywhere** via `src/lib/schema.ts` (Organization + WebSite on every page; FAQPage, Article, BreadcrumbList, FinancialProduct where relevant).
+- **Machine-readable copies.** `/llms.txt` (site map for language models) and `/llms-full.txt` (full text of every answer and guide) are generated at build time from the same collections (`src/pages/llms*.txt.ts`).
+- **Sitemap dates are real.** `scripts/lastmod.mjs` derives each URL's `lastmod` from the content's `updated`, `verifiedOn` or `reviewedOn` date, never the build clock.
+- **IndexNow on deploy.** `scripts/indexnow.mjs` pings api.indexnow.org with every sitemap URL after a Netlify production build (key file in `public/`). Google is covered by Search Console + the sitemap.
 - **Worked examples are computed**, not typed, by `src/lib/calculator.ts` (unit tested), so numbers on pages can never drift from the quote tool.
 
 ## Structure
@@ -63,7 +66,8 @@ Tokens live in `src/styles/global.css`: cream `#F5EAD8`, sand `#EBDDC5`, forest 
 
 1. Re-verify lender rate sheets, update `src/data/rates.ts` (`verifiedOn`).
 2. Review `src/content/lenders/*.json`, bump `reviewedOn`.
-3. Add or refresh `content/answers` entries; bump `updated`.
+3. Add or refresh `content/answers` entries; bump `updated` (keep `published` as the original date).
+4. Rebuild `public/og-image.png` if the headline changes (1200x630, brand colours).
 
 ## Hand-off to the app
 

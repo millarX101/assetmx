@@ -3,6 +3,7 @@ question: "Does getting an asset finance quote affect my credit score?"
 shortAnswer: "No. Getting a quote through AssetMX does not touch your credit file. A credit check on the business and its directors only happens once a formal application is submitted to a lender, which is a separate step after you have seen an indicative quote and decided to proceed."
 description: "A quote does not affect your credit file; a credit check only runs when a formal application is submitted."
 category: process
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Quote stage", value: "No credit file impact" }

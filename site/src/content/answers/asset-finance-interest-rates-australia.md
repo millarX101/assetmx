@@ -3,6 +3,7 @@ question: "What are current asset finance interest rates in Australia?"
 shortAnswer: "Indicative lender base rates verified on 16 February 2026 are 8.49% for a 12-month term, 7.49% for 24 months, and 6.89% for 36 to 60 month terms. These are indicative rates for in-policy low-doc applications and can vary by lender, asset and applicant. AssetMX shows this base rate separately from its $800 flat fee, with no commission loaded into the rate."
 description: "Indicative lender rates verified 16 Feb 2026: 8.49% (12 months), 7.49% (24 months), 6.89% (36-60 months)."
 category: pricing
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "12-month term rate", value: "8.49% (indicative, verified 16 Feb 2026)" }

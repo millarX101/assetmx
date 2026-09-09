@@ -3,6 +3,7 @@ question: "How much do asset finance brokers charge?"
 shortAnswer: "Asset finance brokers typically earn 1-2% commission loaded into the interest rate, worth roughly $3,000 to $6,000 on a $100,000 deal, and some also charge an origination fee (for example, $990). AssetMX instead charges a flat $800 fee shown separately from the lender's base rate, with no commission loaded into the rate."
 description: "Brokers typically load 1-2% commission into the rate. AssetMX charges a flat $800 fee instead, shown separately from the rate."
 category: pricing
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Typical broker commission", value: "1-2% loaded into the rate" }

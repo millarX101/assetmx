@@ -3,6 +3,7 @@ question: "Why do I need to be GST registered to get low-doc asset finance?"
 shortAnswer: "GST registration is one of the hard eligibility rules lenders use for low-doc asset finance policy, alongside an ABN active for 24 or more months, at least one director or guarantor, and business use of the asset. It signals an established, trading business, and it also affects how GST on the asset purchase is claimed back on your BAS."
 description: "GST registration is a hard low-doc eligibility rule and it affects how GST on the purchase is claimed on your BAS."
 category: eligibility
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "GST registration", value: "Required for low-doc policy" }

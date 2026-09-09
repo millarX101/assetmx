@@ -3,6 +3,7 @@ question: "What are the requirements for low-doc asset finance?"
 shortAnswer: "To qualify for low-doc asset finance your ABN must have been active for 24+ months, your business must be registered for GST, you need at least one director or guarantor, the asset must be for business use and no older than 15 years at the end of the term. Business use under 50% may affect the rates available."
 description: "Low-doc asset finance eligibility: 24+ month ABN, GST registration, a guarantor, business-use asset under 15 years old."
 category: eligibility
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Minimum ABN age", value: "24 months" }

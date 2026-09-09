@@ -15,6 +15,7 @@ const answers = defineCollection({
     shortAnswer: z.string().max(600),
     description: z.string().max(200),
     category: z.enum(['eligibility', 'pricing', 'products', 'process', 'comparison', 'tax', 'end-of-term']),
+    published: z.coerce.date(),
     updated: z.coerce.date(),
     keyFacts: z.array(z.object({ label: z.string(), value: z.string() })).default([]),
     related: z.array(z.string()).default([]),

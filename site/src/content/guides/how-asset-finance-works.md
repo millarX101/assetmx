@@ -20,7 +20,7 @@ That's it.
 
 It's not a tax product. It's not a discount scheme. And it's not "free money". It's a cashflow tool designed to spread the cost of productive assets without draining working capital.
 
-**Asset categories (icon cards):**
+**Typical asset categories:**
 - Business vehicles
 - Plant & machinery
 - Construction equipment

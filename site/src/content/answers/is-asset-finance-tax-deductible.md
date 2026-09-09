@@ -3,6 +3,7 @@ question: "Is asset finance tax deductible?"
 shortAnswer: "For a chattel mortgage, interest and depreciation on the business-use share of the asset are generally deductible, and GST on the purchase can usually be claimed on an upcoming BAS. Instant asset write-off thresholds change each financial year, so check the current threshold on ato.gov.au. This is general information, not tax advice."
 description: "How interest, depreciation and GST on financed business assets are generally treated for tax."
 category: tax
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Interest deductibility", value: "Generally deductible to business-use %" }

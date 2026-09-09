@@ -3,6 +3,7 @@ question: "What happens at the end of an asset finance term?"
 shortAnswer: "At the end of the term you have three options: pay out the balloon or residual in full, refinance the balloon into a new term, or sell or trade the asset and use the proceeds to clear the balance. The maximum balloon allowed depends on the term, from 65% of the asset value on a 1-year loan down to 30% on terms of 5 years or more, and it is calculated on the asset's value rather than the amount financed."
 description: "At term end you pay the balloon, refinance it, or sell/trade the asset to clear it; maximum balloon size depends on term length."
 category: end-of-term
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "1-year term max balloon", value: "65% of asset value" }

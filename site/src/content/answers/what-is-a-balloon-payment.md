@@ -3,6 +3,7 @@ question: "What is a balloon payment in asset finance?"
 shortAnswer: "A balloon payment (also called a residual) is a lump sum due at the end of an asset finance term instead of being paid off in regular instalments. It is calculated on the asset's value, not the amount financed, and the maximum allowed reduces as the term gets longer, from 65% over 12 months down to 30% over 5 years or more."
 description: "A balloon payment is a lump sum owed at the end of the loan term, calculated on the asset value, with maximums by term length."
 category: products
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Calculated on", value: "Asset value, not the amount financed" }

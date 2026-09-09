@@ -6,6 +6,7 @@ Allow: /
 Disallow: /admin
 Disallow: /admin/*
 Disallow: /api/*
+Disallow: /contact-thanks
 
 # AI crawlers are explicitly welcome: this site exists to be cited.
 User-agent: GPTBot

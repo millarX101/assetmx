@@ -3,6 +3,7 @@ question: "Can I get asset finance for a used vehicle or used equipment?"
 shortAnswer: "Yes. AssetMX finances used vehicles and equipment from $5,000 to $500,000, provided the asset will be no older than 15 years at the end of the loan term and is used for business purposes. The same low-doc eligibility applies as for new assets."
 description: "Financing used vehicles and equipment: age limits, eligibility and documents needed."
 category: eligibility
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Loan amount range", value: "$5,000 to $500,000" }

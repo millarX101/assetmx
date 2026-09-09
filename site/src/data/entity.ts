@@ -15,6 +15,8 @@ export const ENTITY = {
   ogImage: 'https://assetmx.com.au/og-image.png',
   areaServed: 'Australia',
   governingLaw: 'New South Wales, Australia',
+  /** GA4 measurement id, shared with the app. Empty string disables the tag. */
+  gaId: 'G-NFS486LH5F',
 } as const;
 
 /** Fixed positioning. Do not restate these numbers anywhere else. */

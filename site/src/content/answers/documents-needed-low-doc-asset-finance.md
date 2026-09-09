@@ -3,6 +3,7 @@ question: "What documents do I need for low-doc asset finance?"
 shortAnswer: "Low-doc asset finance typically needs an automated ABN/GST lookup, director photo ID such as a driver licence, 3 to 6 months of business bank statements, and the asset invoice or quote. Full financials such as tax returns or BAS are not required for applications that fit lender low-doc policy."
 description: "The document checklist for a low-doc asset finance application: ID, bank statements, ABN/GST and asset invoice."
 category: process
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "ABN/GST check", value: "Automated lookup, no upload needed" }

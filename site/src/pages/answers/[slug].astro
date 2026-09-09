@@ -19,6 +19,7 @@ const { Content } = await render(entry);
 const d = entry.data;
 const path = `/answers/${entry.id}`;
 const url = `${ENTITY.siteUrl}${path}`;
+const published = d.published.toISOString().slice(0, 10);
 const updated = d.updated.toISOString().slice(0, 10);
 
 const all = await getCollection('answers');
@@ -32,7 +33,7 @@ const schema = [
     { name: 'Answers', url: ENTITY.siteUrl + '/answers' },
     { name: d.question, url },
   ]),
-  article({ url, headline: d.question, description: d.description, published: updated, modified: updated }),
+  article({ url, headline: d.question, description: d.description, published, modified: updated }),
   // The page's own question is the first FAQ entity so the short answer is machine-readable.
   faqPage([{ q: d.question, a: d.shortAnswer }, ...d.faq]),
 ];

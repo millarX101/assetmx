@@ -12,8 +12,113 @@
 # Production environment variables set in Netlify Dashboard:
 # - VITE_SUPABASE_URL
 # - VITE_SUPABASE_ANON_KEY
-# - VITE_SITE_URL=https://www.assetmx.com.au
+# - VITE_SITE_URL=https://app.assetmx.com.au
 # - VITE_SENTRY_DSN (optional)
+
+# ---- Rebuild (Sep 2026): this React app now lives at app.assetmx.com.au.
+# Marketing/answer pages are served by the static Astro site in ./site at assetmx.com.au.
+# Send public-content paths there so the SPA is never the canonical source.
+[[redirects]]
+  from = "/"
+  to = "https://assetmx.com.au/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/car-finance"
+  to = "https://assetmx.com.au/car-finance"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/vehicle-finance"
+  to = "https://assetmx.com.au/car-finance"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/truck-finance"
+  to = "https://assetmx.com.au/truck-finance"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/equipment-finance"
+  to = "https://assetmx.com.au/equipment-finance"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/ev-leasing"
+  to = "https://assetmx.com.au/ev-leasing"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/how-we-compare"
+  to = "https://assetmx.com.au/how-we-compare"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/contact"
+  to = "https://assetmx.com.au/contact"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/guides/*"
+  to = "https://assetmx.com.au/guides/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/terms"
+  to = "https://assetmx.com.au/terms"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/privacy"
+  to = "https://assetmx.com.au/privacy"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/credit-guide"
+  to = "https://assetmx.com.au/credit-guide"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/answers/*"
+  to = "https://assetmx.com.au/answers/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/rates"
+  to = "https://assetmx.com.au/rates"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/lender-policies"
+  to = "https://assetmx.com.au/lender-policies"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/answers"
+  to = "https://assetmx.com.au/answers"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/guides"
+  to = "https://assetmx.com.au/guides"
+  status = 301
+  force = true
 
 # SPA Routing - All routes go to index.html
 [[redirects]]
@@ -65,11 +170,3 @@
 
 [context.branch-deploy]
   command = "npm run build"
-
-# ---- Rebuild (Sep 2026), interim deploy ----
-# The rebuild/public-site branch adds forced 301s from "/" and every marketing
-# path to https://assetmx.com.au (the Astro site in ./site). Those are only
-# correct once this React app has moved to app.assetmx.com.au and the Astro
-# site owns the apex. Until that cutover, this file keeps the pre-rebuild
-# routing so the apex does not redirect to itself. Restore the branch version
-# of this file when the cutover is done.

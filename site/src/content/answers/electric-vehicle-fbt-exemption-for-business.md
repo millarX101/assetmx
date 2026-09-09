@@ -3,6 +3,7 @@ question: "Can my business claim the electric vehicle FBT exemption?"
 shortAnswer: "Eligible zero or low-emission electric cars priced under the luxury car tax threshold for fuel-efficient vehicles can be exempt from fringe benefits tax when provided to an employee for private use. Plug-in hybrid vehicles lost this exemption from 1 April 2025 unless a financially binding commitment was already in place. The threshold changes each financial year, so check the current figure on ato.gov.au before assuming a vehicle qualifies."
 description: "Battery electric and hydrogen cars under the luxury car tax threshold can be FBT exempt for employees; PHEV exemption ended 1 April 2025."
 category: tax
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Eligible vehicle types", value: "Battery electric and hydrogen fuel cell cars" }

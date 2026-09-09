@@ -3,6 +3,7 @@ question: "Can I get equipment finance without financial statements?"
 shortAnswer: "Yes. Low-doc asset finance lets an ABN business trading 24+ months and registered for GST borrow $5,000 to $500,000 without tax returns or full financials, provided the deal fits lender low-doc policy."
 description: "Yes, low-doc asset finance can fund equipment from $5,000 to $500,000 without tax returns, for eligible ABN businesses."
 category: eligibility
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Minimum ABN age", value: "24 months" }

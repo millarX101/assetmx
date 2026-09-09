@@ -3,6 +3,7 @@ question: "What is the minimum and maximum amount I can borrow for asset finance
 shortAnswer: "AssetMX arranges asset finance from $5,000 to $500,000, over terms of 12 to 84 months, for ABN businesses trading 24 or more months and registered for GST that fit lender low-doc policy."
 description: "Loan amount range for asset finance: $5,000 minimum to $500,000 maximum, with term and eligibility detail."
 category: eligibility
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Minimum loan amount", value: "$5,000" }

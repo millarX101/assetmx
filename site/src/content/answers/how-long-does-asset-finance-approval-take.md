@@ -3,6 +3,7 @@ question: "How long does asset finance approval take?"
 shortAnswer: "Getting a quote takes about 60 seconds online. If your application fits lender low-doc policy, conditional approval is typically given the same business day. Settlement then follows once the asset invoice and signed documents are in, often within 24-48 hours."
 description: "Typical asset finance timeline: 60-second quote, same-day conditional approval, settlement in 24-48 hours."
 category: process
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Online quote", value: "About 60 seconds" }

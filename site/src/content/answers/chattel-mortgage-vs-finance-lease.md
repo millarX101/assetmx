@@ -3,6 +3,7 @@ question: "What is the difference between a chattel mortgage and a finance lease
 shortAnswer: "With a chattel mortgage the business owns the asset from day one and the lender takes security over it; GST on the purchase can usually be claimed upfront and interest and depreciation are deductible to the business-use share. With a finance lease the lender owns the asset, the business rents it, and a residual is paid or refinanced at the end of the term."
 description: "Chattel mortgage: the business owns the asset and the lender takes security. Finance lease: the lender owns it and the business rents."
 category: products
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Chattel mortgage ownership", value: "Business owns the asset from settlement" }

@@ -3,6 +3,7 @@ question: "What is the difference between asset finance and a business loan?"
 shortAnswer: "Asset finance is secured against the specific asset being purchased (via a chattel mortgage, finance lease or operating lease), while a general business loan may be unsecured or secured against other business assets. Asset finance on AssetMX covers $5,000 to $500,000 over 12 to 84 months, with the asset itself as security."
 description: "How asset finance differs from a general business loan, and when each structure suits a purchase."
 category: comparison
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Security", value: "The asset being financed" }

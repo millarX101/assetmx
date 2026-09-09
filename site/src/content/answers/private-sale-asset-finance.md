@@ -3,6 +3,7 @@ question: "Can I get finance to buy a vehicle or equipment from a private seller
 shortAnswer: "Yes. AssetMX can finance a private-sale vehicle or piece of equipment, provided it meets the usual eligibility rules. A private-sale asset may need an inspection, which carries a $250 fee, and you will need a contract of sale in place of a dealer invoice."
 description: "How private-sale asset finance works, including the inspection fee and documents needed."
 category: process
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Inspection fee", value: "$250 (if required)" }

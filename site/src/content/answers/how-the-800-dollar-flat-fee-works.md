@@ -3,6 +3,7 @@ question: "How does the $800 flat fee on AssetMX work?"
 shortAnswer: "AssetMX charges a single $800 flat platform fee per deal, shown separately from the lender's base interest rate, with no hidden commission loaded into the rate. It can either be paid upfront or financed into the loan alongside the lender's typical $500 establishment fee, which also varies by lender."
 description: "AssetMX charges one $800 flat fee, shown separately from the lender rate, payable upfront or financed into the loan."
 category: pricing
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "AssetMX platform fee", value: "$800 flat" }

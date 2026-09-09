@@ -3,6 +3,7 @@ question: "What is low-doc asset finance?"
 shortAnswer: "Low-doc asset finance is a loan for a business vehicle, truck or piece of equipment that is approved using bank statements and an ABN/GST check instead of full financials. AssetMX can arrange $5,000 to $500,000 over 12 to 84 months for an ABN business trading 24+ months and registered for GST, subject to lender low-doc policy."
 description: "Low-doc asset finance uses bank statements and an ABN/GST check, not tax returns, to fund business vehicles and equipment."
 category: products
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "Loan amount range", value: "$5,000 to $500,000" }

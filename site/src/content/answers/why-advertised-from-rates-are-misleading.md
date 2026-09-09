@@ -3,6 +3,7 @@ question: "Why are advertised 'from' interest rates on asset finance often misle
 shortAnswer: "Advertised 'from' rates usually show the lowest tier a lender offers, typically reserved for the shortest loan terms and strongest applications, and they often bury broker commission inside the rate rather than showing it separately. AssetMX's indicative lender rate tiers, verified 16 February 2026, are 8.49% for 12 months, 7.49% for 24 months and 6.89% for 36 to 60 months, shown separately from the $800 flat platform fee so there is no commission loaded into the number you see."
 description: "Advertised 'from' rates show the best-case tier and can hide broker commission loaded into your actual rate."
 category: comparison
+published: 2026-09-08
 updated: 2026-09-08
 keyFacts:
   - { label: "12-month indicative rate", value: "8.49%" }

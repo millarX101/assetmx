@@ -57,6 +57,7 @@ const ld = graph(
     <meta name="author" content={`${ENTITY.brand} (${ENTITY.legalName})`} />
     <meta name="theme-color" content="#F5EAD8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
     <meta property="og:type" content={ogType} />
@@ -77,6 +78,12 @@ const ld = graph(
     <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
     <JsonLd data={ld} />
+    {ENTITY.gaId && !import.meta.env.DEV && (
+      <Fragment>
+        <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${ENTITY.gaId}`}></script>
+        <script is:inline set:html={`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${ENTITY.gaId}');`} />
+      </Fragment>
+    )}
     <slot name="head" />
   </head>
   <body class="min-h-screen flex flex-col">
