@@ -1,11 +1,21 @@
 ---
 interface Props { light?: boolean; class?: string }
 const { light = false, class: cls = '' } = Astro.props;
+
+/* Ribbon mark: forest stem, sage fold sweeping down-right over it,
+   forest flag and sand wedge on the right. Reversed for dark grounds. */
+const stem = light ? '#F5EAD8' : '#3D472B';
+const fold = light ? '#AEBF92' : '#7F9466';
+const wedge = '#C2B490';
 ---
-<span class:list={['inline-flex items-center gap-2', cls]}>
-  <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
-    <rect width="30" height="30" rx="9" fill={light ? '#CCDBB2' : '#3D472B'} />
-    <path d="M8.5 21.5 L15 8 L21.5 21.5 M11.2 16.6 H18.8" stroke={light ? '#272E1B' : '#F5EAD8'} stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+<span class:list={['inline-flex items-center gap-2.5', cls]}>
+  <svg width="57" height="30" viewBox="0 0 190 100" class="flex-none" aria-hidden="true">
+    <path d="M144 52 H190 V100 H172 Z" fill={wedge} />
+    <path d="M122 0 H176 C184 0 190 6 190 14 V48 H140 Z" fill={stem} />
+    <path d="M44 0 H20 C9 0 0 9 0 20 V80 C0 91 9 100 20 100 H44 Z" fill={stem} />
+    <path d="M28 0 H70 L152 100 H81 L14 18 V14 C14 6 20 0 28 0 Z" fill={fold} />
   </svg>
-  <span class:list={['font-display text-xl leading-none', light ? 'text-canvas' : 'text-ink']}>AssetMX</span>
+  <span class:list={['font-sans text-xl font-extrabold leading-none tracking-tight', light ? 'text-canvas' : 'text-ink']}>
+    Asset<span class:list={[light ? 'text-sage-300' : 'text-forest']}>MX</span>
+  </span>
 </span>

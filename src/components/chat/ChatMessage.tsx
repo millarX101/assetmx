@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { BrandMark } from '@/components/BrandMark';
 
 export type MessageType = 'bot' | 'user' | 'system';
 
@@ -39,9 +40,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
       {/* Bot Avatar */}
       {isBot && (
         <div className="flex-shrink-0 mr-3">
-          <div className="w-8 h-8 rounded-full bg-sage flex items-center justify-center">
-            <span className="text-forest font-display text-sm">A</span>
-          </div>
+          <BrandMark className="h-8 w-8" />
         </div>
       )}
 

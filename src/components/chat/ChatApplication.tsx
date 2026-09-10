@@ -10,6 +10,7 @@ import { useChatApplication } from '@/hooks/useChatApplication';
 import { Button } from '@/components/ui/button';
 import { RotateCcw, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { BrandMark } from '@/components/BrandMark';
 
 export function ChatApplication() {
   const navigate = useNavigate();
@@ -99,9 +100,7 @@ export function ChatApplication() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-sage flex items-center justify-center">
-              <span className="text-forest font-display text-sm">A</span>
-            </div>
+            <BrandMark className="h-8 w-8 flex-none" />
             <div>
               <div className="font-display text-ink text-base leading-none">AssetMX</div>
               <div className="text-xs text-ink-500 mt-0.5">Guided application</div>

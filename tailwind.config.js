@@ -49,6 +49,7 @@ export default {
         forest: { DEFAULT: '#3D472B', 700: '#333C24', 800: '#272E1B' },
         sage: { DEFAULT: '#CCDBB2', 100: '#F0FAE1', 200: '#E1EECC', 300: '#AEBF92' },
         sand: '#EBDDC5',
+        'sand-deep': '#C2B490', // ribbon-mark wedge
         ink: {
           DEFAULT: '#201E1D',
           800: '#2E2B25',
