@@ -1098,7 +1098,10 @@ export const CHAT_FLOW: ChatStep[] = [
     action: 'extract_licence',
     messages: (data) => {
       const l = data.extracted?.licence;
-      if (!l) return ["I could not read that licence, so I will ask you instead."];
+      if (!l) {
+        const uploaded = (data.uploadedDocuments || []).some(d => /licence|license/i.test(d.id));
+        return [uploaded ? "I could not read that licence, so I will ask you instead." : "No problem, I will ask you instead."];
+      }
 
       const lines: string[] = [];
       const fullName = l.fullName || [l.firstName, l.lastName].filter(Boolean).join(' ').trim();
@@ -1164,7 +1167,11 @@ export const CHAT_FLOW: ChatStep[] = [
     field: 'directors.directors.0.address',
     placeholder: "e.g. 12 Smith St, Richmond VIC 3121",
     nextStep: (answer, data) => {
-      getDirector(data, 0).residentialAddress = answer;
+      const director = getDirector(data, 0);
+      director.residentialAddress = answer;
+      // Already given for 'Email me this quote': don't ask again
+      if (!director.email && data.lead?.email) director.email = data.lead.email;
+      if (!director.phone && data.lead?.phone) director.phone = data.lead.phone;
       return 'director_intro';
     },
   },
@@ -1172,6 +1179,7 @@ export const CHAT_FLOW: ChatStep[] = [
   // ========== PHASE 6: CONTACT AND DECLARATIONS ==========
   {
     id: 'director_intro',
+    skipIf: (data) => !!getDirector(data, 0).email,
     messages: ["What is the best email for you?"],
     inputType: 'email',
     field: 'directors.directors.0.email',
@@ -1182,6 +1190,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'director_phone',
+    skipIf: (data) => !!getDirector(data, 0).phone,
     messages: ["And your mobile number?"],
     inputType: 'phone',
     field: 'directors.directors.0.phone',
