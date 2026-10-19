@@ -1206,7 +1206,9 @@ export function useChatApplication() {
   }, [processStepMessages, state]);
 
   // Handle user input
-  const handleUserInput = useCallback(async (input: string) => {
+  // flowDataOverride: callers that have just changed flowData (file uploads) pass it in,
+  // because this callback still holds the state from before their setState.
+  const handleUserInput = useCallback(async (input: string, flowDataOverride?: ChatFlowData) => {
     debugLog('INPUT', `User input received`, { stepId: state.currentStepId, input });
     const currentStep = getStep(state.currentStepId);
     if (!currentStep) {
@@ -1218,7 +1220,7 @@ export function useChatApplication() {
     addUserMessage(input);
     setState(prev => ({ ...prev, isWaitingForInput: false }));
 
-    let flowData = { ...state.flowData };
+    let flowData = { ...(flowDataOverride ?? state.flowData) };
 
     // Validate input if needed. When a typed answer fails, ask Claude whether it was a
     // differently-phrased answer, a question, or a request for a person, before re-asking.
@@ -1370,14 +1372,18 @@ export function useChatApplication() {
 
   // Files uploaded at a file_upload step: record them, then advance the flow
   const handleFilesUploaded = useCallback((files: { id: string; name: string; type: string; url: string }[]) => {
-    setState(prev => {
-      const existing = prev.flowData.uploadedDocuments || [];
-      const added = files.map(f => ({ id: f.id, name: f.name, type: f.type, url: f.url }));
-      return { ...prev, flowData: { ...prev.flowData, documentsUploaded: true, uploadedDocuments: [...existing, ...added] } };
-    });
-    // Let the state settle before the next step's pre-render action reads uploadedDocuments
-    setTimeout(() => handleUserInput(`Uploaded ${files.length} document${files.length === 1 ? '' : 's'}`), 50);
-  }, [handleUserInput]);
+    // Hand the new list straight to handleUserInput: the next step's extract action reads
+    // flowData.uploadedDocuments, and handleUserInput's own copy of state predates this
+    // upload (passing nothing here is why every quote and licence read came back empty).
+    const added = files.map(f => ({ id: f.id, name: f.name, type: f.type, url: f.url }));
+    const flowData: ChatFlowData = {
+      ...state.flowData,
+      documentsUploaded: true,
+      uploadedDocuments: [...(state.flowData.uploadedDocuments || []), ...added],
+    };
+    setState(prev => ({ ...prev, flowData }));
+    void handleUserInput(`Uploaded ${files.length} document${files.length === 1 ? '' : 's'}`, flowData);
+  }, [handleUserInput, state.flowData]);
 
   // Start or resume the chat
   const startChat = useCallback(async () => {
