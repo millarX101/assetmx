@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import { BrandMark } from '@/components/BrandMark';
 import { formatCurrency } from '@/lib/calculator';
 import { ASSET_CONDITION_LABELS, ASSET_TYPE_LABELS } from '@/lib/crm';
-import { ENTITY, FINANCE_TYPE_LABELS, QUOTE_DISCLAIMER, type PublicQuote } from '@/lib/quotes';
+import { ENTITY, FINANCE_TYPE_LABELS, QUOTE_DISCLAIMER, regularPayments, type PublicQuote } from '@/lib/quotes';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -66,6 +66,7 @@ export function QuoteDocument({ quote: q }: Props) {
   const deposit = Number(q.deposit_amount ?? 0);
   const tradeIn = Number(q.trade_in_amount ?? 0);
   const balloon = Number(q.balloon_amount);
+  const regular = regularPayments(q.term_months, balloon);
   const eff = q.effective_rate_pct != null ? Number(q.effective_rate_pct) : null;
   const alt = q.alt_monthly_repayment != null ? Number(q.alt_monthly_repayment) : null;
   const options = [
@@ -145,18 +146,18 @@ export function QuoteDocument({ quote: q }: Props) {
               </thead>
               <tbody className="tabular-nums">
                 <tr>
-                  <td className="py-1.5">{q.term_months}</td>
+                  <td className="py-1.5">{regular}</td>
                   <td>Monthly</td>
                   <td className="text-right font-bold">{formatCurrency(q.monthly_repayment)}</td>
                   <td className="pl-6 text-ink-600">Month 1 (1 month after settlement)</td>
-                  <td className="text-ink-600">Month {q.term_months}</td>
+                  <td className="text-ink-600">Month {regular}</td>
                 </tr>
                 {balloon > 0 && (
                   <tr>
                     <td className="py-1.5">1</td>
-                    <td>Balloon</td>
+                    <td>Final</td>
                     <td className="text-right font-bold">{formatCurrency(balloon)}</td>
-                    <td className="pl-6 text-ink-600">With the final monthly payment</td>
+                    <td className="pl-6 text-ink-600">Balloon, as payment {q.term_months}</td>
                     <td className="text-ink-600">Month {q.term_months}</td>
                   </tr>
                 )}

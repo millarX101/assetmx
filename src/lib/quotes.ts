@@ -3,7 +3,6 @@
 // supabase/functions/quote-public.
 
 import { FunctionsHttpError } from '@supabase/supabase-js';
-import { getMaxBalloon, LENDER_ESTABLISHMENT_FEE, PLATFORM_FEE } from './calculator';
 import { getSupabaseAnonKey, getSupabaseUrl, supabase } from './supabase';
 import type { FinanceType, Quote } from '@/types/database';
 
@@ -43,96 +42,16 @@ export type PublicQuote = Pick<
   | 'message'
 > & { expired?: boolean };
 
-export type QuoteFigures = Pick<
-  Quote,
-  | 'asset_price' | 'deposit_amount' | 'trade_in_amount' | 'loan_amount'
-  | 'rate_pct' | 'effective_rate_pct' | 'monthly_repayment' | 'alt_monthly_repayment'
-  | 'weekly_repayment' | 'fortnightly_repayment'
-  | 'balloon_amount' | 'amount_financed' | 'total_repayments' | 'total_interest' | 'total_cost'
-  | 'platform_fee' | 'establishment_fee'
->;
-
-export interface QuoteCalcInput {
-  assetPrice: number;
-  deposit: number;
-  tradeIn: number;
-  termMonths: number;
-  balloonPct: number; // % of asset price
-  feeFinanced: boolean;
-  ratePct: number;
-}
-
-const r2 = (n: number) => Math.round(n * 100) / 100;
-
-/** Same formula as site/src/lib/calculator.ts pmt() and the app calculator, so quotes match the website. */
-export function pmt(principal: number, annualRatePct: number, n: number, balloon: number): number {
-  const r = annualRatePct / 100 / 12;
-  if (r === 0) return (principal - balloon) / n;
-  const pvBalloon = balloon / Math.pow(1 + r, n);
-  return ((principal - pvBalloon) * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1);
-}
-
-/** The rate that gives `payment` on `principal` - i.e. the effective rate once a fee is financed on top. */
-function effectiveRate(principal: number, n: number, balloon: number, payment: number): number {
-  let lo = 0;
-  let hi = 60;
-  for (let i = 0; i < 80; i++) {
-    const mid = (lo + hi) / 2;
-    if (pmt(principal, mid, n, balloon) < payment) lo = mid;
-    else hi = mid;
-  }
-  return (lo + hi) / 2;
-}
-
-/**
- * The quote engine. Asset price less deposit and trade-in is the amount to
- * finance; the lender fee is always added; the AssetMX fee is either paid
- * upfront or added. Both fee options are priced so the quote can show them
- * side by side, with the effective rate of adding the fee to the loan.
- */
-export function computeQuote(i: QuoteCalcInput): QuoteFigures {
-  const deposit = Math.max(0, i.deposit || 0);
-  const tradeIn = Math.max(0, i.tradeIn || 0);
-  const net = i.assetPrice - deposit - tradeIn;
-  if (!(i.assetPrice > 0)) throw new Error('Enter the asset price');
-  if (net < 5000) throw new Error('Amount to finance (price less deposit and trade-in) must be at least $5,000');
-  if (net > 500000) throw new Error('Amount to finance must be $500,000 or less');
-  if (i.termMonths < 12 || i.termMonths > 84) throw new Error('Term must be 12 to 84 months');
-  const maxBalloon = getMaxBalloon(i.termMonths);
-  if (i.balloonPct < 0 || i.balloonPct > maxBalloon) throw new Error(`Balloon must be 0-${maxBalloon}% for this term`);
-  if (!(i.ratePct > 0 && i.ratePct < 40)) throw new Error('Rate must be between 0 and 40%');
-
-  const balloon = r2(i.assetPrice * (i.balloonPct / 100));
-  if (balloon >= net) throw new Error('Balloon must be less than the amount to finance');
-
-  const base = net + LENDER_ESTABLISHMENT_FEE; // lender fee always financed
-  const upfront = r2(pmt(base, i.ratePct, i.termMonths, balloon));
-  const financed = r2(pmt(base + PLATFORM_FEE, i.ratePct, i.termMonths, balloon));
-  const monthly = i.feeFinanced ? financed : upfront;
-  const amountFinanced = i.feeFinanced ? base + PLATFORM_FEE : base;
-  const totalRepayments = r2(monthly * i.termMonths + balloon);
-
-  return {
-    asset_price: i.assetPrice,
-    deposit_amount: deposit,
-    trade_in_amount: tradeIn,
-    loan_amount: net,
-    rate_pct: i.ratePct,
-    // Always the fee-added rate, so the quote can show both options
-    effective_rate_pct: Math.round(effectiveRate(base, i.termMonths, balloon, financed) * 100) / 100,
-    monthly_repayment: monthly,
-    alt_monthly_repayment: i.feeFinanced ? upfront : financed,
-    weekly_repayment: r2((monthly * 12) / 52),
-    fortnightly_repayment: r2((monthly * 12) / 26),
-    balloon_amount: balloon,
-    amount_financed: amountFinanced,
-    total_repayments: totalRepayments,
-    total_interest: r2(totalRepayments - amountFinanced),
-    total_cost: r2(totalRepayments + (i.feeFinanced ? 0 : PLATFORM_FEE)),
-    platform_fee: PLATFORM_FEE,
-    establishment_fee: LENDER_ESTABLISHMENT_FEE,
-  };
-}
+// The quote engine (Westpac-matched repayment maths) is shared with the
+// request-quote edge function so manual and automatic quotes price identically.
+export {
+  computeQuote,
+  repayment,
+  effectiveRate,
+  regularPayments,
+  type QuoteCalcInput,
+  type QuoteFigures,
+} from '../../supabase/functions/_shared/quote-engine';
 
 export const publicQuoteUrl = (token: string) => `${window.location.origin}/q/${token}`;
 

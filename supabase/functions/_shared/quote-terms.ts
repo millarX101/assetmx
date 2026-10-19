@@ -44,7 +44,7 @@ export function quoteTerms(q: TermsInput): TermsClause[] {
     {
       heading: "How the repayments are calculated",
       paragraphs: [
-        "Repayments are monthly in arrears: the first payment is due one month after settlement. They are calculated on the total amount financed at the interest rate shown, fixed for the term. Weekly and fortnightly amounts are the monthly repayment expressed as an equivalent. Any balloon or residual is payable at the end of the term, in addition to the final monthly repayment. Figures are rounded to the nearest cent.",
+        "Repayments are monthly in arrears: the first payment is due one month after settlement. They are calculated on the total amount financed at the interest rate shown, fixed for the term. Weekly and fortnightly amounts are the monthly repayment expressed as an equivalent. Where there is a balloon or residual, it is the final payment: a term of 60 months is 59 monthly repayments followed by the balloon as payment 60. Figures are rounded to the nearest cent.",
       ],
     },
     {

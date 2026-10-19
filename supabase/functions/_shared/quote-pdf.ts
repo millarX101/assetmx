@@ -9,6 +9,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type RGB } from "npm:pdf-lib@1.17.1";
 import { DISCLAIMER, ENTITY, LICENCE_LINE, aud, assetLabel, longDate, pct, type Row } from "./quote.ts";
 import { QUOTE_TERMS_VERSION, quoteTerms } from "./quote-terms.ts";
+import { regularPayments } from "./quote-engine.ts";
 
 const hex = (h: string): RGB => {
   const n = parseInt(h.slice(1), 16);
@@ -155,6 +156,7 @@ export async function renderQuotePdf(q: Row): Promise<Uint8Array> {
   const net = Number(q.loan_amount);
   const n = Number(q.term_months);
   const balloon = Number(q.balloon_amount);
+  const regular = regularPayments(n, balloon);
   const fee = Number(q.platform_fee);
   const lenderFee = Number(q.establishment_fee);
   const eff = q.effective_rate_pct != null ? Number(q.effective_rate_pct) : null;
@@ -217,17 +219,17 @@ export async function renderQuotePdf(q: Row): Promise<Uint8Array> {
   head.forEach((h, i) => (i === 2 ? right(c, h, cols[2] + 70, y, 7.5, true, C.muted) : txt(c, h, cols[i], y, 7.5, true, C.muted)));
   hline(c, y - 5, M + 22);
   y -= 16;
-  txt(c, String(n), cols[0], y, 9.5);
+  txt(c, String(regular), cols[0], y, 9.5);
   txt(c, "Monthly", cols[1], y, 9.5);
   right(c, aud(q.monthly_repayment), cols[2] + 70, y, 9.5, true);
   txt(c, "Month 1 (1 month after settlement)", cols[3], y, 8.5, false, C.muted);
-  txt(c, `Month ${n}`, cols[4] + 40, y, 8.5, false, C.muted);
+  txt(c, `Month ${regular}`, cols[4] + 40, y, 8.5, false, C.muted);
   if (balloon > 0) {
     y -= 14;
     txt(c, "1", cols[0], y, 9.5);
-    txt(c, "Balloon", cols[1], y, 9.5);
+    txt(c, "Final", cols[1], y, 9.5);
     right(c, aud(balloon), cols[2] + 70, y, 9.5, true);
-    txt(c, "With the final monthly payment", cols[3], y, 8.5, false, C.muted);
+    txt(c, `Balloon, as payment ${n}`, cols[3], y, 8.5, false, C.muted);
     txt(c, `Month ${n}`, cols[4] + 40, y, 8.5, false, C.muted);
   }
   y -= 8;

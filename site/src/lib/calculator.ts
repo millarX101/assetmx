@@ -1,6 +1,9 @@
 /**
  * Pure quote maths, shared by the public quote island and the app.
- * Payments in advance, balloon on asset value, fees financed per lender practice.
+ * Payments monthly in arrears, balloon on asset value, fees financed per lender practice.
+ * Repayment structure matches Westpac Commercial Loan quotes: with a balloon, a
+ * term of n months is n-1 regular payments then the balloon alone as payment n.
+ * Same formula as supabase/functions/_shared/quote-engine.ts - change both together.
  * Kept dependency-free so it can be unit tested and run in the browser.
  */
 import { PRICING } from '@/data/entity';
@@ -31,12 +34,15 @@ export interface QuoteOutput {
   saving: number;
 }
 
+/** Regular monthly payments: the balloon replaces the last one. */
+export const regularPayments = (n: number, balloon: number) => (balloon > 0 ? n - 1 : n);
+
 export function pmt(principal: number, annualRatePct: number, n: number, balloon: number): number {
   const r = annualRatePct / 100 / 12;
-  if (r === 0) return (principal - balloon) / n;
-  const pvBalloon = balloon / Math.pow(1 + r, n);
-  const p = principal - pvBalloon;
-  return (p * (r * Math.pow(1 + r, n))) / (Math.pow(1 + r, n) - 1);
+  const k = regularPayments(n, balloon);
+  if (r === 0) return (principal - balloon) / k;
+  const annuity = (1 - Math.pow(1 + r, -k)) / r;
+  return (principal - balloon * Math.pow(1 + r, -n)) / annuity;
 }
 
 export function calculateQuote(input: QuoteInput): QuoteOutput {
@@ -50,13 +56,13 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
   const balloon = amount * (balloonPct / 100);
   const amountFinanced = amount + PRICING.lenderEstablishmentFee + (financeFee ? PRICING.platformFee : 0);
   const monthly = pmt(amountFinanced, ratePct, termMonths, balloon);
-  const totalRepayments = monthly * termMonths + balloon;
+  const totalRepayments = monthly * regularPayments(termMonths, balloon) + balloon;
   const totalInterest = totalRepayments - amountFinanced;
   const totalCost = totalRepayments + (financeFee ? 0 : PRICING.platformFee);
 
   const brokerRatePct = ratePct + PRICING.typicalBrokerMarginPct;
   const brokerMonthly = pmt(amount + PRICING.lenderEstablishmentFee, brokerRatePct, termMonths, balloon);
-  const brokerTotalCost = brokerMonthly * termMonths + balloon;
+  const brokerTotalCost = brokerMonthly * regularPayments(termMonths, balloon) + balloon;
 
   const r2 = (n: number) => Math.round(n * 100) / 100;
   return {
