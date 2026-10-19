@@ -8,7 +8,7 @@
 //        preview=1, which the admin "Preview" button passes.
 //   POST { token, action: "accept" | "decline", reason? }
 //        Records the response once, logs it, advances the lead on accept and
-//        emails ADMIN_EMAIL (plus the quote's creator).
+//        emails ADMIN_EMAIL, with Reply-To the customer.
 //
 // Env: RESEND_API_KEY, ADMIN_EMAIL, APP_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 
@@ -148,13 +148,8 @@ Deno.serve(async (req) => {
     }
 
     // Tell the team. Failure here must not fail the customer's response.
-    const to = new Set([ADMIN_EMAIL]);
-    if (quote.created_by) {
-      const { data: creator } = await db.from("admin_users").select("email").eq("id", quote.created_by).maybeSingle();
-      if (creator?.email) to.add(creator.email);
-    }
     const notice = await sendEmail({
-      to: [...to],
+      to: [ADMIN_EMAIL],
       subject: `${action === "accepted" ? "✅ Accepted" : "Declined"}: ${quote.quote_number} - ${quote.customer_name}`,
       html: renderResponseNotice(updated ?? quote, action, reason),
       replyTo: quote.customer_email,
