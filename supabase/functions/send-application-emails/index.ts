@@ -2,7 +2,7 @@
 // Sends confirmation email to client and notification to admin
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { C, DISCLAIMER, aud, esc, firstName, pct, row, shell } from "../_shared/quote.ts";
+import { ADMIN_URL, C, DISCLAIMER, aud, esc, firstName, pct, row, shell } from "../_shared/quote.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "info@assetmx.com.au";
@@ -119,90 +119,41 @@ const getClientEmailHtml = (data: ApplicationData): string => {
   return shell(inner, `Application ${applicationReference(data.id)} received - what happens next`);
 };
 
-// Admin notification email template
+// Team notice: new application. Same layout as every other AssetMX email.
 const getAdminEmailHtml = (data: ApplicationData): string => {
-  const adminUrl = `https://assetmx.com.au/admin/applications/${data.id}`;
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-
-    <!-- Header -->
-    <tr>
-      <td style="background: #7c3aed; padding: 20px 24px;">
-        <h1 style="margin: 0; color: white; font-size: 18px; font-weight: 600;">
-          🚀 New Application Submitted
-        </h1>
-      </td>
-    </tr>
-
-    <!-- Content -->
-    <tr>
-      <td style="padding: 24px;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background: #f8fafc; border-radius: 8px; padding: 16px;">
-          <tr>
-            <td style="padding: 8px 16px;">
-              <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Business</strong><br>
-              <span style="color: #1e293b; font-size: 16px; font-weight: 600;">${data.entityName}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 16px;">
-              <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Contact</strong><br>
-              <span style="color: #1e293b; font-size: 14px;">${data.contactName} | ${data.contactEmail} | ${data.contactPhone}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 16px;">
-              <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Asset</strong><br>
-              <span style="color: #1e293b; font-size: 14px;">${data.assetDescription || data.assetType}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 16px;">
-              <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Finance</strong><br>
-              <span style="color: #7c3aed; font-size: 20px; font-weight: 700;">${formatMoney(data.loanAmount)}</span>
-              <span style="color: #64748b; font-size: 14px;"> over ${data.termMonths} months${data.balloonPercentage > 0 ? ` (${data.balloonPercentage}% balloon)` : ""}</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 16px;">
-              <strong style="color: #64748b; font-size: 12px; text-transform: uppercase;">Documents</strong><br>
-              <span style="color: ${data.documentsUploaded ? '#16a34a' : '#f59e0b'}; font-size: 14px; font-weight: 500;">
-                ${data.documentsUploaded ? '✅ Uploaded' : '⏳ Pending'}
-              </span>
-            </td>
-          </tr>
-        </table>
-
-        <div style="margin-top: 24px; text-align: center;">
-          <a href="${adminUrl}" style="display: inline-block; background: #7c3aed; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
-            View Application →
-          </a>
-        </div>
-      </td>
-    </tr>
-
-    <!-- Footer -->
-    <tr>
-      <td style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
-        <p style="margin: 0; color: #94a3b8; font-size: 12px;">
-          Application ID: ${data.id}<br>
-          Submitted: ${new Date().toLocaleString("en-AU", { timeZone: "Australia/Sydney" })}
-        </p>
-      </td>
-    </tr>
-
+  const adminUrl = `${ADMIN_URL}/admin/applications/${data.id}`;
+  const ref = applicationReference(data.id);
+  const assetPrice = Number(data.assetPrice) || 0;
+  const deposit = Number(data.depositAmount) || 0;
+  const balloonPct = Number(data.balloonPercentage) || 0;
+  const inner = `
+<tr><td style="padding:28px 28px 8px;">
+  <p style="margin:0 0 6px;font-size:20px;font-weight:800;color:${C.forest};">New application ${esc(ref)}</p>
+  <p style="margin:0;font-size:15px;line-height:1.6;"><strong>${esc(data.entityName)}</strong> applied for ${esc(aud(data.loanAmount, 0))} over ${data.termMonths} months.</p>
+</td></tr>
+<tr><td style="padding:12px 28px 4px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    ${row("Reference", ref)}
+    ${row("Business", data.entityName)}
+    ${data.abn ? row("ABN", data.abn) : ""}
+    ${row("Contact", data.contactName)}
+    ${row("Email", data.contactEmail)}
+    ${data.contactPhone ? row("Phone", data.contactPhone) : ""}
+    ${row("Asset", data.assetDescription || data.assetType)}
+    ${assetPrice > 0 ? row("Asset price", aud(assetPrice)) : ""}
+    ${deposit > 0 ? row("Deposit", aud(deposit)) : ""}
+    ${row("Amount to finance", aud(data.loanAmount), true)}
+    ${row("Term", `${data.termMonths} months`)}
+    ${balloonPct > 0 ? row("Balloon", `${balloonPct}%`) : ""}
+    ${data.indicativeRate ? row("Indicative rate", `${pct(data.indicativeRate)} p.a.`) : ""}
+    ${data.monthlyRepayment ? row("Indicative repayment", `${aud(data.monthlyRepayment)} per month`) : ""}
+    ${row("Documents", data.documentsUploaded ? "Uploaded in chat" : "None uploaded")}
   </table>
-</body>
-</html>
-`;
+</td></tr>
+<tr><td style="padding:20px 28px 28px;">
+  <a href="${adminUrl}" style="display:inline-block;background:${C.forest};color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 26px;border-radius:999px;">Open in AssetMX admin</a>
+</td></tr>`;
+  return shell(inner, `New application ${ref}: ${data.entityName} - ${aud(data.loanAmount, 0)}`);
 };
 
 // Send email via Resend
@@ -261,262 +212,49 @@ async function sendEmail(
   }
 }
 
-// Director form request email template
+// To an additional director/guarantor. There is no self-serve director form yet,
+// so the team collects their details directly.
 const getDirectorFormEmailHtml = (data: DirectorFormRequest): string => {
-  const formUrl = `https://assetmx.com.au/director-form?email=${encodeURIComponent(data.directorEmail)}`;
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Complete Your Details - AssetMX</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-
-          <!-- Header -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 40px 40px 30px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td>
-                    <div style="display: inline-block; background: white; border-radius: 12px; padding: 12px 16px;">
-                      <span style="font-size: 24px; font-weight: bold; color: #1e293b;">Asset</span><span style="font-size: 24px; font-weight: bold; color: #7c3aed;">MX</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding-top: 24px;">
-                    <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 600;">Your Details Needed</h1>
-                    <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">Quick form to complete</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Content -->
-          <tr>
-            <td style="padding: 40px;">
-              <p style="margin: 0 0 20px; color: #1e293b; font-size: 16px; line-height: 1.6;">
-                Hi there,
-              </p>
-              <p style="margin: 0 0 20px; color: #1e293b; font-size: 16px; line-height: 1.6;">
-                <strong>${data.primaryContactName}</strong> has listed you as an additional director/guarantor on a finance application for <strong>${data.businessName}</strong>.
-              </p>
-              <p style="margin: 0 0 30px; color: #1e293b; font-size: 16px; line-height: 1.6;">
-                Please take a couple of minutes to complete your details by clicking the button below.
-              </p>
-
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${formUrl}" style="display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 16px;">
-                  Complete Your Details
-                </a>
-              </div>
-
-              <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-top: 30px;">
-                <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                  <strong style="color: #1e293b;">What we need:</strong><br>
-                  • Basic personal information<br>
-                  • Property ownership status<br>
-                  • Quick financial summary
-                </p>
-                <p style="margin: 16px 0 0; color: #64748b; font-size: 14px;">
-                  Takes about 2-3 minutes to complete.
-                </p>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Questions -->
-          <tr>
-            <td style="padding: 0 40px 40px;">
-              <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                Questions? Contact ${data.primaryContactName} at <a href="mailto:${data.primaryContactEmail}" style="color: #7c3aed; text-decoration: none;">${data.primaryContactEmail}</a> or reply to this email.
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background: #f8fafc; padding: 30px 40px; border-top: 1px solid #e2e8f0;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td>
-                    <p style="margin: 0 0 8px; color: #1e293b; font-size: 14px; font-weight: 600;">AssetMX</p>
-                    <p style="margin: 0; color: #64748b; font-size: 12px;">Transparent Asset Finance</p>
-                  </td>
-                  <td style="text-align: right;">
-                    <a href="https://assetmx.com.au" style="color: #7c3aed; text-decoration: none; font-size: 12px;">assetmx.com.au</a>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>
-`;
+  const inner = `
+<tr><td style="padding:28px 28px 8px;">
+  <p style="margin:0 0 14px;font-size:16px;">Hi,</p>
+  <p style="margin:0 0 14px;font-size:15px;line-height:1.6;">
+    ${esc(data.primaryContactName)} has listed you as a director or guarantor on a finance application for <strong>${esc(data.businessName)}</strong> through AssetMX.
+  </p>
+  <p style="margin:0 0 14px;font-size:15px;line-height:1.6;">
+    The lender needs your name, date of birth, address and driver licence details. Our team will contact you to collect them. Nothing is needed from you until then.
+  </p>
+</td></tr>
+<tr><td style="padding:4px 28px 24px;">
+  <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:${C.muted};">Questions? Reply to this email, or contact ${esc(data.primaryContactName)} at ${esc(data.primaryContactEmail)}.</p>
+  <p style="margin:0;font-size:15px;"><strong>AssetMX</strong></p>
+</td></tr>`;
+  return shell(inner, `Finance application for ${data.businessName}: director details`);
 };
 
-// New lead notification email template (admin only)
+// Team notice: chat applicant who did not qualify and left details.
 const getLeadNotificationEmailHtml = (data: NewLeadRequest): string => {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Lead - AssetMX</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-
-          <!-- Header -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px 40px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td>
-                    <div style="display: inline-block; background: white; border-radius: 12px; padding: 12px 16px;">
-                      <span style="font-size: 24px; font-weight: bold; color: #1e293b;">Asset</span><span style="font-size: 24px; font-weight: bold; color: #7c3aed;">MX</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding-top: 20px;">
-                    <h1 style="margin: 0; color: white; font-size: 24px; font-weight: 600;">📋 New Lead Captured</h1>
-                    <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Non-qualifying applicant - manual follow-up required</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Content -->
-          <tr>
-            <td style="padding: 30px 40px;">
-              <!-- Reason for not qualifying -->
-              <div style="background: #fef3c7; border-radius: 12px; padding: 16px; margin-bottom: 24px; border-left: 4px solid #f59e0b;">
-                <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 600;">Reason:</p>
-                <p style="margin: 4px 0 0; color: #78350f; font-size: 14px;">${data.reason}</p>
-              </div>
-
-              <!-- Contact Details -->
-              <h3 style="margin: 0 0 16px; color: #1e293b; font-size: 16px; font-weight: 600;">Contact Details</h3>
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                    <span style="color: #64748b; font-size: 14px;">Name:</span>
-                  </td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">
-                    <span style="color: #1e293b; font-size: 14px; font-weight: 500;">${data.name}</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                    <span style="color: #64748b; font-size: 14px;">Email:</span>
-                  </td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">
-                    <a href="mailto:${data.email}" style="color: #7c3aed; font-size: 14px; text-decoration: none;">${data.email}</a>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                    <span style="color: #64748b; font-size: 14px;">Phone:</span>
-                  </td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">
-                    <a href="tel:${data.phone}" style="color: #7c3aed; font-size: 14px; text-decoration: none;">${data.phone}</a>
-                  </td>
-                </tr>
-                ${data.businessName ? `
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                    <span style="color: #64748b; font-size: 14px;">Business:</span>
-                  </td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">
-                    <span style="color: #1e293b; font-size: 14px;">${data.businessName}</span>
-                  </td>
-                </tr>
-                ` : ''}
-                ${data.abn ? `
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                    <span style="color: #64748b; font-size: 14px;">ABN:</span>
-                  </td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">
-                    <span style="color: #1e293b; font-size: 14px;">${data.abn}</span>
-                  </td>
-                </tr>
-                ` : ''}
-              </table>
-
-              <!-- Finance Details -->
-              <h3 style="margin: 0 0 16px; color: #1e293b; font-size: 16px; font-weight: 600;">Finance Requirements</h3>
-              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 24px;">
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                    <span style="color: #64748b; font-size: 14px;">Asset Type:</span>
-                  </td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">
-                    <span style="color: #1e293b; font-size: 14px;">${data.assetType || 'Not specified'}</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                    <span style="color: #64748b; font-size: 14px;">Loan Amount:</span>
-                  </td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">
-                    <span style="color: #1e293b; font-size: 14px; font-weight: 600;">${formatMoney(data.loanAmount)}</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-                    <span style="color: #64748b; font-size: 14px;">Consent to Share:</span>
-                  </td>
-                  <td style="padding: 8px 0; border-bottom: 1px solid #e2e8f0; text-align: right;">
-                    <span style="color: ${data.consentToShare ? '#16a34a' : '#dc2626'}; font-size: 14px; font-weight: 500;">${data.consentToShare ? '✓ Yes - can share with partners' : '✗ No - contact directly only'}</span>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Action Button -->
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="https://assetmx.com.au/admin/leads" style="display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 14px;">
-                  View in Admin Dashboard
-                </a>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background: #f8fafc; padding: 20px 40px; border-top: 1px solid #e2e8f0;">
-              <p style="margin: 0; color: #64748b; font-size: 12px; text-align: center;">
-                This lead was captured via the AssetMX Express chat flow.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
+  const inner = `
+<tr><td style="padding:28px 28px 8px;">
+  <p style="margin:0 0 6px;font-size:20px;font-weight:800;color:${C.forest};">New lead: ${esc(data.name || "No name")}</p>
+  <p style="margin:0;font-size:15px;line-height:1.6;"><strong>Reason:</strong> ${esc(data.reason || "Did not qualify via chat")}</p>
+</td></tr>
+<tr><td style="padding:12px 28px 4px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    ${row("Name", data.name || "-")}
+    ${row("Email", data.email || "-")}
+    ${row("Phone", data.phone || "-")}
+    ${data.businessName ? row("Business", data.businessName) : ""}
+    ${data.abn ? row("ABN", data.abn) : ""}
+    ${row("Asset", data.assetType || "Not specified")}
+    ${row("Amount", data.loanAmount ? aud(data.loanAmount, 0) : "Not given")}
+    ${row("Share with partners", data.consentToShare ? "Yes" : "No, contact directly")}
   </table>
-</body>
-</html>
-`;
+</td></tr>
+<tr><td style="padding:20px 28px 28px;">
+  <a href="${ADMIN_URL}/admin/leads" style="display:inline-block;background:${C.forest};color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 26px;border-radius:999px;">Open leads in AssetMX admin</a>
+</td></tr>`;
+  return shell(inner, `New lead: ${data.name} - ${data.reason}`);
 };
 
 serve(async (req) => {
@@ -547,7 +285,7 @@ serve(async (req) => {
 
       const result = await sendEmail(
         data.directorEmail,
-        `Complete Your Details - ${data.businessName} Finance Application`,
+        `Finance application for ${data.businessName}: director details`,
         getDirectorFormEmailHtml(data)
       );
 
@@ -569,7 +307,7 @@ serve(async (req) => {
       // Send admin notification email only (no client email for leads)
       const result = await sendEmail(
         ADMIN_EMAIL,
-        `📋 New Lead: ${data.name} - ${data.businessName || 'No business'} - ${formatMoney(data.loanAmount)}`,
+        `New lead: ${data.name} - ${data.businessName || 'No business'} - ${formatMoney(data.loanAmount)}`,
         getLeadNotificationEmailHtml(data),
         data.email || CUSTOMER_REPLY_TO
       );
@@ -606,7 +344,7 @@ serve(async (req) => {
     // Send admin notification email
     const adminResult = await sendEmail(
       ADMIN_EMAIL,
-      `🚀 New Application ${applicationReference(data.id)}: ${data.entityName} - ${formatMoney(data.loanAmount)}`,
+      `New application ${applicationReference(data.id)}: ${data.entityName} - ${formatMoney(data.loanAmount)}`,
       getAdminEmailHtml(data),
       data.contactEmail
     );

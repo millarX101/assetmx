@@ -17,6 +17,8 @@ export const ENTITY = {
 };
 
 export const APP_URL = (Deno.env.get("APP_URL") ?? "https://app.assetmx.com.au").replace(/\/$/, "");
+/** Admin is its own site (admin.assetmx.com.au); links into it use this. */
+export const ADMIN_URL = (Deno.env.get("ADMIN_URL") ?? "https://admin.assetmx.com.au").replace(/\/$/, "");
 export const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") ?? ENTITY.email;
 export const FROM_EMAIL = Deno.env.get("QUOTE_FROM_EMAIL") ?? "AssetMX <quotes@assetmx.com.au>";
 // Where customer replies to a quote go. An AssetMX address (forwarded to the
@@ -218,7 +220,7 @@ export function renderResponseNotice(q: Row, action: "accepted" | "declined", re
     ${q.customer_phone ? row("Phone", q.customer_phone) : ""}
   </table>
   <p style="margin:22px 0 0;">
-    <a href="${APP_URL}/admin/quotes/${q.id}" style="display:inline-block;background:${C.forest};color:#fff;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:999px;">Open in AssetMX admin</a>
+    <a href="${ADMIN_URL}/admin/quotes/${q.id}" style="display:inline-block;background:${C.forest};color:#fff;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:999px;">Open in AssetMX admin</a>
   </p>
 </td></tr>`;
   return shell(inner, `${q.customer_name} ${action} ${q.quote_number}`);

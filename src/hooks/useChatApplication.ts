@@ -989,7 +989,8 @@ export function useChatApplication() {
               contactEmail: primaryDirector?.email || '',
               contactPhone: primaryDirector?.phone || '',
               assetType: asset?.assetType || 'vehicle',
-              assetDescription: asset?.assetDescription || '',
+              // '2024 Toyota Hilux SR5' when we have the parts, else what they typed
+              assetDescription: [asset?.assetYear, asset?.assetMake, asset?.assetModel].filter(Boolean).join(' ') || asset?.assetDescription || '',
               loanAmount: loan?.loanAmount || 0,
               termMonths: loan?.termMonths || 60,
               balloonPercentage: loan?.balloonPercentage || 0,
