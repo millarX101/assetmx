@@ -110,7 +110,35 @@ export async function sendQuote(quoteId: string): Promise<{ public_url: string }
   return data;
 }
 
+/** Admin: download the PDF quote sheet (quote + terms). Works for drafts. */
+export async function downloadQuotePdf(quote: Pick<Quote, 'id' | 'quote_number'>): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const res = await fetch(`${getSupabaseUrl()}/functions/v1/send-quote`, {
+    method: 'POST',
+    headers: {
+      apikey: getSupabaseAnonKey(),
+      Authorization: `Bearer ${session?.access_token ?? ''}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ quote_id: quote.id, action: 'pdf' }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? 'Could not create the PDF');
+  }
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `AssetMX-quote-${quote.quote_number}.pdf`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
 const publicEndpoint = () => `${getSupabaseUrl()}/functions/v1/quote-public`;
+
+/** Customer: the PDF quote sheet for a sent quote (doesn't count as a view). */
+export const publicPdfUrl = (token: string) =>
+  `${publicEndpoint()}?${new URLSearchParams({ token, format: 'pdf' })}`;
 const publicHeaders = () => ({
   apikey: getSupabaseAnonKey(),
   Authorization: `Bearer ${getSupabaseAnonKey()}`,

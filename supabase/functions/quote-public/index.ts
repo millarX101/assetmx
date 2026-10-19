@@ -21,6 +21,7 @@ import {
   serviceClient,
   type Row,
 } from "../_shared/quote.ts";
+import { pdfFilename, renderQuotePdf } from "../_shared/quote-pdf.ts";
 
 const db = serviceClient();
 
@@ -64,6 +65,19 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const quote = await load(url.searchParams.get("token"));
     if (!quote) return json({ error: "Quote not found" }, 404);
+
+    // PDF quote sheet download. Not counted as a view.
+    if (url.searchParams.get("format") === "pdf") {
+      return new Response((await renderQuotePdf(quote)) as unknown as BodyInit, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="${pdfFilename(quote)}"`,
+          "Cache-Control": "private, no-store",
+          "X-Robots-Tag": "noindex",
+        },
+      });
+    }
 
     if (url.searchParams.get("preview") !== "1") {
       const now = new Date().toISOString();

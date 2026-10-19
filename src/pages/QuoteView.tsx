@@ -4,12 +4,13 @@
 
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, Printer, XCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { CheckCircle2, Printer, XCircle, ArrowRight, Loader2, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { QuoteDocument } from '@/components/quotes/QuoteDocument';
+import { QuoteTerms } from '@/components/quotes/QuoteTerms';
 import { SEO } from '@/components/SEO';
-import { applyUrl, ENTITY, fetchPublicQuote, respondToQuote, type PublicQuote } from '@/lib/quotes';
+import { applyUrl, ENTITY, fetchPublicQuote, publicPdfUrl, respondToQuote, type PublicQuote } from '@/lib/quotes';
 
 export function QuoteView() {
   const { token = '' } = useParams();
@@ -129,7 +130,8 @@ export function QuoteView() {
               <div>
                 <h2 className="font-bold text-lg">Happy with this quote?</h2>
                 <p className="text-sm text-ink-600">
-                  Accepting isn't a credit application. It tells us to get started.
+                  Accepting isn't a credit application. It tells us to get started. By accepting you agree to
+                  the <a href="#quote-terms" className="underline">quote terms</a> below.
                 </p>
               </div>
               <div className="flex gap-2 shrink-0">
@@ -152,11 +154,22 @@ export function QuoteView() {
             <span className="text-ink-600">
               Questions? <a className="underline" href={`mailto:${ENTITY.email}`}>{ENTITY.email}</a>
             </span>
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" />
-              {responded ? 'Print / save PDF' : 'Print / save as PDF'}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => window.print()}>
+                <Printer className="mr-2 h-4 w-4" />Print
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <a href={publicPdfUrl(token)} download>
+                  <FileDown className="mr-2 h-4 w-4" />
+                  {responded ? 'Download PDF' : 'Download quote PDF'}
+                </a>
+              </Button>
+            </div>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <QuoteTerms quote={quote} />
         </div>
       </div>
     </div>

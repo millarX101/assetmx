@@ -3,7 +3,10 @@
 // Emails a quote to the customer and records it on the lead timeline.
 // Admin only: the caller's Supabase JWT must belong to a row in admin_users.
 //
-//   POST { quote_id }   →  { ok, public_url, email_id }
+//   POST { quote_id }                 →  { ok, public_url, email_id }
+//        Emails the quote with the PDF quote sheet (quote + terms) attached.
+//   POST { quote_id, action: "pdf" }  →  application/pdf
+//        The same quote sheet for download, any status (drafts included).
 //
 // Re-sending is allowed (sent_count increments). A quote the customer has
 // already viewed/accepted keeps that status - a resend must not reset it.
@@ -23,6 +26,7 @@ import {
   sendEmail,
   serviceClient,
 } from "../_shared/quote.ts";
+import { pdfFilename, renderQuotePdf, toBase64 } from "../_shared/quote-pdf.ts";
 
 const db = serviceClient();
 
@@ -42,10 +46,8 @@ Deno.serve(async (req) => {
     .eq("id", auth.user.id)
     .maybeSingle();
   if (!adminUser) return json({ error: "Admin access required" }, 403);
-  if (adminUser.role === "viewer") return json({ error: "Viewers cannot send quotes" }, 403);
-
   // ── Load the quote ─────────────────────────────────────────────────────────
-  let body: { quote_id?: string };
+  let body: { quote_id?: string; action?: string };
   try {
     body = await req.json();
   } catch {
@@ -55,6 +57,20 @@ Deno.serve(async (req) => {
 
   const { data: quote, error: qErr } = await db.from("quotes").select("*").eq("id", body.quote_id).maybeSingle();
   if (qErr || !quote) return json({ error: "Quote not found" }, 404);
+
+  const pdf = await renderQuotePdf(quote);
+
+  if (body.action === "pdf") {
+    return new Response(pdf as unknown as BodyInit, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${pdfFilename(quote)}"`,
+      },
+    });
+  }
+
+  if (adminUser.role === "viewer") return json({ error: "Viewers cannot send quotes" }, 403);
   if (!quote.customer_email) return json({ error: "Quote has no customer email" }, 422);
 
   // ── Send ───────────────────────────────────────────────────────────────────
@@ -71,6 +87,7 @@ Deno.serve(async (req) => {
     replyTo: senderEmail ?? ADMIN_EMAIL,
     bcc: ADMIN_EMAIL && ADMIN_EMAIL !== quote.customer_email ? [ADMIN_EMAIL] : undefined,
     tags: [{ name: "kind", value: "quote" }],
+    attachments: [{ filename: pdfFilename(quote), content: toBase64(pdf) }],
   });
   if (!result.ok) return json({ error: `Email failed: ${result.error}` }, 502);
 

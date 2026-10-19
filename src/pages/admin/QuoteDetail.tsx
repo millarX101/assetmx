@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
-import { ArrowLeft, Copy, Copy as Duplicate, ExternalLink, Eye, Loader2, Pencil, Send, Trash2, User } from 'lucide-react';
-import { publicQuoteUrl, sendQuote } from '@/lib/quotes';
+import { ArrowLeft, Copy, Copy as Duplicate, ExternalLink, Eye, FileDown, Loader2, Pencil, Send, Trash2, User } from 'lucide-react';
+import { downloadQuotePdf, publicQuoteUrl, sendQuote } from '@/lib/quotes';
 import { QUOTE_STATUS_META, db, timeAgo } from '@/lib/crm';
 import { useAuthStore } from '@/stores/authStore';
 import { QuoteDocument } from '@/components/quotes/QuoteDocument';
@@ -23,6 +23,7 @@ export function QuoteDetail() {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [flash, setFlash] = useState<{ text: string; tone: 'ok' | 'error' } | null>(() => {
     const s = location.state as { flash?: string; tone?: 'ok' | 'error' } | null;
     return s?.flash ? { text: s.flash, tone: s.tone ?? 'ok' } : null;
@@ -58,6 +59,18 @@ export function QuoteDetail() {
       setFlash({ text: (e as Error).message, tone: 'error' });
     } finally {
       setSending(false);
+    }
+  }
+
+  async function downloadPdf() {
+    if (!quote) return;
+    setDownloading(true);
+    try {
+      await downloadQuotePdf(quote);
+    } catch (e) {
+      setFlash({ text: (e as Error).message, tone: 'error' });
+    } finally {
+      setDownloading(false);
     }
   }
 
@@ -119,6 +132,10 @@ export function QuoteDetail() {
               </Link>
             </Button>
           )}
+          <Button variant="outline" onClick={downloadPdf} disabled={downloading}>
+            {downloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+            Download PDF
+          </Button>
           {quote.status !== 'draft' && (
             <>
               <Button variant="outline" onClick={copyLink}>

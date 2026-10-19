@@ -185,7 +185,7 @@ export function renderQuoteEmail(q: Row, senderName?: string | null) {
 </td></tr>
 <tr><td style="padding:20px 28px 8px;" align="center">
   <a href="${url}" style="display:inline-block;background:${C.forest};color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:14px 30px;border-radius:999px;">View &amp; accept your quote</a>
-  <p style="margin:12px 0 0;font-size:12px;color:${C.muted};">Full cost breakdown, printable PDF and one-click acceptance.</p>
+  <p style="margin:12px 0 0;font-size:12px;color:${C.muted};">Your quote sheet and its terms and conditions are attached as a PDF.</p>
 </td></tr>
 <tr><td style="padding:16px 28px 24px;">
   <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Any questions, just reply to this email.</p>
@@ -230,6 +230,7 @@ export async function sendEmail(opts: {
   replyTo?: string;
   bcc?: string[];
   tags?: { name: string; value: string }[];
+  attachments?: { filename: string; content: string }[]; // content = base64
 }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   if (!RESEND_API_KEY) return { ok: false, error: "RESEND_API_KEY not configured" };
   const res = await fetch("https://api.resend.com/emails", {
@@ -243,6 +244,7 @@ export async function sendEmail(opts: {
       reply_to: opts.replyTo,
       bcc: opts.bcc,
       tags: opts.tags,
+      attachments: opts.attachments,
     }),
   });
   const text = await res.text();
