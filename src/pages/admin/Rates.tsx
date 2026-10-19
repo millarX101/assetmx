@@ -146,7 +146,7 @@ export function AdminRates() {
       // Update fees
       for (const [feeName, feeData] of Object.entries(fees)) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from('fee_config') as any)
+        const { error: feeError } = await (supabase.from('fee_config') as any)
           .upsert(
             {
               fee_name: feeName,
@@ -156,13 +156,18 @@ export function AdminRates() {
             },
             { onConflict: 'fee_name' }
           );
+        if (feeError) {
+          console.error('Error saving fee', feeName, feeError);
+          throw feeError;
+        }
       }
 
       setHasChanges(false);
       alert('Changes saved successfully!');
     } catch (error) {
       console.error('Error saving changes:', error);
-      alert('Error saving changes. Please try again.');
+      const message = (error as { message?: string })?.message;
+      alert(`Error saving changes${message ? `: ${message}` : '. Please try again.'}`);
     } finally {
       setIsSaving(false);
     }
