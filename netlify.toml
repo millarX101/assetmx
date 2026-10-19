@@ -122,6 +122,20 @@
   status = 301
   force = true
 
+# Admin moved to its own site (same paths). The admin site never reaches these:
+# its _redirects file is read first.
+[[redirects]]
+  from = "/admin"
+  to = "https://admin.assetmx.com.au/admin"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/admin/*"
+  to = "https://admin.assetmx.com.au/admin/:splat"
+  status = 301
+  force = true
+
 # SPA Routing - All routes go to index.html
 [[redirects]]
   from = "/*"

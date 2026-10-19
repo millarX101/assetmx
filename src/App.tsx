@@ -1,113 +1,76 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Landing } from '@/pages/Landing';
-import { Application } from '@/pages/Application';
-import { ChatApply } from '@/pages/ChatApply';
-import { Terms } from '@/pages/legal/Terms';
-import { Privacy } from '@/pages/legal/Privacy';
-import { CreditGuide } from '@/pages/legal/CreditGuide';
-import { VehicleFinance } from '@/pages/products/VehicleFinance';
-import { TruckFinance } from '@/pages/products/TruckFinance';
-import { EquipmentFinance } from '@/pages/products/EquipmentFinance';
-import { EVLeasing } from '@/pages/products/EVLeasing';
-import { HowWeCompare } from '@/pages/HowWeCompare';
-import { Contact } from '@/pages/Contact';
-import { HowAssetFinanceWorks } from '@/pages/guides/HowAssetFinanceWorks';
-import { AdvertisedRatesMisleading } from '@/pages/guides/AdvertisedRatesMisleading';
-import { BrokerFeesExplained } from '@/pages/guides/BrokerFeesExplained';
-import { AdminLogin } from '@/pages/admin/Login';
-import { AdminLayout } from '@/pages/admin/AdminLayout';
-import { AdminDashboard } from '@/pages/admin/Dashboard';
-import { AdminApplications } from '@/pages/admin/Applications';
-import { AdminLeads } from '@/pages/admin/Leads';
-import { LeadDetail } from '@/pages/admin/LeadDetail';
-import { AdminQuotes } from '@/pages/admin/Quotes';
-import { QuoteBuilder } from '@/pages/admin/QuoteBuilder';
-import { QuoteDetail } from '@/pages/admin/QuoteDetail';
-import { QuoteView } from '@/pages/QuoteView';
-import { AdminRates } from '@/pages/admin/Rates';
-import { AdminAnalytics } from '@/pages/admin/Analytics';
-import { useAuthStore } from '@/stores/authStore';
+import { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { ADMIN_URL } from '@/lib/admin-url';
 
-// Protected route wrapper for admin pages
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, isLoading } = useAuthStore();
+// Public app only. Admin is a separate build (admin.html / src/admin) served at
+// ADMIN_URL, so applicants never download the admin screens.
+// Each page loads on demand: opening the chat downloads the chat, nothing else.
+const page = <T extends Record<string, React.ComponentType>>(load: () => Promise<T>, name: keyof T) =>
+  lazy(() => load().then((m) => ({ default: m[name] as React.ComponentType })));
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
-      </div>
-    );
-  }
+const Landing = page(() => import('@/pages/Landing'), 'Landing');
+const Application = page(() => import('@/pages/Application'), 'Application');
+const ChatApply = page(() => import('@/pages/ChatApply'), 'ChatApply');
+const QuoteView = page(() => import('@/pages/QuoteView'), 'QuoteView');
+const Terms = page(() => import('@/pages/legal/Terms'), 'Terms');
+const Privacy = page(() => import('@/pages/legal/Privacy'), 'Privacy');
+const CreditGuide = page(() => import('@/pages/legal/CreditGuide'), 'CreditGuide');
+const VehicleFinance = page(() => import('@/pages/products/VehicleFinance'), 'VehicleFinance');
+const TruckFinance = page(() => import('@/pages/products/TruckFinance'), 'TruckFinance');
+const EquipmentFinance = page(() => import('@/pages/products/EquipmentFinance'), 'EquipmentFinance');
+const EVLeasing = page(() => import('@/pages/products/EVLeasing'), 'EVLeasing');
+const HowWeCompare = page(() => import('@/pages/HowWeCompare'), 'HowWeCompare');
+const Contact = page(() => import('@/pages/Contact'), 'Contact');
+const HowAssetFinanceWorks = page(() => import('@/pages/guides/HowAssetFinanceWorks'), 'HowAssetFinanceWorks');
+const AdvertisedRatesMisleading = page(() => import('@/pages/guides/AdvertisedRatesMisleading'), 'AdvertisedRatesMisleading');
+const BrokerFeesExplained = page(() => import('@/pages/guides/BrokerFeesExplained'), 'BrokerFeesExplained');
 
-  if (!user || !isAdmin) {
-    return <Navigate to="/admin/login" replace />;
-  }
-
-  return <>{children}</>;
+/** Old /admin links (bookmarks, emails) go to the admin site, same path. */
+function ToAdminSite() {
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    window.location.replace(`${ADMIN_URL}${pathname}${search}`);
+  }, [pathname, search]);
+  return null;
 }
 
 function App() {
-  const { initialize } = useAuthStore();
-
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
-
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/apply" element={<Application />} />
-        <Route path="/chat-apply" element={<ChatApply />} />
-        <Route path="/q/:token" element={<QuoteView />} />
+      <Suspense fallback={<div className="min-h-screen bg-cream" />}>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/apply" element={<Application />} />
+          <Route path="/chat-apply" element={<ChatApply />} />
+          <Route path="/q/:token" element={<QuoteView />} />
 
-        {/* Legal pages */}
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/credit-guide" element={<CreditGuide />} />
+          {/* Legal pages */}
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/credit-guide" element={<CreditGuide />} />
 
-        {/* Product pages */}
-        <Route path="/car-finance" element={<VehicleFinance />} />
-        <Route path="/vehicle-finance" element={<Navigate to="/car-finance" replace />} />
-        <Route path="/truck-finance" element={<TruckFinance />} />
-        <Route path="/equipment-finance" element={<EquipmentFinance />} />
-        <Route path="/ev-leasing" element={<EVLeasing />} />
-        <Route path="/how-we-compare" element={<HowWeCompare />} />
-        <Route path="/contact" element={<Contact />} />
+          {/* Product pages */}
+          <Route path="/car-finance" element={<VehicleFinance />} />
+          <Route path="/vehicle-finance" element={<Navigate to="/car-finance" replace />} />
+          <Route path="/truck-finance" element={<TruckFinance />} />
+          <Route path="/equipment-finance" element={<EquipmentFinance />} />
+          <Route path="/ev-leasing" element={<EVLeasing />} />
+          <Route path="/how-we-compare" element={<HowWeCompare />} />
+          <Route path="/contact" element={<Contact />} />
 
-        {/* Guide pages */}
-        <Route path="/guides/how-asset-finance-works" element={<HowAssetFinanceWorks />} />
-        <Route path="/guides/advertised-rates-misleading" element={<AdvertisedRatesMisleading />} />
-        <Route path="/guides/broker-fees-explained" element={<BrokerFeesExplained />} />
+          {/* Guide pages */}
+          <Route path="/guides/how-asset-finance-works" element={<HowAssetFinanceWorks />} />
+          <Route path="/guides/advertised-rates-misleading" element={<AdvertisedRatesMisleading />} />
+          <Route path="/guides/broker-fees-explained" element={<BrokerFeesExplained />} />
 
-        {/* Admin routes */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="applications" element={<AdminApplications />} />
-          <Route path="applications/:id" element={<AdminApplications />} />
-          <Route path="leads" element={<AdminLeads />} />
-          <Route path="leads/:id" element={<LeadDetail />} />
-          <Route path="quotes" element={<AdminQuotes />} />
-          <Route path="quotes/new" element={<QuoteBuilder />} />
-          <Route path="quotes/:id" element={<QuoteDetail />} />
-          <Route path="analytics" element={<AdminAnalytics />} />
-          <Route path="rates" element={<AdminRates />} />
-        </Route>
+          {/* Admin lives on its own site */}
+          <Route path="/admin/*" element={<ToAdminSite />} />
 
-        {/* Catch all - redirect to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Catch all - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
