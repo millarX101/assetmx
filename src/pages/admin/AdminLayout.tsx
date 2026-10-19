@@ -10,6 +10,7 @@ import {
   X,
   FileText,
   BarChart3,
+  Receipt,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,7 @@ const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/applications', label: 'Applications', icon: FileText },
   { path: '/admin/leads', label: 'Leads', icon: Users },
+  { path: '/admin/quotes', label: 'Quotes', icon: Receipt },
   { path: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/admin/rates', label: 'Rates', icon: Percent },
 ];

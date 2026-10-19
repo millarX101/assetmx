@@ -34,7 +34,7 @@ The balloon is calculated as a percentage of the asset's value, not the amount f
 | 5 years or more | 30% |
 
 ## Repayments and timing
-Repayments on an asset finance facility are made in advance, and the balloon sits outside the regular repayment schedule as a separate final amount.
+Repayments on an asset finance facility are made monthly in arrears, and the balloon is the final payment: it replaces the last regular repayment rather than sitting on top of it.
 
 ## What happens when the balloon is due
 At the end of the term the business generally has three options: pay the balloon out in full, refinance it into a new facility, or sell or trade the asset and use the proceeds to clear the remaining balance. Which option makes sense depends on the asset's condition and market value at that time.

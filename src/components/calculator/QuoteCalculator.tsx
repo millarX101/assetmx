@@ -301,7 +301,7 @@ export function QuoteCalculator() {
                       </div>
                     </div>
                     <p className="text-xs text-slate-500 text-center mt-4">
-                      Payments in advance • First payment due at contract start
+                      Payments monthly in arrears • First payment one month after settlement
                     </p>
                   </CardContent>
                 </Card>

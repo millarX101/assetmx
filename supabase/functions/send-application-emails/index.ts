@@ -6,6 +6,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "info@assetmx.com.au";
 const FROM_EMAIL = "AssetMX <noreply@assetmx.com.au>";
+// noreply@ has no mailbox. Customer emails reply to info@ (forwarded to the team
+// by Cloudflare Email Routing); team notices reply straight to the customer.
+const CUSTOMER_REPLY_TO = Deno.env.get("QUOTE_REPLY_TO") || "info@assetmx.com.au";
 
 interface ApplicationData {
   id: string;
@@ -357,7 +360,8 @@ const getAdminEmailHtml = (data: ApplicationData): string => {
 async function sendEmail(
   to: string,
   subject: string,
-  html: string
+  html: string,
+  replyTo: string = CUSTOMER_REPLY_TO
 ): Promise<{ success: boolean; error?: string }> {
   console.log("[EMAIL] Attempting to send email to:", to);
   console.log("[EMAIL] Subject:", subject);
@@ -382,6 +386,7 @@ async function sendEmail(
         to: [to],
         subject,
         html,
+        reply_to: replyTo,
       }),
     });
 
@@ -716,7 +721,8 @@ serve(async (req) => {
       const result = await sendEmail(
         ADMIN_EMAIL,
         `📋 New Lead: ${data.name} - ${data.businessName || 'No business'} - ${formatMoney(data.loanAmount)}`,
-        getLeadNotificationEmailHtml(data)
+        getLeadNotificationEmailHtml(data),
+        data.email || CUSTOMER_REPLY_TO
       );
 
       return new Response(
@@ -752,7 +758,8 @@ serve(async (req) => {
     const adminResult = await sendEmail(
       ADMIN_EMAIL,
       `🚀 New Application: ${data.entityName} - ${formatMoney(data.loanAmount)}`,
-      getAdminEmailHtml(data)
+      getAdminEmailHtml(data),
+      data.contactEmail
     );
 
     return new Response(

@@ -14,6 +14,11 @@ describe('pmt', () => {
   it('handles zero rate', () => {
     expect(pmt(12_000, 0, 12, 0)).toBe(1000);
   });
+  it('matches a Westpac Commercial Loan quote (35 payments + balloon as payment 36, in arrears)', () => {
+    // Westpac quote: $74,482.00 financed, 36 months, 35 x $1,669.11 then $29,592.80.
+    // Their displayed 8.54% is rounded from 8.5354%.
+    expect(pmt(74_482, 8.5354, 36, 29_592.8)).toBeCloseTo(1669.11, 1);
+  });
 });
 
 describe('calculateQuote', () => {

@@ -1,4 +1,5 @@
 // AssetMX Calculator Logic
+import { regularPayments, repayment } from '../../supabase/functions/_shared/quote-engine';
 // Transparent pricing with broker comparison
 
 export interface QuoteInput {
@@ -8,6 +9,7 @@ export interface QuoteInput {
   termMonths: number;
   balloonPercentage: number;
   financePlatformFee?: boolean; // true = finance $800 into loan (default), false = pay upfront
+  rateOverride?: number; // admin quote builder: a lender-specific rate instead of the term table
 }
 
 export interface QuoteOutput {
@@ -161,35 +163,11 @@ export const BASE_RATES: Record<string, Record<string, number>> = {
 };
 
 /**
- * Calculate monthly repayment with balloon/residual
- * Uses standard PMT formula adjusted for balloon payment
+ * Monthly repayment, in arrears, Westpac structure: with a balloon a term of n
+ * months is n-1 regular payments then the balloon alone as payment n. Shared
+ * with the quote engine (supabase/functions/_shared/quote-engine.ts).
  */
-function calculateRepayment(
-  principal: number,
-  annualRate: number,
-  termMonths: number,
-  balloonAmount: number
-): number {
-  const monthlyRate = annualRate / 100 / 12;
-
-  // Handle 0% rate edge case
-  if (monthlyRate === 0) {
-    return (principal - balloonAmount) / termMonths;
-  }
-
-  // Present value of balloon payment
-  const pvBalloon = balloonAmount / Math.pow(1 + monthlyRate, termMonths);
-
-  // Adjusted principal (loan amount minus PV of balloon)
-  const adjustedPrincipal = principal - pvBalloon;
-
-  // PMT formula: P * [r(1+r)^n] / [(1+r)^n - 1]
-  const payment = adjustedPrincipal *
-    (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) /
-    (Math.pow(1 + monthlyRate, termMonths) - 1);
-
-  return payment;
-}
+const calculateRepayment = repayment;
 
 /**
  * Main quote calculation function
@@ -202,7 +180,7 @@ function calculateRepayment(
  * which includes the lender establishment fee (always financed) and
  * optionally the platform fee. This matches real lender quotes.
  *
- * Payments are IN ADVANCE (first payment due at contract start).
+ * Payments are IN ARREARS (first payment one month after settlement).
  */
 export function calculateQuote(input: QuoteInput): QuoteOutput {
   // Validate inputs
@@ -221,7 +199,7 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
 
   // Get base rate based on term length
   // 1 year: 8.49%, 2 years: 7.49%, 3-5 years: 6.89%
-  const indicativeRate = getBaseRate(input.termMonths);
+  const indicativeRate = input.rateOverride ?? getBaseRate(input.termMonths);
 
   // Balloon is calculated on the ASSET VALUE (loan amount), not financed amount
   const balloonAmount = input.loanAmount * (input.balloonPercentage / 100);
@@ -257,7 +235,7 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
   const fortnightlyRepaymentFeeUpfront = (monthlyRepaymentFeeUpfront * 12) / 26;
 
   // Calculate total costs for the financed option
-  const totalRepayments = (monthlyRepayment * input.termMonths) + balloonAmount;
+  const totalRepayments = (monthlyRepayment * regularPayments(input.termMonths, balloonAmount)) + balloonAmount;
   const totalInterest = totalRepayments - totalAmountFinanced;
 
   // Fees breakdown
@@ -276,7 +254,7 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
     input.termMonths,
     balloonAmount
   );
-  const brokerTotalRepayments = (brokerMonthlyRepayment * input.termMonths) + balloonAmount;
+  const brokerTotalRepayments = (brokerMonthlyRepayment * regularPayments(input.termMonths, balloonAmount)) + balloonAmount;
   const brokerTotalCost = brokerTotalRepayments;
 
   // The savings = broker's hidden commission vs our transparent fee

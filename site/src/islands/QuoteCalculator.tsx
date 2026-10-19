@@ -182,7 +182,7 @@ export default function QuoteCalculator({ compact = false }: { compact?: boolean
         Continue with this quote
       </a>
       <p className="mt-3 text-xs leading-relaxed text-ink-500">
-        Indicative only. Repayments in advance, balloon calculated on the asset value, lender establishment fee financed. Your
+        Indicative only. Repayments monthly in arrears, balloon calculated on the asset value, lender establishment fee financed. Your
         rate and approval are set by the lender after a formal application. No credit check is run for this quote. Rates verified{' '}
         {longDate(RATES.verifiedOn)}.
       </p>
