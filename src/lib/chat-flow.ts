@@ -21,6 +21,8 @@ export type ChatAction =
   | 'save_lead'
   | 'save_novated_lead'
   | 'send_director_form'
+  // "Email me this quote" (request-quote edge function). PRE_RENDER, like calculate_quote.
+  | 'email_quote'
   // Document reading. Both must be listed in the hook's PRE_RENDER_ACTIONS so the
   // extracted values exist by the time the confirmation card renders its messages.
   | 'extract_asset'
@@ -64,6 +66,12 @@ export interface ChatFlowData {
     totalCost?: number;
   };
   currentDirectorIndex: number;
+  // Result of "Email me this quote" (request-quote edge function)
+  emailedQuote?: {
+    status: 'sent' | 'ineligible' | 'limited' | 'error';
+    quoteNumber?: string;
+    reason?: string;
+  };
   eligibilityPassed?: boolean;
   eligibilityMessages?: string[];
   // Lead capture for non-qualifying applicants
@@ -903,13 +911,61 @@ export const CHAT_FLOW: ChatStep[] = [
       ];
     },
     inputType: 'select',
-    options: ["Continue", "Save for later"],
-    nextStep: (answer) => {
+    options: (data) => (data.quote ? ["Continue", "Email me this quote", "Save for later"] : ["Continue", "Save for later"]),
+    nextStep: (answer, data) => {
+      if (answer.toLowerCase().includes('email')) {
+        return data.lead?.email ? 'quote_email_sent' : 'quote_email_name';
+      }
       if (answer.toLowerCase().includes('later') || answer.toLowerCase().includes('save')) {
         return 'save_for_later';
       }
       return 'loan_term';
     },
+  },
+
+  // ========== EMAIL ME THIS QUOTE (automatic quote, no human) ==========
+  {
+    id: 'quote_email_name',
+    messages: ["Who should the quote be addressed to?"],
+    inputType: 'text',
+    field: 'lead.name',
+    placeholder: "Your name",
+    nextStep: 'quote_email_address',
+  },
+
+  {
+    id: 'quote_email_address',
+    messages: ["And the email to send it to?"],
+    inputType: 'email',
+    field: 'lead.email',
+    placeholder: "your@email.com",
+    validate: validateEmail,
+    nextStep: 'quote_email_sent',
+  },
+
+  {
+    id: 'quote_email_sent',
+    // email_quote is a PRE_RENDER action: the quote is sent before these messages show
+    action: 'email_quote',
+    messages: (data) => {
+      const r = data.emailedQuote;
+      if (r?.status === 'sent') {
+        return [
+          `Done. Quote ${r.quoteNumber} is on its way to ${data.lead?.email}, with the full breakdown and terms attached as a PDF.`,
+          "You can accept it from the email and your application will be filled in with these figures, or keep going here now.",
+        ];
+      }
+      if (r?.status === 'ineligible') {
+        return ["I could not issue a formal quote for this business automatically.", "We have your details and will be in touch."];
+      }
+      if (r?.status === 'limited') {
+        return ["We have already sent quotes to that address today. Check your inbox, or keep going here."];
+      }
+      return ["Something went wrong sending the quote. Your progress is saved, and you can keep going here."];
+    },
+    inputType: 'select',
+    options: (data) => (data.emailedQuote?.status === 'ineligible' ? ["Done"] : ["Continue my application", "Done for now"]),
+    nextStep: (answer) => (answer.toLowerCase().includes('continue') ? 'loan_term' : 'end_saved'),
   },
 
   {
@@ -1500,6 +1556,9 @@ const PROGRESS_MAP: Record<string, number> = {
   'asset_condition_q': 8,
   'show_estimate': 9,
   'save_for_later': 9,
+  'quote_email_name': 9,
+  'quote_email_address': 9,
+  'quote_email_sent': 9,
   // Loan structure
   'loan_term': 10,
   'balloon_preference': 11,

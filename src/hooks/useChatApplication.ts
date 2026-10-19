@@ -35,7 +35,7 @@ export interface ChatState {
 }
 
 // Actions executed before their step's messages render, so the copy can report the result
-const PRE_RENDER_ACTIONS: string[] = ['calculate_quote', 'submit_application', 'extract_asset', 'extract_licence'];
+const PRE_RENDER_ACTIONS: string[] = ['calculate_quote', 'submit_application', 'extract_asset', 'extract_licence', 'email_quote'];
 
 const TYPING_DELAY = 800; // ms between bot messages
 const STORAGE_KEY = 'assetmx_chat_progress';
@@ -588,6 +588,52 @@ export function useChatApplication() {
           } catch (error) {
             console.error('Quote calculation failed:', error);
           }
+        }
+        break;
+      }
+
+      case 'email_quote': {
+        // "Email me this quote": request-quote checks eligibility, prices it with the
+        // shared engine, emails the PDF quote sheet and records the lead. No human.
+        const asset = flowData.application.asset;
+        const loan = flowData.application.loan;
+        const business = flowData.application.business;
+        if (!isSupabaseConfigured()) {
+          updatedData.emailedQuote = { status: 'error', reason: 'Not configured' };
+          break;
+        }
+        try {
+          const anonKey = getSupabaseAnonKey();
+          const res = await fetch(`${getSupabaseUrl()}/functions/v1/request-quote`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+            body: JSON.stringify({
+              name: flowData.lead?.name,
+              email: flowData.lead?.email,
+              phone: flowData.lead?.phone,
+              abn: business?.abn,
+              asset_type: asset?.assetType,
+              asset_condition: asset?.assetCondition,
+              asset_description:
+                [asset?.assetYear, asset?.assetMake, asset?.assetModel].filter(Boolean).join(' ') || asset?.assetDescription,
+              asset_price: asset?.assetPriceIncGst,
+              deposit: loan?.depositAmount,
+              trade_in: loan?.tradeInAmount,
+              term_months: loan?.termMonths,
+              balloon_pct: loan?.balloonPercentage,
+              source: 'chat',
+            }),
+          });
+          const body = await res.json().catch(() => ({}));
+          updatedData.emailedQuote =
+            res.status === 429
+              ? { status: 'limited' }
+              : res.ok
+                ? { status: body.status === 'ineligible' ? 'ineligible' : 'sent', quoteNumber: body.quote_number, reason: body.reason }
+                : { status: 'error', reason: body.error };
+        } catch (error) {
+          console.error('Email quote failed:', error);
+          updatedData.emailedQuote = { status: 'error' };
         }
         break;
       }
