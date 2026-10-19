@@ -25,7 +25,7 @@ views, records accept/decline and emails the team.
 ## Behaviour
 
 - **send-quote** `POST { quote_id }` with the admin's session JWT. Rejects non-admins and
-  `viewer` role. Reply-To is the sending admin, so customer replies land in their inbox.
+  `viewer` role. Reply-To is `QUOTE_REPLY_TO` (default info@assetmx.com.au, forwarded by Cloudflare Email Routing), so the thread stays on the AssetMX address.
   Draft → `sent`; a resend never resets `viewed`/`accepted`. Logs `quote_sent` on the lead and
   moves `new`/`contacted` leads to `quoted`.
 - **quote-public** `GET ?token=` counts a view (`?preview=1` doesn't), logs the first

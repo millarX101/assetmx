@@ -5,6 +5,7 @@
 //
 //   POST { quote_id }                 →  { ok, public_url, email_id }
 //        Emails the quote with the PDF quote sheet (quote + terms) attached.
+//        Reply-To is QUOTE_REPLY_TO (default info@assetmx.com.au).
 //   POST { quote_id, action: "pdf" }  →  application/pdf
 //        The same quote sheet for download, any status (drafts included).
 //
@@ -17,6 +18,7 @@
 
 import {
   ADMIN_EMAIL,
+  QUOTE_REPLY_TO,
   assetLabel,
   aud,
   corsHeaders,
@@ -74,12 +76,11 @@ Deno.serve(async (req) => {
   if (!quote.customer_email) return json({ error: "Quote has no customer email" }, 422);
 
   // ── Send ───────────────────────────────────────────────────────────────────
-  const senderEmail = auth.user.email ?? adminUser.email;
   const result = await sendEmail({
     to: [quote.customer_email],
     subject: `Your AssetMX quote ${quote.quote_number}: ${aud(quote.monthly_repayment)}/month for ${assetLabel(quote)}`,
     html: renderQuoteEmail(quote),
-    replyTo: senderEmail ?? ADMIN_EMAIL,
+    replyTo: QUOTE_REPLY_TO,
     bcc: ADMIN_EMAIL && ADMIN_EMAIL !== quote.customer_email ? [ADMIN_EMAIL] : undefined,
     tags: [{ name: "kind", value: "quote" }],
     attachments: [{ filename: pdfFilename(quote), content: toBase64(pdf) }],

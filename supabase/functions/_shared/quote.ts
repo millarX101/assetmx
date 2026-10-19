@@ -19,6 +19,10 @@ export const ENTITY = {
 export const APP_URL = (Deno.env.get("APP_URL") ?? "https://app.assetmx.com.au").replace(/\/$/, "");
 export const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") ?? ENTITY.email;
 export const FROM_EMAIL = Deno.env.get("QUOTE_FROM_EMAIL") ?? "AssetMX <quotes@assetmx.com.au>";
+// Where customer replies to a quote go. An AssetMX address (forwarded to the
+// team by Cloudflare Email Routing) so the reply thread stays on-brand: Gmail
+// "send mail as" then answers from the same AssetMX address.
+export const QUOTE_REPLY_TO = Deno.env.get("QUOTE_REPLY_TO") ?? ENTITY.email;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 export const corsHeaders = {
