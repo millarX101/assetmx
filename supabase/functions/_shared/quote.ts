@@ -110,7 +110,7 @@ export const LICENCE_LINE =
 // Email templates (inline styles only - email clients strip <style>)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const C = {
+export const C = {
   forest: "#3D472B",
   forestDark: "#272E1B",
   sage: "#CCDBB2",
@@ -122,7 +122,7 @@ const C = {
   line: "#E4DACB",
 };
 
-function shell(inner: string, preheader: string) {
+export function shell(inner: string, preheader: string) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AssetMX</title></head>
@@ -145,7 +145,7 @@ ${inner}
 </body></html>`;
 }
 
-function row(label: string, value: string, strong = false) {
+export function row(label: string, value: string, strong = false) {
   return `<tr>
 <td style="padding:7px 0;font-size:14px;color:${C.muted};">${esc(label)}</td>
 <td align="right" style="padding:7px 0;font-size:14px;${strong ? "font-weight:700;" : ""}color:${C.ink};">${esc(value)}</td>

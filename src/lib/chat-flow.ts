@@ -1337,13 +1337,22 @@ export const CHAT_FLOW: ChatStep[] = [
   // ========== END STATES ==========
   {
     id: 'end_complete',
-    messages: (data) => [
-      `Application submitted. Reference ${data.submittedApplicationId || 'pending'}.`,
-      "Conditional approval is typically the same business day for in-policy applications.",
-      "We will send a secure link for your bank statements, and your lender may email an affordability declaration to sign."
-    ],
+    messages: (data) => {
+      const ref = data.submittedApplicationId
+        ? `APP-${data.submittedApplicationId.replace(/-/g, '').slice(0, 8).toUpperCase()}`
+        : 'pending';
+      const email = data.application.directors?.directors?.[0]?.email;
+      return [
+        `Application submitted. Your reference is ${ref}.`,
+        email
+          ? `We have emailed a summary and what happens next to ${email}.`
+          : 'We have emailed you a summary and what happens next.',
+        'Conditional approval is typically the same business day for in-policy applications.',
+      ];
+    },
+    // No quick reply: the completed panel below has Back to Home and Start New Application
     inputType: 'select',
-    options: ["Back to home"],
+    options: [],
     nextStep: 'end_complete',
   },
 

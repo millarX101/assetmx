@@ -2,6 +2,7 @@
 // Sends confirmation email to client and notification to admin
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { C, DISCLAIMER, aud, esc, firstName, pct, row, shell } from "../_shared/quote.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "info@assetmx.com.au";
@@ -23,6 +24,7 @@ interface ApplicationData {
   termMonths: number;
   balloonPercentage: number;
   depositAmount: number;
+  assetPrice?: number;
   monthlyRepayment?: number;
   indicativeRate?: number;
   documentsUploaded: boolean;
@@ -59,215 +61,62 @@ const formatMoney = (amount: number): string => {
   }).format(amount);
 };
 
-// Client confirmation email template
+// Short reference shown to the applicant: the start of the application id.
+const applicationReference = (id: string) => `APP-${id.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+
+// Client confirmation email: summary, then what happens next. Plain, no sales copy.
 const getClientEmailHtml = (data: ApplicationData): string => {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Application Received - AssetMX</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+  const assetPrice = Number(data.assetPrice) || 0;
+  const deposit = Number(data.depositAmount) || 0;
+  const balloonPct = Number(data.balloonPercentage) || 0;
+  const step = (n: number, title: string, body: string) => `<tr>
+<td valign="top" style="padding:0 12px 14px 0;width:28px;">
+  <div style="width:26px;height:26px;border-radius:13px;background:${C.forest};color:#ffffff;font-size:13px;font-weight:700;line-height:26px;text-align:center;">${n}</div>
+</td>
+<td valign="top" style="padding:2px 0 14px;font-size:14px;line-height:1.55;">
+  <strong>${esc(title)}</strong><br><span style="color:${C.muted};">${esc(body)}</span>
+</td></tr>`;
 
-          <!-- Header -->
-          <tr>
-            <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 40px 40px 30px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td>
-                    <div style="display: inline-block; background: white; border-radius: 12px; padding: 12px 16px;">
-                      <span style="font-size: 24px; font-weight: bold; color: #1e293b;">Asset</span><span style="font-size: 24px; font-weight: bold; color: #7c3aed;">MX</span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding-top: 24px;">
-                    <h1 style="margin: 0; color: white; font-size: 28px; font-weight: 600;">Application Received</h1>
-                    <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">Thanks ${data.contactName.split(" ")[0]}, we're on it!</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Application Summary -->
-          <tr>
-            <td style="padding: 40px;">
-              <h2 style="margin: 0 0 20px; color: #1e293b; font-size: 18px; font-weight: 600;">Your Application Summary</h2>
-
-              <table width="100%" cellpadding="0" cellspacing="0" style="background: #f8fafc; border-radius: 12px; overflow: hidden;">
-                <tr>
-                  <td style="padding: 20px;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Business</td>
-                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${data.entityName}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">ABN</td>
-                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${data.abn}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Asset</td>
-                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${data.assetDescription || data.assetType}</td>
-                      </tr>
-                      <tr>
-                        <td colspan="2" style="padding: 12px 0 0;">
-                          <div style="border-top: 1px solid #e2e8f0;"></div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 0 8px; color: #64748b; font-size: 14px;">Finance Amount</td>
-                        <td style="padding: 12px 0 8px; color: #7c3aed; font-size: 20px; font-weight: 700; text-align: right;">${formatMoney(data.loanAmount)}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Term</td>
-                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${data.termMonths} months</td>
-                      </tr>
-                      ${data.balloonPercentage > 0 ? `
-                      <tr>
-                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Balloon</td>
-                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${data.balloonPercentage}%</td>
-                      </tr>` : ""}
-                      ${data.depositAmount > 0 ? `
-                      <tr>
-                        <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Deposit</td>
-                        <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500; text-align: right;">${formatMoney(data.depositAmount)}</td>
-                      </tr>` : ""}
-                      ${data.monthlyRepayment ? `
-                      <tr>
-                        <td colspan="2" style="padding: 12px 0 0;">
-                          <div style="border-top: 1px solid #e2e8f0;"></div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 0 8px; color: #64748b; font-size: 14px;">Est. Monthly Repayment</td>
-                        <td style="padding: 12px 0 8px; color: #16a34a; font-size: 18px; font-weight: 700; text-align: right;">${formatMoney(data.monthlyRepayment)}/mo</td>
-                      </tr>` : ""}
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- What Happens Next -->
-          <tr>
-            <td style="padding: 0 40px 40px;">
-              <h2 style="margin: 0 0 20px; color: #1e293b; font-size: 18px; font-weight: 600;">What Happens Next</h2>
-
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding: 16px 0; border-bottom: 1px solid #f1f5f9;">
-                    <table cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="width: 40px; vertical-align: top;">
-                          <div style="width: 32px; height: 32px; background: #f0fdf4; border-radius: 50%; text-align: center; line-height: 32px; color: #16a34a; font-weight: 600;">1</div>
-                        </td>
-                        <td style="vertical-align: top; padding-left: 12px;">
-                          <div style="color: #1e293b; font-weight: 600; font-size: 15px;">Privacy Consent</div>
-                          <div style="color: #64748b; font-size: 14px; margin-top: 4px;">You'll receive the Westpac Online Privacy form to complete and return.</div>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 16px 0; border-bottom: 1px solid #f1f5f9;">
-                    <table cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="width: 40px; vertical-align: top;">
-                          <div style="width: 32px; height: 32px; background: #f0fdf4; border-radius: 50%; text-align: center; line-height: 32px; color: #16a34a; font-weight: 600;">2</div>
-                        </td>
-                        <td style="vertical-align: top; padding-left: 12px;">
-                          <div style="color: #1e293b; font-weight: 600; font-size: 15px;">Dealer/Supplier Contact</div>
-                          <div style="color: #64748b; font-size: 14px; margin-top: 4px;">We'll contact your dealer for the tax invoice. If this is a private sale, we'll be in touch directly.</div>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 16px 0;">
-                    <table cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="width: 40px; vertical-align: top;">
-                          <div style="width: 32px; height: 32px; background: #f0fdf4; border-radius: 50%; text-align: center; line-height: 32px; color: #16a34a; font-weight: 600;">3</div>
-                        </td>
-                        <td style="vertical-align: top; padding-left: 12px;">
-                          <div style="color: #1e293b; font-weight: 600; font-size: 15px;">E-Sign Documents</div>
-                          <div style="color: #64748b; font-size: 14px; margin-top: 4px;">Once approved, loan documents will be sent via e-signature for quick, paperless signing.</div>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Timeline -->
-          <tr>
-            <td style="padding: 0 40px 40px;">
-              <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 20px;">
-                <table cellpadding="0" cellspacing="0">
-                  <tr>
-                    <td style="vertical-align: top; width: 24px;">
-                      <span style="font-size: 20px;">⏱️</span>
-                    </td>
-                    <td style="padding-left: 12px;">
-                      <div style="color: #92400e; font-weight: 600; font-size: 15px;">Expected Timeline</div>
-                      <div style="color: #a16207; font-size: 14px; margin-top: 4px;">Most applications are assessed within 15 minutes during business hours (Mon-Fri 9am-5pm AEST).</div>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-            </td>
-          </tr>
-
-          <!-- Contact -->
-          <tr>
-            <td style="padding: 0 40px 40px;">
-              <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                Questions? Reply to this email or call us on <a href="tel:1300000000" style="color: #7c3aed; text-decoration: none; font-weight: 500;">1300 000 000</a>
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background: #f8fafc; padding: 30px 40px; border-top: 1px solid #e2e8f0;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td>
-                    <p style="margin: 0 0 8px; color: #1e293b; font-size: 14px; font-weight: 600;">AssetMX</p>
-                    <p style="margin: 0; color: #64748b; font-size: 12px;">Transparent Finance</p>
-                  </td>
-                  <td style="text-align: right;">
-                    <a href="https://assetmx.com.au" style="color: #7c3aed; text-decoration: none; font-size: 12px;">assetmx.com.au</a>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin: 20px 0 0; color: #94a3b8; font-size: 11px; line-height: 1.5;">
-                Blackrock Leasing Pty Ltd | ABN XX XXX XXX XXX | Australian Credit Licence XXXXXX<br>
-                This email contains confidential information intended for the addressee only.
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
+  const inner = `
+<tr><td style="padding:28px 28px 8px;">
+  <p style="margin:0 0 14px;font-size:16px;">Hi ${esc(firstName(data.contactName))},</p>
+  <p style="margin:0 0 6px;font-size:15px;line-height:1.6;">
+    We have your finance application for <strong>${esc(data.entityName)}</strong>. Your reference is <strong>${esc(applicationReference(data.id))}</strong>.
+  </p>
+</td></tr>
+<tr><td style="padding:12px 28px 4px;">
+  <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:${C.forest};font-weight:700;margin-bottom:6px;">Your application</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    ${row("Reference", applicationReference(data.id))}
+    ${row("Business", data.entityName)}
+    ${data.abn ? row("ABN", data.abn) : ""}
+    ${row("Asset", data.assetDescription || data.assetType)}
+    ${assetPrice > 0 ? row("Asset price", aud(assetPrice)) : ""}
+    ${deposit > 0 ? row("Less deposit", `-${aud(deposit)}`) : ""}
+    ${row("Amount to finance", aud(data.loanAmount), true)}
+    ${row("Term", `${data.termMonths} months, payments monthly in arrears`)}
+    ${balloonPct > 0 ? row("Balloon", `${balloonPct}%`) : ""}
+    ${data.indicativeRate ? row("Indicative rate", `${pct(data.indicativeRate)} p.a.`) : ""}
+    ${data.monthlyRepayment ? row("Indicative repayment", `${aud(data.monthlyRepayment)} per month`, true) : ""}
   </table>
-</body>
-</html>
-`;
+</td></tr>
+<tr><td style="padding:20px 28px 4px;">
+  <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:${C.forest};font-weight:700;margin-bottom:12px;">What happens next</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    ${step(1, "Credit assessment", "We check your application against lender policy and submit it. Conditional approval is typically the same business day for in-policy applications.")}
+    ${step(2, "Bank statements", "If the lender needs them, we email you a secure link to provide your bank statements.")}
+    ${step(3, "Affordability declaration", "Your lender may email you an affordability declaration to sign.")}
+    ${step(4, "Loan documents", "Once approved, the loan documents are sent to you for e-signature.")}
+    ${step(5, "Settlement", "After you sign, the lender pays the supplier and you take delivery of the asset.")}
+  </table>
+</td></tr>
+<tr><td style="padding:12px 28px 24px;">
+  <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:${C.muted};">Questions? Reply to this email and quote ${esc(applicationReference(data.id))}.</p>
+  <p style="margin:0;font-size:15px;"><strong>AssetMX</strong></p>
+  <p style="margin:22px 0 0;font-size:11px;line-height:1.6;color:${C.muted};">${esc(DISCLAIMER)}</p>
+</td></tr>`;
+
+  return shell(inner, `Application ${applicationReference(data.id)} received - what happens next`);
 };
 
 // Admin notification email template
@@ -750,14 +599,14 @@ serve(async (req) => {
     // Send client confirmation email
     const clientResult = await sendEmail(
       data.contactEmail,
-      `Application Received - ${data.entityName}`,
+      `Application received - ${applicationReference(data.id)} - ${data.entityName}`,
       getClientEmailHtml(data)
     );
 
     // Send admin notification email
     const adminResult = await sendEmail(
       ADMIN_EMAIL,
-      `🚀 New Application: ${data.entityName} - ${formatMoney(data.loanAmount)}`,
+      `🚀 New Application ${applicationReference(data.id)}: ${data.entityName} - ${formatMoney(data.loanAmount)}`,
       getAdminEmailHtml(data),
       data.contactEmail
     );

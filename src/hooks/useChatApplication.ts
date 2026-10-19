@@ -989,6 +989,7 @@ export function useChatApplication() {
               termMonths: loan?.termMonths || 60,
               balloonPercentage: loan?.balloonPercentage || 0,
               depositAmount: loan?.depositAmount || 0,
+              assetPrice: asset?.assetPriceIncGst || 0,
               monthlyRepayment: quote?.monthlyRepayment || 0,
               indicativeRate: quote?.indicativeRate || 0,
               documentsUploaded: flowData.documentsUploaded || false,
