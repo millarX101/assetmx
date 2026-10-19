@@ -6,7 +6,7 @@ import AnswerBox from '@/components/AnswerBox.astro';
 import Faq from '@/components/Faq.astro';
 import Cta from '@/components/Cta.astro';
 import { ENTITY, PRICING, money, pct, longDate } from '@/data/entity';
-import { RATES, lowestRate } from '@/data/rates';
+import { RATES, lowestRate, EV_OFFER, evOfferActive } from '@/data/rates';
 import { calculateQuote } from '@/lib/calculator';
 import { breadcrumbs, faqPage } from '@/lib/schema';
 
@@ -36,6 +36,9 @@ const schema = [breadcrumbs([{ name: 'Home', url: ENTITY.siteUrl + '/' }, { name
     <div>
       <h2>Lender base rate by term</h2>
       <div class="mt-4"><RateTable /></div>
+      {evOfferActive() && (
+        <p class="mt-3 text-sm text-ink-600">Electric and plug-in hybrid vehicles: {EV_OFFER.discountPct}% p.a. off these rates for applications until 31 December 2026.</p>
+      )}
     </div>
     <aside class="card p-6 text-sm">
       <p class="eyebrow">What is and is not in the rate</p>

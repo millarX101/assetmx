@@ -27,7 +27,7 @@ PRICING (fixed positioning)
 - One flat $800 AssetMX fee, disclosed up front. It can be financed into the loan or paid before settlement. AssetMX receives no lender commission and adds nothing to the lender's rate.
 - Lender establishment fee: typically $500, financed into the loan.
 - Private-sale inspection fee: $250 may apply.
-- Indicative lender base rates, verified 8 September 2026: 12 months 9.10% p.a., 24 months 8.10% p.a., 36 to 60 months 7.50% p.a. The lender sets the final rate on formal application.
+- Indicative lender base rates, verified 19 October 2026: 12 months 9.95% p.a., 24 to 48 months 7.98% p.a., 60 months 8.06% p.a. Electric and plug-in hybrid vehicles get 1% p.a. off these rates until 31 December 2026. The lender sets the final rate on formal application.
 - Amount $5,000 to $500,000. Term 12 to 84 months. Maximum balloon by term: 1 year 65%, 2 years 60%, 3 years 50%, 4 years 40%, 5 years or more 30%. Balloon is calculated on the asset value. Repayments are in advance.
 
 ELIGIBILITY (bank low-doc policy)

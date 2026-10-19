@@ -569,6 +569,7 @@ export function useChatApplication() {
               loanAmount: asset.assetPriceIncGst - depositAmount,
               termMonths,
               balloonPercentage,
+              isEv: flowData.isEv,
             });
             updatedData.quote = {
               monthlyRepayment: quote.monthlyRepayment,
@@ -625,6 +626,7 @@ export function useChatApplication() {
               trade_in: loan?.tradeInAmount,
               term_months: loan?.termMonths,
               balloon_pct: loan?.balloonPercentage,
+              is_ev: !!flowData.isEv,
               source: 'chat',
             }),
           });

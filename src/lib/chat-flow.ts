@@ -7,7 +7,7 @@
 // off the documents they upload (dealer quote, driver licence) and confirmed in a card.
 
 import { validateABN, cleanABN, type ABNSearchResult } from './abn-lookup';
-import { getMaxBalloon, PLATFORM_FEE, LENDER_ESTABLISHMENT_FEE } from './calculator';
+import { getMaxBalloon, PLATFORM_FEE, LENDER_ESTABLISHMENT_FEE, EV_DISCOUNT_PCT, evDiscountActive, evDiscountFor } from './calculator';
 import type { ApplicationData } from '@/types/application';
 
 export type InputType = 'text' | 'select' | 'number' | 'date' | 'email' | 'phone' | 'confirm' | 'abn_select' | 'file_upload';
@@ -135,6 +135,8 @@ export interface ChatFlowData {
   }[];
   // Flag indicating user came from calculator with pre-filled data
   fromCalculator?: boolean;
+  // Electric or plug-in hybrid vehicle (EV discount). Undefined until asked.
+  isEv?: boolean;
   // Privacy consent - the hook stamps the time when consent is given
   consentAt?: string;
   // Set once the application row has been inserted - guards against double submission
@@ -673,10 +675,11 @@ export const CHAT_FLOW: ChatStep[] = [
     skipIf: (data) => !!data.fromCalculator && !!data.application.asset?.assetType,
     messages: ["What are you financing?"],
     inputType: 'select',
-    options: ["Car, ute or van", "Truck or trailer", "Equipment or machinery", "Electric vehicle"],
+    options: ["Car, ute or van", "Truck or trailer", "Equipment or machinery", "Electric or plug-in hybrid"],
     field: 'asset.assetType',
-    nextStep: (answer) => {
+    nextStep: (answer, data) => {
       if (answer.toLowerCase().includes('electric')) {
+        data.isEv = true;
         return 'ev_use_type';
       }
       return 'asset_purchased_check';
@@ -889,7 +892,20 @@ export const CHAT_FLOW: ChatStep[] = [
     inputType: 'select',
     options: ["New", "Demo", "Used"],
     field: 'asset.assetCondition',
-    nextStep: 'show_estimate',
+    nextStep: 'asset_ev_check',
+  },
+
+  {
+    id: 'asset_ev_check',
+    // Vehicles only, while the EV offer runs, unless they already picked the EV option
+    skipIf: (data) => data.application.asset?.assetType !== 'vehicle' || data.isEv !== undefined || !evDiscountActive(),
+    messages: [`Is it electric or a plug-in hybrid? Until 31 December 2026 they get ${EV_DISCOUNT_PCT}% p.a. off the rate.`],
+    inputType: 'select',
+    options: ["Yes, electric or plug-in hybrid", "No"],
+    nextStep: (answer, data) => {
+      data.isEv = answer.toLowerCase().startsWith('yes');
+      return 'show_estimate';
+    },
   },
 
   {
@@ -906,7 +922,7 @@ export const CHAT_FLOW: ChatStep[] = [
       }
       const weekly = quote.weeklyRepayment || (quote.monthlyRepayment * 12) / 52;
       return [
-        `Indicative repayment: about ${formatMoney(quote.monthlyRepayment)} per month (${formatMoney(weekly)} per week) at ${quote.indicativeRate.toFixed(2)}% p.a. lender base rate over ${termLabel(data)}.`,
+        `Indicative repayment: about ${formatMoney(quote.monthlyRepayment)} per month (${formatMoney(weekly)} per week) at ${quote.indicativeRate.toFixed(2)}% p.a. ${evDiscountFor(data.isEv) ? `(lender base rate less the ${EV_DISCOUNT_PCT}% EV discount)` : 'lender base rate'} over ${termLabel(data)}.`,
         `That includes the flat ${formatMoney(PLATFORM_FEE)} AssetMX fee and the ${formatMoney(LENDER_ESTABLISHMENT_FEE)} lender establishment fee financed into the loan.`,
         "Indicative only, not an offer of credit."
       ];
@@ -1574,6 +1590,7 @@ const PROGRESS_MAP: Record<string, number> = {
   'asset_supplier': 7,
   'asset_price': 8,
   'asset_condition_q': 8,
+  'asset_ev_check': 9,
   'show_estimate': 9,
   'save_for_later': 9,
   'quote_email_name': 9,

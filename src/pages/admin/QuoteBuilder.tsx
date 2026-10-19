@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Link2, Loader2, Save, Send, X } from 'lucide-react';
 import { fetchRates } from '@/lib/rates';
-import { getBaseRate, getMaxBalloon, type QuoteInput } from '@/lib/calculator';
+import { getBaseRate, getMaxBalloon, evDiscountActive, evDiscountFor, EV_DISCOUNT_PCT, type QuoteInput } from '@/lib/calculator';
 import { computeQuote, FINANCE_TYPE_LABELS, sendQuote } from '@/lib/quotes';
 import { ASSET_CONDITION_LABELS, ASSET_TYPE_LABELS, db, leadName } from '@/lib/crm';
 import { useAuthStore } from '@/stores/authStore';
@@ -68,6 +68,7 @@ export function QuoteBuilder() {
   const [balloon, setBalloon] = useState('0');
   const [feeFinanced, setFeeFinanced] = useState(true);
   const [rateOverride, setRateOverride] = useState('');
+  const [isEv, setIsEv] = useState(false);
   const [validDays, setValidDays] = useState(14);
 
   const [ratesLoaded, setRatesLoaded] = useState(false);
@@ -163,7 +164,9 @@ export function QuoteBuilder() {
 
   const maxBalloon = getMaxBalloon(term);
   const balloonPct = Math.min(Number(balloon) || 0, maxBalloon);
-  const ratePct = rateOverride.trim() ? Number(rateOverride) : getBaseRate(term);
+  // Table rate less the EV/PHEV discount while it runs; an override is used as typed
+  const tableRate = Math.max(0, getBaseRate(term) - evDiscountFor(isEv));
+  const ratePct = rateOverride.trim() ? Number(rateOverride) : tableRate;
 
   const calc = useMemo(() => {
     try {
@@ -473,7 +476,7 @@ export function QuoteBuilder() {
                   type="number"
                 />
                 <Field
-                  label={`Rate override (table ${getBaseRate(term).toFixed(2)}%)`}
+                  label={`Rate override (table ${tableRate.toFixed(2)}%)`}
                   value={rateOverride}
                   onChange={setRateOverride}
                   type="number"
@@ -482,6 +485,12 @@ export function QuoteBuilder() {
               </div>
               {Number(balloon) > maxBalloon && (
                 <p className="text-xs text-amber-700">Balloon capped at {maxBalloon}% for this term.</p>
+              )}
+              {evDiscountActive() && (
+                <label className="flex items-center gap-2 text-sm">
+                  <Checkbox checked={isEv} onCheckedChange={(v) => setIsEv(v === true)} />
+                  Electric or plug-in hybrid ({EV_DISCOUNT_PCT}% off the table rate until 31 Dec 2026)
+                </label>
               )}
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={feeFinanced} onCheckedChange={(v) => setFeeFinanced(v === true)} />

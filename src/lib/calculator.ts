@@ -10,6 +10,7 @@ export interface QuoteInput {
   balloonPercentage: number;
   financePlatformFee?: boolean; // true = finance $800 into loan (default), false = pay upfront
   rateOverride?: number; // admin quote builder: a lender-specific rate instead of the term table
+  isEv?: boolean; // electric or plug-in hybrid: EV discount while it runs
 }
 
 export interface QuoteOutput {
@@ -51,16 +52,26 @@ export const BROKER_MARGIN = 2.00; // What brokers typically add to hide commiss
 // Base rates by term (from lender rate sheets)
 // Default fallback rates if database unavailable
 export const DEFAULT_RATES: Record<number, number> = {
-  12: 9.10,  // 1 year
-  24: 8.10,  // 2 years
-  36: 7.50,  // 3 years
-  48: 7.50,  // 4 years
-  60: 7.50,  // 5 years
+  12: 9.95,  // 1 year
+  24: 7.98,  // 2 years
+  36: 7.98,  // 3 years
+  48: 7.98,  // 4 years
+  60: 8.06,  // 5 years
 };
 
+/**
+ * EV and plug-in hybrid offer: 1% p.a. off the lender base rate, through
+ * 31 December 2026 (Sydney time). Not applied to a manual rate override.
+ */
+export const EV_DISCOUNT_PCT = 1;
+export const EV_DISCOUNT_UNTIL = '2026-12-31';
+const EV_DISCOUNT_ENDS = Date.parse('2027-01-01T00:00:00+11:00');
+export const evDiscountActive = (now: Date = new Date()) => now.getTime() < EV_DISCOUNT_ENDS;
+export const evDiscountFor = (isEv?: boolean, now: Date = new Date()) => (isEv && evDiscountActive(now) ? EV_DISCOUNT_PCT : 0);
+
 // Legacy constants for backwards compatibility
-export const BASE_RATE_SHORT = 7.50; // 3-5 years (default)
-export const BASE_RATE_LONG = 9.10;  // 1 year
+export const BASE_RATE_SHORT = 7.98; // 2-4 years (default)
+export const BASE_RATE_LONG = 9.95;  // 1 year
 
 // Rate cache to avoid excessive database calls
 let rateCache: { rates: Record<number, number>; timestamp: number } | null = null;
@@ -197,9 +208,8 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
     throw new Error(`Balloon percentage must be between 0% and ${maxBalloon}% for a ${Math.ceil(input.termMonths / 12)} year term`);
   }
 
-  // Get base rate based on term length
-  // 1 year: 8.49%, 2 years: 7.49%, 3-5 years: 6.89%
-  const indicativeRate = input.rateOverride ?? getBaseRate(input.termMonths);
+  // Term rate, less the EV/PHEV discount while it runs (a manual override is used as given)
+  const indicativeRate = input.rateOverride ?? Math.max(0, getBaseRate(input.termMonths) - evDiscountFor(input.isEv));
 
   // Balloon is calculated on the ASSET VALUE (loan amount), not financed amount
   const balloonAmount = input.loanAmount * (input.balloonPercentage / 100);

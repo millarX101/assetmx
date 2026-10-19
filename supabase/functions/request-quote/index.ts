@@ -23,7 +23,7 @@
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY, RESEND_API_KEY, APP_URL.
 
 import { aud, corsHeaders, json, quoteUrl, serviceClient } from "../_shared/quote.ts";
-import { baseRateFor, computeQuote, getMaxBalloon } from "../_shared/quote-engine.ts";
+import { baseRateFor, computeQuote, evDiscountFor, getMaxBalloon } from "../_shared/quote-engine.ts";
 import { deliverQuote } from "../_shared/quote-send.ts";
 
 const db = serviceClient();
@@ -119,6 +119,7 @@ Deno.serve(async (req) => {
   const balloonPct = Math.min(Math.max(num(b.balloon_pct ?? 0) || 0, 0), getMaxBalloon(term));
   const feeFinanced = b.fee_financed !== false;
   const source = str(b.source, 20) || "chat";
+  const evDiscount = evDiscountFor(b.is_ev === true && assetType === "vehicle");
 
   if (!name) return json({ error: "Name is required" }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "A valid email is required" }, 400);
@@ -144,7 +145,7 @@ Deno.serve(async (req) => {
       termMonths: term,
       balloonPct,
       feeFinanced,
-      ratePct: baseRateFor(term, await termRates()),
+      ratePct: baseRateFor(term, await termRates()) - evDiscount,
     });
   } catch (e) {
     return json({ error: (e as Error).message }, 422);
@@ -197,7 +198,7 @@ Deno.serve(async (req) => {
   if (qErr || !quote) return json({ error: `Could not create quote: ${qErr?.message}` }, 500);
 
   // ── Lead (reuse a recent one; the note gives FLWUP the quote link) ─────────
-  const note = `Automatic quote ${quote.quote_number} emailed: ${aud(quote.monthly_repayment)}/month at ${Number(quote.rate_pct).toFixed(2)}%. ${quoteUrl(quote)}`;
+  const note = `Automatic quote ${quote.quote_number} emailed: ${aud(quote.monthly_repayment)}/month at ${Number(quote.rate_pct).toFixed(2)}%${evDiscount ? ` (incl. ${evDiscount}% EV/PHEV discount)` : ""}. ${quoteUrl(quote)}`;
   let leadId: string;
   if (existing) {
     leadId = existing.id;

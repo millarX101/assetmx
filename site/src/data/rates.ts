@@ -5,17 +5,21 @@
  * Mirrors DEFAULT_RATES in the app (src/lib/calculator.ts) and the rate_config table.
  */
 export const RATES = {
-  verifiedOn: '2026-09-08',
+  verifiedOn: '2026-10-19',
   source: 'AssetMX lender panel rate sheets',
   byTerm: [
-    { termMonths: 12, ratePct: 9.10 },
-    { termMonths: 24, ratePct: 8.10 },
-    { termMonths: 36, ratePct: 7.50 },
-    { termMonths: 48, ratePct: 7.50 },
-    { termMonths: 60, ratePct: 7.50 },
+    { termMonths: 12, ratePct: 9.95 },
+    { termMonths: 24, ratePct: 7.98 },
+    { termMonths: 36, ratePct: 7.98 },
+    { termMonths: 48, ratePct: 7.98 },
+    { termMonths: 60, ratePct: 8.06 },
   ],
   maxBalloonByTerm: { 12: 65, 24: 60, 36: 50, 48: 40, 60: 30, 72: 30, 84: 30 } as Record<number, number>,
 } as const;
+
+/** EV and plug-in hybrid offer. Mirrors EV_DISCOUNT_* in src/lib/calculator.ts. */
+export const EV_OFFER = { discountPct: 1, until: '2026-12-31' } as const;
+export const evOfferActive = (now: Date = new Date()) => now.getTime() < Date.parse('2027-01-01T00:00:00+11:00');
 
 export const lowestRate = () => Math.min(...RATES.byTerm.map((r) => r.ratePct));
 

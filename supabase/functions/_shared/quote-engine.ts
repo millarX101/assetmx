@@ -16,13 +16,23 @@ export const PLATFORM_FEE = 800;
 export const LENDER_ESTABLISHMENT_FEE = 500;
 
 /** Fallback lender base rates by term, mirroring DEFAULT_RATES in src/lib/calculator.ts. */
-export const DEFAULT_RATES: Record<number, number> = { 12: 9.1, 24: 8.1, 36: 7.5, 48: 7.5, 60: 7.5 };
+export const DEFAULT_RATES: Record<number, number> = { 12: 9.95, 24: 7.98, 36: 7.98, 48: 7.98, 60: 8.06 };
 
 const MAX_BALLOON_BY_TERM: Record<number, number> = { 12: 65, 24: 60, 36: 50, 48: 40, 60: 30, 72: 30, 84: 30 };
 
 export function getMaxBalloon(termMonths: number): number {
   return MAX_BALLOON_BY_TERM[Math.ceil(termMonths / 12) * 12] ?? 30;
 }
+
+/**
+ * EV and plug-in hybrid offer: 1% p.a. off the lender base rate, through
+ * 31 December 2026 (Sydney time). Mirrors src/lib/calculator.ts.
+ */
+export const EV_DISCOUNT_PCT = 1;
+export const EV_DISCOUNT_UNTIL = '2026-12-31';
+const EV_DISCOUNT_ENDS = Date.parse('2027-01-01T00:00:00+11:00');
+export const evDiscountActive = (now: Date = new Date()) => now.getTime() < EV_DISCOUNT_ENDS;
+export const evDiscountFor = (isEv?: boolean, now: Date = new Date()) => (isEv && evDiscountActive(now) ? EV_DISCOUNT_PCT : 0);
 
 /** Same term banding as getBaseRate() in src/lib/calculator.ts. */
 export function baseRateFor(termMonths: number, rates: Record<number, number> = DEFAULT_RATES): number {
