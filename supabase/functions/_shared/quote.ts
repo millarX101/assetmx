@@ -148,22 +148,17 @@ function row(label: string, value: string, strong = false) {
 </tr>`;
 }
 
-export function renderQuoteEmail(q: Row, senderName?: string | null) {
+export function renderQuoteEmail(q: Row) {
   const url = quoteUrl(q);
   const fee = q.fee_financed ? "added to the loan" : "paid upfront";
   const price = Number(q.asset_price ?? q.loan_amount);
-  const message = q.message
-    ? `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;white-space:pre-line;">${esc(q.message)}</p>`
-    : "";
 
   const inner = `
 <tr><td style="padding:28px 28px 8px;">
   <p style="margin:0 0 14px;font-size:16px;">Hi ${esc(firstName(q.customer_name))},</p>
   <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">
-    Here's your finance quote for the <strong>${esc(assetLabel(q))}</strong>${q.business_name ? ` for ${esc(q.business_name)}` : ""}.
-    It's the lender's rate with no commission added. Our only fee is a flat ${aud(q.platform_fee, 0)}.
+    Your finance quote for the <strong>${esc(assetLabel(q))}</strong> is attached. Lender rate, no commission, one flat ${aud(q.platform_fee, 0)} fee.
   </p>
-  ${message}
 </td></tr>
 <tr><td style="padding:0 28px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.sageLight};border-radius:12px;">
@@ -191,11 +186,11 @@ export function renderQuoteEmail(q: Row, senderName?: string | null) {
 </td></tr>
 <tr><td style="padding:20px 28px 8px;" align="center">
   <a href="${url}" style="display:inline-block;background:${C.forest};color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:14px 30px;border-radius:999px;">View &amp; accept your quote</a>
-  <p style="margin:12px 0 0;font-size:12px;color:${C.muted};">Your quote sheet and its terms and conditions are attached as a PDF.</p>
+  <p style="margin:12px 0 0;font-size:12px;color:${C.muted};">Accept online in one click. Your application is then prefilled with these figures.</p>
 </td></tr>
 <tr><td style="padding:16px 28px 24px;">
-  <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Any questions, just reply to this email.</p>
-  <p style="margin:0;font-size:15px;">Cheers,<br><strong>${esc(senderName || "The AssetMX team")}</strong><br><span style="color:${C.muted};font-size:13px;">AssetMX</span></p>
+  <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:${C.muted};">Questions? Reply to this email.</p>
+  <p style="margin:0;font-size:15px;"><strong>AssetMX</strong></p>
   <p style="margin:22px 0 0;font-size:11px;line-height:1.6;color:${C.muted};">${esc(DISCLAIMER)}</p>
 </td></tr>`;
 

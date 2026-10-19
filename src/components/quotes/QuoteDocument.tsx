@@ -121,10 +121,6 @@ export function QuoteDocument({ quote: q }: Props) {
           ))}
         </dl>
 
-        {q.message && (
-          <p className="text-sm leading-relaxed whitespace-pre-line bg-ivory border-l-4 border-sage px-4 py-3">{q.message}</p>
-        )}
-
         <Section n={1} title="Your payments">
           <div className={cn('bg-sage-100 px-5 py-4 flex flex-wrap items-baseline justify-between gap-2', printExact)}>
             <div>

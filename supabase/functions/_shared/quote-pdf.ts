@@ -199,17 +199,7 @@ export async function renderQuotePdf(q: Row): Promise<Uint8Array> {
     vs.forEach((v, i) => txt(c, v, vx2, ry - i * 11.5, 9.5, b));
     ry -= 12.5 + (vs.length - 1) * 11.5;
   }
-  y = Math.min(ly, ry) - 8;
-
-  if (q.message) {
-    const ml = wrap(q.message, reg, 8.6, CW - 24).slice(0, 4);
-    const bh = ml.length * 11 + 11;
-    c.page.drawRectangle({ x: M, y: y - bh, width: CW, height: bh, color: C.ivory });
-    c.page.drawRectangle({ x: M, y: y - bh, width: 2.5, height: bh, color: C.sage });
-    ml.forEach((l, i) => txt(c, l, M + 14, y - 13 - i * 11, 8.6, false, C.ink));
-    y -= bh + 4;
-  }
-  y -= 12;
+  y = Math.min(ly, ry) - 22;
 
   // 1. Payments
   y = section(c, y, 1, "Your payments");

@@ -75,15 +75,10 @@ Deno.serve(async (req) => {
 
   // ── Send ───────────────────────────────────────────────────────────────────
   const senderEmail = auth.user.email ?? adminUser.email;
-  const senderName =
-    (auth.user.user_metadata?.full_name as string | undefined) ??
-    (auth.user.user_metadata?.name as string | undefined) ??
-    null;
-
   const result = await sendEmail({
     to: [quote.customer_email],
     subject: `Your AssetMX quote ${quote.quote_number}: ${aud(quote.monthly_repayment)}/month for ${assetLabel(quote)}`,
-    html: renderQuoteEmail(quote, senderName),
+    html: renderQuoteEmail(quote),
     replyTo: senderEmail ?? ADMIN_EMAIL,
     bcc: ADMIN_EMAIL && ADMIN_EMAIL !== quote.customer_email ? [ADMIN_EMAIL] : undefined,
     tags: [{ name: "kind", value: "quote" }],

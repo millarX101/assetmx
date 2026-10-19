@@ -20,7 +20,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { FinanceType, Lead, Quote } from '@/types/database';
@@ -70,7 +69,6 @@ export function QuoteBuilder() {
   const [feeFinanced, setFeeFinanced] = useState(true);
   const [rateOverride, setRateOverride] = useState('');
   const [validDays, setValidDays] = useState(14);
-  const [message, setMessage] = useState('');
 
   const [ratesLoaded, setRatesLoaded] = useState(false);
   const [saving, setSaving] = useState<'draft' | 'send' | null>(null);
@@ -102,7 +100,7 @@ export function QuoteBuilder() {
     setResults([]);
   }
 
-  function applyQuote(q: Quote, keepMeta: boolean) {
+  function applyQuote(q: Quote) {
     setName(q.customer_name);
     setEmail(q.customer_email);
     setPhone(q.customer_phone ?? '');
@@ -119,7 +117,6 @@ export function QuoteBuilder() {
     setTerm(q.term_months);
     setBalloon(String(q.balloon_percentage));
     setFeeFinanced(q.fee_financed);
-    if (keepMeta) setMessage(q.message ?? '');
   }
 
   // Prefill from ?lead / ?from / ?edit
@@ -130,7 +127,7 @@ export function QuoteBuilder() {
       if (sourceId) {
         const { data: q } = await db.from('quotes').select('*').eq('id', sourceId).single();
         if (q) {
-          applyQuote(q, true);
+          applyQuote(q);
           // Carry a non-table rate through a re-quote
           if (Number(q.rate_pct) !== getBaseRate(q.term_months)) setRateOverride(String(q.rate_pct));
           if (q.lead_id) {
@@ -245,7 +242,7 @@ export function QuoteBuilder() {
         term_months: term,
         balloon_percentage: balloonPct,
         fee_financed: feeFinanced,
-        message: message.trim() || null,
+        message: null,
         valid_until: validUntil,
         ...f,
       };
@@ -307,7 +304,7 @@ export function QuoteBuilder() {
     term_months: term,
     balloon_percentage: balloonPct,
     fee_financed: feeFinanced,
-    message: message || null,
+    message: null,
     ...calc.figures,
   };
 
@@ -502,18 +499,9 @@ export function QuoteBuilder() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Message &amp; validity</CardTitle>
+              <CardTitle className="text-base">Validity</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div>
-                <Label className="text-xs">Personal note (shown on the quote and in the email)</Label>
-                <Textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Great chatting today. Here's the quote on the HiLux, based on the 5-year term we discussed…"
-                  rows={4}
-                />
-              </div>
               <div>
                 <Label className="text-xs">Valid for</Label>
                 <Select value={String(validDays)} onValueChange={(v) => setValidDays(Number(v))}>
