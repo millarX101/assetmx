@@ -19,6 +19,8 @@ export function AdminQuotes() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | 'open' | QuoteStatus>('all');
+  // Automatic quotes (request-quote) have no created_by; manual ones carry the admin's id.
+  const [origin, setOrigin] = useState<'all' | 'manual' | 'auto'>('all');
 
   useEffect(() => {
     db
@@ -35,6 +37,8 @@ export function AdminQuotes() {
   const filtered = useMemo(() => {
     const t = search.toLowerCase().trim();
     return quotes.filter((q) => {
+      if (origin === 'auto' && q.created_by) return false;
+      if (origin === 'manual' && !q.created_by) return false;
       if (status === 'open' && !(q.status === 'sent' || q.status === 'viewed')) return false;
       if (status !== 'all' && status !== 'open' && q.status !== status) return false;
       if (!t) return true;
@@ -42,7 +46,7 @@ export function AdminQuotes() {
         .filter(Boolean)
         .some((s) => s!.toLowerCase().includes(t));
     });
-  }, [quotes, search, status]);
+  }, [quotes, search, status, origin]);
 
   return (
     <div className="space-y-6">
@@ -76,6 +80,14 @@ export function AdminQuotes() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={origin} onValueChange={(v) => setOrigin(v as typeof origin)}>
+            <SelectTrigger className="w-full md:w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Manual + auto</SelectItem>
+              <SelectItem value="manual">Manual</SelectItem>
+              <SelectItem value="auto">Auto</SelectItem>
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
@@ -104,7 +116,10 @@ export function AdminQuotes() {
                 <TableBody>
                   {filtered.map((q) => (
                     <TableRow key={q.id} className="cursor-pointer" onClick={() => navigate(`/admin/quotes/${q.id}`)}>
-                      <TableCell className="font-medium whitespace-nowrap">{q.quote_number}</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {q.quote_number}
+                        <div className="text-xs font-normal text-muted-foreground">{q.created_by ? 'Manual' : 'Auto'}</div>
+                      </TableCell>
                       <TableCell>
                         <div className="font-medium">{q.customer_name}</div>
                         <div className="text-xs text-muted-foreground">{q.business_name ?? q.customer_email}</div>
