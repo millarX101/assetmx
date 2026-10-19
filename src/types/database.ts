@@ -88,7 +88,17 @@ export interface Quote {
   view_count: number;
   responded_at: string | null;
   decline_reason: string | null;
+  // v2 (supabase/quotes-v2.sql). asset_price null = legacy quote (price = loan_amount).
+  asset_price: number | null;
+  deposit_amount: number;
+  trade_in_amount: number;
+  finance_type: FinanceType;
+  prepared_by: string | null;
+  alt_monthly_repayment: number | null;
+  effective_rate_pct: number | null;
 }
+
+export type FinanceType = 'chattel_mortgage' | 'finance_lease' | 'hire_purchase';
 
 export type ActivityType =
   | 'note' | 'call' | 'email' | 'sms' | 'meeting' | 'status_change'

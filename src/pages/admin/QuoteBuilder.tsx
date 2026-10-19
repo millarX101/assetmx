@@ -12,7 +12,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Link2, Loader2, Save, Send, X } from 'lucide-react';
 import { fetchRates } from '@/lib/rates';
 import { getBaseRate, getMaxBalloon, type QuoteInput } from '@/lib/calculator';
-import { quoteFigures, sendQuote } from '@/lib/quotes';
+import { computeQuote, FINANCE_TYPE_LABELS, sendQuote } from '@/lib/quotes';
 import { ASSET_CONDITION_LABELS, ASSET_TYPE_LABELS, db, leadName } from '@/lib/crm';
 import { useAuthStore } from '@/stores/authStore';
 import { QuoteDocument } from '@/components/quotes/QuoteDocument';
@@ -23,7 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Lead, Quote } from '@/types/database';
+import type { FinanceType, Lead, Quote } from '@/types/database';
 
 type AssetType = QuoteInput['assetType'];
 type Condition = QuoteInput['assetCondition'];
@@ -58,7 +58,13 @@ export function QuoteBuilder() {
   const [assetType, setAssetType] = useState<AssetType>('vehicle');
   const [condition, setCondition] = useState<Condition>('new');
   const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('50000');
+  const [financeType, setFinanceType] = useState<FinanceType>('chattel_mortgage');
+  const [amount, setAmount] = useState('50000'); // asset price
+  const [deposit, setDeposit] = useState('');
+  const [tradeIn, setTradeIn] = useState('');
+  const [preparedBy, setPreparedBy] = useState(
+    () => (user?.user_metadata?.full_name as string | undefined) ?? (user?.user_metadata?.name as string | undefined) ?? '',
+  );
   const [term, setTerm] = useState(60);
   const [balloon, setBalloon] = useState('0');
   const [feeFinanced, setFeeFinanced] = useState(true);
@@ -105,7 +111,11 @@ export function QuoteBuilder() {
     setAssetType(q.asset_type);
     setCondition(q.asset_condition);
     setDescription(q.asset_description ?? '');
-    setAmount(String(q.loan_amount));
+    setAmount(String(q.asset_price ?? q.loan_amount));
+    setDeposit(q.deposit_amount ? String(q.deposit_amount) : '');
+    setTradeIn(q.trade_in_amount ? String(q.trade_in_amount) : '');
+    setFinanceType(q.finance_type ?? 'chattel_mortgage');
+    if (q.prepared_by) setPreparedBy(q.prepared_by);
     setTerm(q.term_months);
     setBalloon(String(q.balloon_percentage));
     setFeeFinanced(q.fee_financed);
@@ -155,27 +165,29 @@ export function QuoteBuilder() {
   }, [search]);
 
   const maxBalloon = getMaxBalloon(term);
-  const input: QuoteInput = {
-    assetType,
-    assetCondition: condition,
-    loanAmount: Number(amount),
-    termMonths: term,
-    balloonPercentage: Math.min(Number(balloon) || 0, maxBalloon),
-    financePlatformFee: feeFinanced,
-    rateOverride: rateOverride.trim() ? Number(rateOverride) : undefined,
-  };
+  const balloonPct = Math.min(Number(balloon) || 0, maxBalloon);
+  const ratePct = rateOverride.trim() ? Number(rateOverride) : getBaseRate(term);
 
   const calc = useMemo(() => {
     try {
-      if (input.rateOverride !== undefined && !(input.rateOverride > 0 && input.rateOverride < 40)) {
-        throw new Error('Rate must be between 0 and 40%');
-      }
-      return { figures: quoteFigures(input), error: null };
+      return {
+        figures: computeQuote({
+          assetPrice: Number(amount),
+          deposit: Number(deposit) || 0,
+          tradeIn: Number(tradeIn) || 0,
+          termMonths: term,
+          balloonPct,
+          feeFinanced,
+          ratePct,
+        }),
+        error: null,
+      };
     } catch (e) {
       return { figures: null, error: (e as Error).message };
     }
+    // ratesLoaded: getBaseRate reads the rate cache fetchRates fills
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(input), ratesLoaded]);
+  }, [amount, deposit, tradeIn, term, balloonPct, feeFinanced, ratePct, ratesLoaded]);
 
   const validUntil = plusDays(validDays);
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -201,13 +213,12 @@ export function QuoteBuilder() {
             abn: abn.replace(/\s/g, ''),
             asset_type: assetType,
             asset_condition: condition,
-            loan_amount: input.loanAmount,
+            loan_amount: f.loan_amount,
             term_months: term,
-            balloon_percentage: input.balloonPercentage,
+            balloon_percentage: balloonPct,
             indicative_rate: f.rate_pct,
             monthly_repayment: f.monthly_repayment,
             total_cost: f.total_cost,
-            estimated_saving: f.estimated_saving,
             status: 'new',
             source: 'admin_quote',
             assigned_to: user?.id ?? null,
@@ -229,9 +240,10 @@ export function QuoteBuilder() {
         asset_type: assetType,
         asset_condition: condition,
         asset_description: description.trim() || null,
-        loan_amount: input.loanAmount,
+        finance_type: financeType,
+        prepared_by: preparedBy.trim() || null,
         term_months: term,
-        balloon_percentage: input.balloonPercentage,
+        balloon_percentage: balloonPct,
         fee_financed: feeFinanced,
         message: message.trim() || null,
         valid_until: validUntil,
@@ -255,7 +267,7 @@ export function QuoteBuilder() {
           lead_id: leadId,
           quote_id: q.id,
           type: 'quote_created',
-          body: `Created ${q.quote_number}: ${input.loanAmount.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 })} over ${term} months at ${f.rate_pct.toFixed(2)}%`,
+          body: `Created ${q.quote_number}: ${f.amount_financed.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 })} over ${term} months at ${f.rate_pct.toFixed(2)}%`,
           created_by: user?.id ?? null,
         });
       }
@@ -290,9 +302,10 @@ export function QuoteBuilder() {
     asset_type: assetType,
     asset_condition: condition,
     asset_description: description || null,
-    loan_amount: input.loanAmount,
+    finance_type: financeType,
+    prepared_by: preparedBy || null,
     term_months: term,
-    balloon_percentage: input.balloonPercentage,
+    balloon_percentage: balloonPct,
     fee_financed: feeFinanced,
     message: message || null,
     ...calc.figures,
@@ -393,6 +406,17 @@ export function QuoteBuilder() {
               <CardTitle className="text-base">Finance</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label className="text-xs">Finance type</Label>
+                <Select value={financeType} onValueChange={(v) => setFinanceType(v as FinanceType)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(FINANCE_TYPE_LABELS).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Asset type</Label>
@@ -423,8 +447,17 @@ export function QuoteBuilder() {
                 onChange={setDescription}
                 placeholder="e.g. 2025 Toyota HiLux SR5 dual cab"
               />
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="Asset price ($)" value={amount} onChange={setAmount} type="number" />
+                <Field label="Deposit ($)" value={deposit} onChange={setDeposit} type="number" placeholder="0" />
+                <Field label="Trade-in ($)" value={tradeIn} onChange={setTradeIn} type="number" placeholder="0" />
+              </div>
+              {calc.figures && (Number(deposit) > 0 || Number(tradeIn) > 0) && (
+                <p className="text-xs text-muted-foreground -mt-2">
+                  Amount to finance: {calc.figures.loan_amount.toLocaleString('en-AU', { style: 'currency', currency: 'AUD' })}
+                </p>
+              )}
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Amount ($)" value={amount} onChange={setAmount} type="number" />
                 <div>
                   <Label className="text-xs">Term</Label>
                   <Select value={String(term)} onValueChange={(v) => setTerm(Number(v))}>
@@ -437,7 +470,7 @@ export function QuoteBuilder() {
                   </Select>
                 </div>
                 <Field
-                  label={`Balloon % (max ${maxBalloon}%)`}
+                  label={`Balloon % of price (max ${maxBalloon}%)`}
                   value={balloon}
                   onChange={setBalloon}
                   type="number"
@@ -455,8 +488,15 @@ export function QuoteBuilder() {
               )}
               <label className="flex items-center gap-2 text-sm">
                 <Checkbox checked={feeFinanced} onCheckedChange={(v) => setFeeFinanced(v === true)} />
-                Finance the $800 AssetMX fee into the loan
+                Add the $800 AssetMX fee to the loan
+                {calc.figures?.effective_rate_pct != null && (
+                  <span className="text-xs text-muted-foreground">
+                    (effective rate {calc.figures.effective_rate_pct.toFixed(2)}%)
+                  </span>
+                )}
               </label>
+              <p className="text-xs text-muted-foreground -mt-2">The quote shows both fee options side by side either way.</p>
+              <Field label="Quoted by" value={preparedBy} onChange={setPreparedBy} placeholder="Your name" />
             </CardContent>
           </Card>
 

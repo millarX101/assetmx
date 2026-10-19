@@ -28,12 +28,14 @@ const db = serviceClient();
 // Never return internal columns (lead_id, created_by, email_id, view counts).
 const PUBLIC_FIELDS = [
   "quote_number", "created_at", "sent_at", "status", "responded_at", "valid_until",
-  "customer_name", "business_name", "abn",
+  "customer_name", "business_name", "abn", "prepared_by", "finance_type",
   "asset_type", "asset_condition", "asset_description",
-  "loan_amount", "term_months", "balloon_percentage", "fee_financed",
-  "rate_pct", "monthly_repayment", "weekly_repayment", "fortnightly_repayment",
+  "asset_price", "deposit_amount", "trade_in_amount", "loan_amount",
+  "term_months", "balloon_percentage", "fee_financed",
+  "rate_pct", "effective_rate_pct", "monthly_repayment", "alt_monthly_repayment",
+  "weekly_repayment", "fortnightly_repayment",
   "balloon_amount", "amount_financed", "total_repayments", "total_interest", "total_cost",
-  "platform_fee", "establishment_fee", "broker_rate_pct", "broker_total_cost", "estimated_saving",
+  "platform_fee", "establishment_fee",
   "message",
 ];
 

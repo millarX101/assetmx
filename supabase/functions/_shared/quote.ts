@@ -93,11 +93,11 @@ export const firstName = (name: string) => (name || "").trim().split(/\s+/)[0] |
 
 export const quoteUrl = (q: Row) => `${APP_URL}/q/${q.public_token}`;
 
+// Mirrors QUOTE_DISCLAIMER in src/lib/quotes.ts.
 export const DISCLAIMER =
-  "This is an indicative quote, not an offer or approval of credit. The rate, fees and repayments are " +
-  "subject to the lender's credit assessment, verification of your information and the asset, and may change " +
-  "before settlement. Finance is for business purposes only. Repayments are calculated in advance, with the " +
-  "first payment due at settlement.";
+  "This is not an offer of finance. It is an indicative quote based on the information provided, subject to " +
+  "the lender's credit assessment and verification of you and the asset, and may change before settlement. " +
+  "Finance is for business purposes only. Other lender fees and charges may apply.";
 
 export const LICENCE_LINE =
   `${ENTITY.legalName} trading as ${ENTITY.brand} · ABN ${ENTITY.abn} · Australian Credit Licence ${ENTITY.acl}`;
@@ -150,7 +150,8 @@ function row(label: string, value: string, strong = false) {
 
 export function renderQuoteEmail(q: Row, senderName?: string | null) {
   const url = quoteUrl(q);
-  const fee = q.fee_financed ? "financed into the loan" : "paid upfront";
+  const fee = q.fee_financed ? "added to the loan" : "paid upfront";
+  const price = Number(q.asset_price ?? q.loan_amount);
   const message = q.message
     ? `<p style="margin:0 0 18px;font-size:15px;line-height:1.6;white-space:pre-line;">${esc(q.message)}</p>`
     : "";
@@ -160,7 +161,7 @@ export function renderQuoteEmail(q: Row, senderName?: string | null) {
   <p style="margin:0 0 14px;font-size:16px;">Hi ${esc(firstName(q.customer_name))},</p>
   <p style="margin:0 0 18px;font-size:15px;line-height:1.6;">
     Here's your finance quote for the <strong>${esc(assetLabel(q))}</strong>${q.business_name ? ` for ${esc(q.business_name)}` : ""}.
-    It's the lender's rate with no commission added - our only fee is a flat ${aud(q.platform_fee, 0)}.
+    It's the lender's rate with no commission added. Our only fee is a flat ${aud(q.platform_fee, 0)}.
   </p>
   ${message}
 </td></tr>
@@ -175,11 +176,16 @@ export function renderQuoteEmail(q: Row, senderName?: string | null) {
 <tr><td style="padding:16px 28px 4px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
     ${row("Quote", q.quote_number)}
-    ${row("Amount", aud(q.loan_amount, 0))}
-    ${row("Term", `${q.term_months} months`)}
-    ${row("Indicative rate", pct(q.rate_pct), true)}
+    ${row("Asset price", aud(price))}
+    ${Number(q.deposit_amount) > 0 ? row("Less deposit", `-${aud(q.deposit_amount)}`) : ""}
+    ${Number(q.trade_in_amount) > 0 ? row("Less trade-in", `-${aud(q.trade_in_amount)}`) : ""}
+    ${row("Total amount financed", aud(q.amount_financed))}
+    ${row("Term", `${q.term_months} months, payments monthly in arrears`)}
+    ${row("Interest rate", `${pct(q.rate_pct)} p.a.`, true)}
+    ${q.fee_financed && q.effective_rate_pct != null ? row("Effective rate with AssetMX fee added", `${pct(q.effective_rate_pct)} p.a.`) : ""}
     ${Number(q.balloon_amount) > 0 ? row(`Balloon (${q.balloon_percentage}%)`, aud(q.balloon_amount)) : ""}
     ${row("AssetMX fee", `${aud(q.platform_fee, 0)} ${fee}`)}
+    ${row("Lender establishment fee", `${aud(q.establishment_fee, 0)} (lender's fee)`)}
     ${row("Valid until", longDate(q.valid_until))}
   </table>
 </td></tr>

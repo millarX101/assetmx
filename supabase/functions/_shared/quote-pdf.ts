@@ -1,9 +1,10 @@
-// Branded A4 quote sheet: page 1 the quote, page 2+ the quote terms.
-// Used by send-quote (email attachment, admin download) and quote-public
-// (customer download). Drawn with pdf-lib so it needs no browser.
+// Branded A4 quote sheet. Page 1 is the quote in four plain sections -
+// Payments, Finance calculation, Interest rate, Fees - and page 2 the quote
+// terms. Used by send-quote (email attachment, admin download) and
+// quote-public (customer download). Drawn with pdf-lib, no browser needed.
 //
-// Standard PDF fonts only (Helvetica) - they can't encode characters outside
-// WinAnsi, so every string goes through `t()` first.
+// Standard PDF fonts only (Helvetica): they can't encode characters outside
+// WinAnsi, so every string goes through `t()`.
 
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type RGB } from "npm:pdf-lib@1.17.1";
 import { DISCLAIMER, ENTITY, LICENCE_LINE, aud, assetLabel, longDate, pct, type Row } from "./quote.ts";
@@ -32,18 +33,27 @@ const C = {
 const MARK_LEFT = "M40 8 H24 C14 8 6 16 6 26 V74 C6 84 14 92 24 92 H40 Z";
 const MARK_DIAG = "M30 8 H58 L94 92 H49 L20 24 V20 C20 13 25 8 30 8 Z";
 
+export const FINANCE_TYPES: Record<string, string> = {
+  chattel_mortgage: "Commercial loan (chattel mortgage)",
+  finance_lease: "Finance lease",
+  hire_purchase: "Commercial hire purchase",
+};
+const CONDITION: Record<string, string> = {
+  new: "New", demo: "Demo", used_0_3: "Used (0-3 yrs)", used_4_7: "Used (4-7 yrs)", used_8_plus: "Used (8+ yrs)",
+};
+const ASSET_TYPE: Record<string, string> = { vehicle: "Vehicle", truck: "Truck / trailer", equipment: "Equipment / machinery" };
+
 const W = 595.28;
 const H = 841.89;
-const M = 44; // side margin
+const M = 46;
+const CW = W - M * 2;
 
-/** Map to WinAnsi-safe text. */
 function t(s: unknown): string {
   return String(s ?? "")
     .replace(/[‘’]/g, "'")
     .replace(/[“”]/g, '"')
-    .replace(/[–—]/g, "-")
+    .replace(/[–—−]/g, "-")
     .replace(/…/g, "...")
-    .replace(/→/g, "->")
     .replace(/\r/g, "")
     .replace(/[^\n\x20-\x7E\xA0-\xFF]/g, "");
 }
@@ -65,74 +75,68 @@ function wrap(text: string, font: PDFFont, size: number, width: number): string[
   return out;
 }
 
-interface Fonts {
+interface Ctx {
+  page: PDFPage;
   reg: PDFFont;
   bold: PDFFont;
 }
 
-function text(page: PDFPage, s: string, x: number, y: number, size: number, font: PDFFont, color = C.ink) {
-  page.drawText(t(s), { x, y, size, font, color });
+function txt(c: Ctx, s: string, x: number, y: number, size: number, bold = false, color = C.ink) {
+  c.page.drawText(t(s), { x, y, size, font: bold ? c.bold : c.reg, color });
 }
-
-function textRight(page: PDFPage, s: string, right: number, y: number, size: number, font: PDFFont, color = C.ink) {
+function right(c: Ctx, s: string, r: number, y: number, size: number, bold = false, color = C.ink) {
   const v = t(s);
-  page.drawText(v, { x: right - font.widthOfTextAtSize(v, size), y, size, font, color });
+  const f = bold ? c.bold : c.reg;
+  c.page.drawText(v, { x: r - f.widthOfTextAtSize(v, size), y, size, font: f, color });
+}
+function hline(c: Ctx, y: number, x1 = M, x2 = W - M, color = C.line, thickness = 0.6) {
+  c.page.drawLine({ start: { x: x1, y }, end: { x: x2, y }, thickness, color });
 }
 
-function textCenter(page: PDFPage, s: string, cx: number, y: number, size: number, font: PDFFont, color = C.ink) {
-  const v = t(s);
-  page.drawText(v, { x: cx - font.widthOfTextAtSize(v, size) / 2, y, size, font, color });
-}
-
-/** Header band. Returns the y just below it. */
-function header(page: PDFPage, f: Fonts, q: Row, compact: boolean): number {
-  const bandH = compact ? 64 : 104;
-  page.drawRectangle({ x: 0, y: H - bandH, width: W, height: bandH, color: C.forest });
-
-  const markSize = compact ? 34 : 50;
-  const mx = M;
-  const my = H - (bandH - markSize) / 2; // top of mark
-  const s = (markSize / 100) * 0.78;
-  const off = (markSize / 100) * 11;
-  page.drawSvgPath(MARK_LEFT, { x: mx + off, y: my - off, scale: s, color: C.sage });
-  page.drawSvgPath(MARK_DIAG, { x: mx + off, y: my - off, scale: s, color: C.cream });
-
-  const tx = mx + markSize + 12;
-  const nameSize = compact ? 18 : 24;
-  const baseY = H - bandH / 2 + (compact ? -2 : 2);
-  text(page, "Asset", tx, baseY, nameSize, f.bold, C.white);
-  text(page, "MX", tx + f.bold.widthOfTextAtSize("Asset", nameSize), baseY, nameSize, f.bold, C.sage);
-  if (!compact) text(page, "TRANSPARENT FINANCE", tx + 1, baseY - 16, 7.5, f.reg, C.sage);
-
-  const r = W - M;
-  if (compact) {
-    textRight(page, `Quote ${q.quote_number} - terms and conditions`, r, baseY + 2, 9, f.bold, C.white);
-  } else {
-    textRight(page, "FINANCE QUOTE", r, H - 36, 8, f.reg, C.sage);
-    textRight(page, q.quote_number, r, H - 56, 18, f.bold, C.white);
-    textRight(page, `Issued ${longDate(q.sent_at ?? q.created_at ?? new Date().toISOString())}`, r, H - 72, 8.5, f.reg, C.sage);
-    textRight(page, `Valid until ${longDate(q.valid_until)}`, r, H - 84, 8.5, f.reg, C.sage);
-  }
+function header(c: Ctx, q: Row, subtitle: string): number {
+  const bandH = 66;
+  c.page.drawRectangle({ x: 0, y: H - bandH, width: W, height: bandH, color: C.forest });
+  const size = 38;
+  const top = H - (bandH - size) / 2;
+  const s = (size / 100) * 0.78;
+  const off = (size / 100) * 11;
+  c.page.drawSvgPath(MARK_LEFT, { x: M + off, y: top - off, scale: s, color: C.sage });
+  c.page.drawSvgPath(MARK_DIAG, { x: M + off, y: top - off, scale: s, color: C.cream });
+  const tx = M + size + 10;
+  txt(c, "Asset", tx, H - 36, 19, true, C.white);
+  txt(c, "MX", tx + c.bold.widthOfTextAtSize("Asset", 19), H - 36, 19, true, C.sage);
+  txt(c, "TRANSPARENT FINANCE", tx + 1, H - 48, 6.5, false, C.sage);
+  right(c, subtitle, W - M, H - 28, 7.5, false, C.sage);
+  right(c, q.quote_number, W - M, H - 45, 15, true, C.white);
   return H - bandH;
 }
 
-function footer(page: PDFPage, f: Fonts, n: number, total: number) {
-  page.drawLine({ start: { x: M, y: 40 }, end: { x: W - M, y: 40 }, thickness: 0.5, color: C.line });
-  text(page, LICENCE_LINE, M, 28, 7, f.reg, C.faint);
-  text(page, `${ENTITY.email}  |  assetmx.com.au`, M, 18, 7, f.reg, C.faint);
-  textRight(page, `Page ${n} of ${total}`, W - M, 28, 7, f.reg, C.faint);
+function footer(c: Ctx, n: number, total: number) {
+  hline(c, 40);
+  txt(c, LICENCE_LINE, M, 28, 7, false, C.faint);
+  txt(c, `${ENTITY.email}  |  assetmx.com.au`, M, 18, 7, false, C.faint);
+  right(c, `Page ${n} of ${total}`, W - M, 28, 7, false, C.faint);
 }
 
-function row(page: PDFPage, f: Fonts, x: number, w: number, y: number, label: string, value: string, opts: { strong?: boolean; sub?: string } = {}) {
-  text(page, label, x, y, 9.5, f.reg, C.muted);
-  textRight(page, value, x + w, y, 9.5, opts.strong ? f.bold : f.reg, C.ink);
-  let bottom = y - 8;
-  if (opts.sub) {
-    text(page, opts.sub, x, y - 11, 7.5, f.reg, C.faint);
-    bottom = y - 18;
+/** Numbered section heading with a rule. Returns y for the first line below. */
+function section(c: Ctx, y: number, n: number, title: string): number {
+  c.page.drawCircle({ x: M + 8, y: y + 3.5, size: 8, color: C.forest });
+  const ns = String(n);
+  c.page.drawText(ns, { x: M + 8 - c.bold.widthOfTextAtSize(ns, 8.5) / 2, y: y + 0.5, size: 8.5, font: c.bold, color: C.white });
+  txt(c, title, M + 22, y, 11.5, true, C.forestDark);
+  hline(c, y - 8, M, W - M, C.forest, 0.8);
+  return y - 21;
+}
+
+/** Ledger line: label left, amount right. */
+function ledger(c: Ctx, y: number, label: string, amount: string, o: { bold?: boolean; note?: string; muted?: boolean } = {}) {
+  txt(c, label, M + 22, y, 9.5, o.bold, o.muted ? C.muted : C.ink);
+  if (o.note) {
+    const lw = (o.bold ? c.bold : c.reg).widthOfTextAtSize(t(label), 9.5);
+    txt(c, o.note, M + 22 + lw + 8, y, 8, false, C.faint);
   }
-  page.drawLine({ start: { x, y: bottom }, end: { x: x + w, y: bottom }, thickness: 0.5, color: C.line });
-  return bottom - 14;
+  right(c, amount, W - M, y, 9.5, o.bold, o.muted ? C.muted : C.ink);
+  return y - 14.2;
 }
 
 export async function renderQuotePdf(q: Row): Promise<Uint8Array> {
@@ -141,149 +145,223 @@ export async function renderQuotePdf(q: Row): Promise<Uint8Array> {
   doc.setAuthor(`${ENTITY.legalName} (AssetMX)`);
   doc.setSubject(`Finance quote for ${q.customer_name}`);
   doc.setCreator("AssetMX");
-  const f: Fonts = {
-    reg: await doc.embedFont(StandardFonts.Helvetica),
-    bold: await doc.embedFont(StandardFonts.HelveticaBold),
-  };
-  const contentW = W - M * 2;
+  const reg = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 
-  // ── Page 1: the quote ─────────────────────────────────────────────────────
-  const p1 = doc.addPage([W, H]);
-  let y = header(p1, f, q, false) - 34;
+  // Legacy quotes (before deposit/trade-in) have no asset_price.
+  const price = Number(q.asset_price ?? q.loan_amount);
+  const deposit = Number(q.deposit_amount ?? 0);
+  const tradeIn = Number(q.trade_in_amount ?? 0);
+  const net = Number(q.loan_amount);
+  const n = Number(q.term_months);
+  const balloon = Number(q.balloon_amount);
+  const fee = Number(q.platform_fee);
+  const lenderFee = Number(q.establishment_fee);
+  const eff = q.effective_rate_pct != null ? Number(q.effective_rate_pct) : null;
+  const alt = q.alt_monthly_repayment != null ? Number(q.alt_monthly_repayment) : null;
+  const upfrontMonthly = q.fee_financed ? alt : Number(q.monthly_repayment);
+  const financedMonthly = q.fee_financed ? Number(q.monthly_repayment) : alt;
 
-  // Prepared for / asset
-  const half = contentW / 2;
-  text(p1, "PREPARED FOR", M, y, 7.5, f.reg, C.faint);
-  textRight(p1, "ASSET", W - M, y, 7.5, f.reg, C.faint);
-  y -= 15;
-  text(p1, q.customer_name, M, y, 11, f.bold);
-  const assetLines = wrap(assetLabel(q), f.bold, 11, half - 10).slice(0, 2);
-  assetLines.forEach((l, i) => textRight(p1, l, W - M, y - i * 14, 11, f.bold));
-  let ly = y - 14;
-  if (q.business_name) { text(p1, q.business_name, M, ly, 9.5, f.reg, C.muted); ly -= 13; }
-  if (q.abn) { text(p1, `ABN ${q.abn}`, M, ly, 9.5, f.reg, C.muted); ly -= 13; }
-  y = Math.min(ly, y - assetLines.length * 14) - 14;
+  // ── Page 1 ───────────────────────────────────────────────────────────────
+  const c: Ctx = { page: doc.addPage([W, H]), reg, bold };
+  let y = header(c, q, "FINANCE QUOTE") - 24;
 
-  // Personal note
+  // Details (Westpac-style key/value grid)
+  const kx = M;
+  const vx = M + 70;
+  const kx2 = M + CW / 2 + 10;
+  const vx2 = kx2 + 78;
+  const goodsW = W - M - vx2;
+  const lines: [string, string][] = [
+    ["Quote for", q.customer_name],
+    ...(q.business_name ? [["Business", q.business_name] as [string, string]] : []),
+    ...(q.abn ? [["ABN", q.abn] as [string, string]] : []),
+    ["Quoted by", q.prepared_by || "AssetMX"],
+    ["Date", longDate(q.sent_at ?? q.created_at ?? new Date().toISOString())],
+    ["Valid until", longDate(q.valid_until)],
+  ];
+  const goods = wrap(assetLabel(q), bold, 9.5, goodsW).slice(0, 2);
+  const lines2: [string, string[], boolean][] = [
+    ["Finance type", [FINANCE_TYPES[q.finance_type] ?? FINANCE_TYPES.chattel_mortgage], false],
+    ["Goods", goods, true],
+    ["Asset type", [`${ASSET_TYPE[q.asset_type] ?? q.asset_type}, ${CONDITION[q.asset_condition] ?? q.asset_condition}`], false],
+    ["Term", [`${n} months`], false],
+  ];
+  let ly = y;
+  for (const [k, v] of lines) {
+    txt(c, k, kx, ly, 8.5, false, C.muted);
+    txt(c, v, vx, ly, 9.5, k === "Quote for");
+    ly -= 12.5;
+  }
+  let ry = y;
+  for (const [k, vs, b] of lines2) {
+    txt(c, k, kx2, ry, 8.5, false, C.muted);
+    vs.forEach((v, i) => txt(c, v, vx2, ry - i * 11.5, 9.5, b));
+    ry -= 12.5 + (vs.length - 1) * 11.5;
+  }
+  y = Math.min(ly, ry) - 8;
+
   if (q.message) {
-    const lines = wrap(q.message, f.reg, 9.5, contentW - 28).slice(0, 7);
-    const boxH = lines.length * 13 + 20;
-    p1.drawRectangle({ x: M, y: y - boxH, width: contentW, height: boxH, color: C.ivory, borderColor: C.line, borderWidth: 0.5 });
-    lines.forEach((l, i) => text(p1, l, M + 14, y - 18 - i * 13, 9.5, f.reg));
-    y -= boxH + 18;
+    const ml = wrap(q.message, reg, 8.6, CW - 24).slice(0, 4);
+    const bh = ml.length * 11 + 11;
+    c.page.drawRectangle({ x: M, y: y - bh, width: CW, height: bh, color: C.ivory });
+    c.page.drawRectangle({ x: M, y: y - bh, width: 2.5, height: bh, color: C.sage });
+    ml.forEach((l, i) => txt(c, l, M + 14, y - 13 - i * 11, 8.6, false, C.ink));
+    y -= bh + 4;
   }
+  y -= 12;
 
-  // Headline repayment
-  const heroH = 116;
-  p1.drawRectangle({ x: M, y: y - heroH, width: contentW, height: heroH, color: C.sageLight });
-  const cx = W / 2;
-  textCenter(p1, "MONTHLY REPAYMENT", cx, y - 24, 8, f.reg, C.forest);
-  textCenter(p1, aud(q.monthly_repayment), cx, y - 58, 32, f.bold, C.forestDark);
-  textCenter(p1, `${aud(q.weekly_repayment)} weekly  |  ${aud(q.fortnightly_repayment)} fortnightly`, cx, y - 78, 9.5, f.reg, C.muted);
-  const rateText = `Indicative rate ${pct(q.rate_pct)} p.a.`;
-  const pillW = f.bold.widthOfTextAtSize(rateText, 10) + 28;
-  p1.drawRectangle({ x: cx - pillW / 2, y: y - 106, width: pillW, height: 20, color: C.white });
-  textCenter(p1, rateText, cx, y - 99.5, 10, f.bold, C.forest);
-  y -= heroH + 30;
+  // 1. Payments
+  y = section(c, y, 1, "Your payments");
+  const boxH = 40;
+  c.page.drawRectangle({ x: M, y: y - boxH + 12, width: CW, height: boxH, color: C.sageLight });
+  txt(c, aud(q.monthly_repayment), M + 16, y - 16, 22, true, C.forestDark);
+  txt(c, "per month", M + 22 + bold.widthOfTextAtSize(t(aud(q.monthly_repayment)), 22), y - 16, 10, false, C.forest);
+  right(c, `${aud(q.fortnightly_repayment)} per fortnight (equivalent)`, W - M - 16, y - 7, 8.5, false, C.muted);
+  right(c, `${aud(q.weekly_repayment)} per week (equivalent)`, W - M - 16, y - 19, 8.5, false, C.muted);
+  y -= boxH + 4;
 
-  // Breakdown columns
-  const colW = (contentW - 28) / 2;
-  const lx = M;
-  const rx = M + colW + 28;
-  text(p1, "Loan", lx, y, 11, f.bold);
-  text(p1, "Fees and totals", rx, y, 11, f.bold);
-  let a = y - 20;
-  let b = y - 20;
-  a = row(p1, f, lx, colW, a, "Asset amount", aud(q.loan_amount));
-  a = row(p1, f, lx, colW, a, "Term", `${q.term_months} months`);
-  const hasBalloon = Number(q.balloon_amount) > 0;
-  a = row(p1, f, lx, colW, a, "Balloon / residual", hasBalloon ? aud(q.balloon_amount) : "None", {
-    sub: hasBalloon ? `${q.balloon_percentage}% of asset amount, due at end of term` : undefined,
-  });
-  a = row(p1, f, lx, colW, a, "Total amount financed", aud(q.amount_financed), { strong: true });
-
-  b = row(p1, f, rx, colW, b, "AssetMX fee (flat, incl. GST)", aud(q.platform_fee), {
-    sub: q.fee_financed ? "Financed into the loan" : "Paid upfront at settlement",
-  });
-  b = row(p1, f, rx, colW, b, "Lender establishment fee", aud(q.establishment_fee), { sub: "Financed into the loan" });
-  b = row(p1, f, rx, colW, b, "Total interest", aud(q.total_interest));
-  b = row(p1, f, rx, colW, b, "Total cost over the term", aud(q.total_cost), { strong: true });
-  y = Math.min(a, b) - 6;
-
-  // Broker comparison
-  const saving = Number(q.estimated_saving ?? 0);
-  if (saving > 0 && q.broker_rate_pct) {
-    const boxH = 50;
-    p1.drawRectangle({ x: M, y: y - boxH, width: contentW, height: boxH, color: C.ivory, borderColor: C.line, borderWidth: 0.5 });
-    text(p1, "No commission in your rate", M + 14, y - 19, 10, f.bold);
-    text(
-      p1,
-      `A typical broker rate of ${pct(q.broker_rate_pct)} would cost about ${aud(q.broker_total_cost ?? 0, 0)} over the same term.`,
-      M + 14, y - 34, 8.5, f.reg, C.muted,
-    );
-    textRight(p1, "Estimated saving", W - M - 14, y - 19, 7.5, f.reg, C.faint);
-    textRight(p1, aud(saving), W - M - 14, y - 36, 14, f.bold, C.forest);
-    y -= boxH + 22;
-  }
-
-  // Next step
-  text(p1, "Next step", M, y, 10, f.bold);
-  y -= 14;
-  for (const l of wrap(
-    "To go ahead, open your quote link and press Accept, or reply to the quote email. Accepting starts your application; it is not a credit contract. See page 2 for the terms of this quote.",
-    f.reg, 9, contentW,
-  )) {
-    text(p1, l, M, y, 9, f.reg, C.muted);
-    y -= 12;
-  }
-
-  // Disclaimer, pinned above the footer
-  const disc = wrap(DISCLAIMER, f.reg, 7.5, contentW);
-  disc.forEach((l, i) => text(p1, l, M, 52 + (disc.length - 1 - i) * 10, 7.5, f.reg, C.faint));
-
-  // ── Page 2+: terms ────────────────────────────────────────────────────────
-  let page = doc.addPage([W, H]);
-  y = header(page, f, q, true) - 30;
-  text(page, "Quote terms and conditions", M, y, 15, f.bold);
+  // Schedule table
+  const cols = [M + 22, M + 82, M + 170, M + 300, M + 410];
+  const head = ["Payments", "Frequency", "Amount", "From", "To"];
+  head.forEach((h, i) => (i === 2 ? right(c, h, cols[2] + 70, y, 7.5, true, C.muted) : txt(c, h, cols[i], y, 7.5, true, C.muted)));
+  hline(c, y - 5, M + 22);
   y -= 16;
-  text(page, `These terms apply to quote ${q.quote_number}. Version ${QUOTE_TERMS_VERSION}.`, M, y, 8.5, f.reg, C.muted);
-  y -= 24;
+  txt(c, String(n), cols[0], y, 9.5);
+  txt(c, "Monthly", cols[1], y, 9.5);
+  right(c, aud(q.monthly_repayment), cols[2] + 70, y, 9.5, true);
+  txt(c, "Month 1 (1 month after settlement)", cols[3], y, 8.5, false, C.muted);
+  txt(c, `Month ${n}`, cols[4] + 40, y, 8.5, false, C.muted);
+  if (balloon > 0) {
+    y -= 14;
+    txt(c, "1", cols[0], y, 9.5);
+    txt(c, "Balloon", cols[1], y, 9.5);
+    right(c, aud(balloon), cols[2] + 70, y, 9.5, true);
+    txt(c, "With the final monthly payment", cols[3], y, 8.5, false, C.muted);
+    txt(c, `Month ${n}`, cols[4] + 40, y, 8.5, false, C.muted);
+  }
+  y -= 8;
+  hline(c, y, M + 22);
+  y -= 11;
+  txt(c, "Payments are monthly in arrears. No GST is charged on the repayments.", M + 22, y, 7.6, false, C.faint);
+  y -= 20;
 
-  const ensure = (needed: number) => {
-    if (y - needed < 60) {
-      page = doc.addPage([W, H]);
-      y = header(page, f, q, true) - 36;
+  // 2. Finance calculation
+  y = section(c, y, 2, "Finance calculation");
+  y = ledger(c, y, "Asset price", aud(price));
+  if (deposit > 0) y = ledger(c, y, "Less deposit", `-${aud(deposit)}`);
+  if (tradeIn > 0) y = ledger(c, y, "Less trade-in", `-${aud(tradeIn)}`);
+  if (deposit > 0 || tradeIn > 0) {
+    hline(c, y + 10, M + 22);
+    y = ledger(c, y - 2, "Amount to finance", aud(net), { bold: true });
+  }
+  y = ledger(c, y, "Plus lender establishment fee", aud(lenderFee), { note: "charged by the lender" });
+  y = q.fee_financed
+    ? ledger(c, y, "Plus AssetMX fee", aud(fee), { note: "added to the loan - see section 4" })
+    : ledger(c, y, "AssetMX fee", "Paid upfront", { note: `${aud(fee, 0)} at settlement - not financed`, muted: true });
+  hline(c, y + 10, M + 22, W - M, C.ink, 0.8);
+  y = ledger(c, y - 2, "Total amount financed", aud(q.amount_financed), { bold: true });
+  if (balloon > 0) {
+    y = ledger(c, y, "Balloon / residual", aud(balloon), { note: `${q.balloon_percentage}% of asset price, due at end of term` });
+  }
+  y -= 8;
+
+  // 3. Interest rate
+  y = section(c, y, 3, "Interest rate");
+  txt(c, `${pct(q.rate_pct)} p.a.`, M + 22, y - 4, 17, true, C.forestDark);
+  txt(c, `fixed for ${n} months`, M + 30 + bold.widthOfTextAtSize(t(`${pct(q.rate_pct)} p.a.`), 17), y - 4, 9, false, C.muted);
+  if (q.fee_financed && eff != null) {
+    right(c, `Effective rate with the AssetMX fee added: ${pct(eff)} p.a.`, W - M, y - 1, 8.5, true, C.forest);
+    right(c, "Adding the fee to the loan means you pay interest on it.", W - M, y - 12, 7.8, false, C.muted);
+  } else if (eff != null) {
+    right(c, "Fee paid upfront, so no interest is charged on it.", W - M, y - 1, 8.5, false, C.muted);
+    right(c, `(If added to the loan, the effective rate would be ${pct(eff)} p.a.)`, W - M, y - 12, 7.8, false, C.faint);
+  }
+  y -= 24;
+  y = ledger(c, y, "Total interest over the term", aud(q.total_interest));
+  y = ledger(c, y, `Total repayments${balloon > 0 ? " incl. balloon" : ""}`, aud(q.total_repayments));
+  y = ledger(c, y, `Total cost${q.fee_financed ? "" : " incl. AssetMX fee paid upfront"}`, aud(q.total_cost), { bold: true });
+  y -= 8;
+
+  // 4. Fees
+  y = section(c, y, 4, "Fees");
+  const optW = (CW - 22 - 12) / 2;
+  const optH = 50;
+  const opts = [
+    { title: "Pay AssetMX fee upfront", line1: `${aud(fee, 0)} paid at settlement`, monthly: upfrontMonthly, rate: Number(q.rate_pct), chosen: !q.fee_financed },
+    { title: "Add AssetMX fee to the loan", line1: "Nothing to pay upfront", monthly: financedMonthly, rate: eff, chosen: !!q.fee_financed },
+  ];
+  opts.forEach((o, i) => {
+    const x = M + 22 + i * (optW + 12);
+    c.page.drawRectangle({
+      x, y: y - optH + 10, width: optW, height: optH,
+      color: o.chosen ? C.sageLight : C.white,
+      borderColor: o.chosen ? C.forest : C.line,
+      borderWidth: o.chosen ? 1.2 : 0.6,
+    });
+    txt(c, o.title, x + 10, y - 4, 9.5, true);
+    if (o.chosen) right(c, "THIS QUOTE", x + optW - 10, y - 4, 7, true, C.forest);
+    txt(c, o.line1, x + 10, y - 17, 8.3, false, C.muted);
+    txt(c, o.monthly != null ? `${aud(o.monthly)} per month` : "-", x + 10, y - 31, 9.5, true);
+    if (o.rate != null) right(c, `effective rate ${pct(o.rate)} p.a.`, x + optW - 10, y - 31, 8.3, false, C.muted);
+  });
+  y -= optH + 4;
+  for (const l of wrap(
+    `AssetMX fee: ${aud(fee, 0)} flat (incl. GST), only payable if your finance settles. We take no commission from the lender. ` +
+      `Lender establishment fee: ${aud(lenderFee, 0)}, charged by the lender and added to the amount financed.`,
+    reg, 8, CW - 22,
+  )) {
+    txt(c, l, M + 22, y, 8, false, C.muted);
+    y -= 10.5;
+  }
+  if (y < 84) console.warn(`[quote-pdf] page 1 content reaches y=${y.toFixed(0)}, overlapping the disclaimer`);
+
+  // Disclaimer pinned above the footer
+  const disc = wrap(`${DISCLAIMER} Terms of this quote are on page 2.`, reg, 7.2, CW);
+  disc.forEach((l, i) => txt(c, l, M, 48 + (disc.length - 1 - i) * 9, 7.2, false, C.faint));
+
+  // ── Page 2: terms ────────────────────────────────────────────────────────
+  const p2: Ctx = { page: doc.addPage([W, H]), reg, bold };
+  let ty = header(p2, q, "QUOTE TERMS AND CONDITIONS") - 32;
+  txt(p2, "Quote terms and conditions", M, ty, 14, true);
+  ty -= 15;
+  txt(p2, `These terms apply to quote ${q.quote_number}. Version ${QUOTE_TERMS_VERSION}.`, M, ty, 8.3, false, C.muted);
+  ty -= 20;
+
+  let tc = p2;
+  const ensure = (need: number) => {
+    if (ty - need < 56) {
+      tc = { page: doc.addPage([W, H]), reg, bold };
+      ty = header(tc, q, "QUOTE TERMS AND CONDITIONS") - 32;
     }
   };
-
-  const TS = 8.6; // terms font size
-  const TL = 11.4; // terms leading
+  const TS = 8.5;
+  const TL = 11.3;
   quoteTerms(q as never).forEach((clause, i) => {
-    ensure(36);
-    text(page, `${i + 1}. ${clause.heading}`, M, y, 9.5, f.bold);
-    y -= 13;
+    ensure(34);
+    txt(tc, `${i + 1}. ${clause.heading}`, M, ty, 9.5, true);
+    ty -= 13;
     for (const para of clause.paragraphs) {
-      for (const l of wrap(para, f.reg, TS, contentW)) {
+      for (const l of wrap(para, reg, TS, CW)) {
         ensure(TL);
-        text(page, l, M, y, TS, f.reg, C.ink);
-        y -= TL;
+        txt(tc, l, M, ty, TS);
+        ty -= TL;
       }
-      y -= 3;
+      ty -= 3;
     }
-    for (const bullet of clause.bullets ?? []) {
-      wrap(bullet, f.reg, TS, contentW - 14).forEach((l, j) => {
+    for (const b of clause.bullets ?? []) {
+      wrap(b, reg, TS, CW - 14).forEach((l, j) => {
         ensure(TL);
-        if (j === 0) text(page, "-", M + 2, y, TS, f.reg, C.muted);
-        text(page, l, M + 14, y, TS, f.reg, C.ink);
-        y -= TL;
+        if (j === 0) txt(tc, "-", M + 2, ty, TS, false, C.muted);
+        txt(tc, l, M + 14, ty, TS);
+        ty -= TL;
       });
     }
-    y -= 8;
+    ty -= 7;
   });
 
   const pages = doc.getPages();
-  pages.forEach((pg, i) => footer(pg, f, i + 1, pages.length));
-
+  pages.forEach((pg, i) => footer({ page: pg, reg, bold }, i + 1, pages.length));
   return await doc.save();
 }
 

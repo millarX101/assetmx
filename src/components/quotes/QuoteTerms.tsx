@@ -4,7 +4,7 @@
 import { QUOTE_TERMS_VERSION, quoteTerms } from '../../../supabase/functions/_shared/quote-terms';
 import type { PublicQuote } from '@/lib/quotes';
 
-type Props = { quote: Pick<PublicQuote, 'quote_number' | 'valid_until' | 'fee_financed' | 'rate_pct' | 'broker_rate_pct'> };
+type Props = { quote: Pick<PublicQuote, 'quote_number' | 'valid_until' | 'rate_pct' | 'effective_rate_pct'> };
 
 export function QuoteTerms({ quote }: Props) {
   return (
