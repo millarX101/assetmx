@@ -15,8 +15,26 @@ export const ENTITY = {
   ogImage: 'https://assetmx.com.au/og-image.png',
   areaServed: 'Australia',
   governingLaw: 'New South Wales, Australia',
+  /**
+   * Independent public records that confirm this entity exists. These are the
+   * `sameAs` targets a search engine can actually check, which is what turns
+   * "a domain making claims" into "a registered business".
+   */
+  abnLookup: 'https://abr.business.gov.au/ABN/View?abn=15681267818',
   /** GA4 measurement id, shared with the app. Empty string disables the tag. */
   gaId: 'G-NFS486LH5F',
+} as const;
+
+/**
+ * The named human behind the content. Financial advice is YMYL territory, where
+ * search engines weigh identifiable, credentialed authorship heavily - a brand
+ * name alone carries much less than a real person who can be looked up.
+ */
+export const PERSON = {
+  name: 'Ben Millar',
+  jobTitle: 'Founder',
+  /** Personal profile. An AssetMX company page belongs on ENTITY, not here. */
+  linkedIn: 'https://www.linkedin.com/in/ben-millar1/',
 } as const;
 
 /** Fixed positioning. Do not restate these numbers anywhere else. */

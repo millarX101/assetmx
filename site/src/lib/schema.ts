@@ -2,10 +2,26 @@
  * JSON-LD builders. Every builder pulls entity data from ENTITY so the
  * organisation node is identical on every page (@id anchored).
  */
-import { ENTITY, PRICING } from '@/data/entity';
+import { ENTITY, PERSON, PRICING } from '@/data/entity';
 
 export const ORG_ID = `${ENTITY.siteUrl}/#organization`;
 export const SITE_ID = `${ENTITY.siteUrl}/#website`;
+export const PERSON_ID = `${ENTITY.siteUrl}/#founder`;
+
+/**
+ * The named person behind the business. Emitted on every page alongside the
+ * organisation so the two nodes always resolve together.
+ */
+export function person() {
+  return {
+    '@type': 'Person',
+    '@id': PERSON_ID,
+    name: PERSON.name,
+    jobTitle: PERSON.jobTitle,
+    worksFor: { '@id': ORG_ID },
+    sameAs: [PERSON.linkedIn],
+  };
+}
 
 export function organization() {
   return {
@@ -21,6 +37,8 @@ export function organization() {
       { '@type': 'PropertyValue', propertyID: 'ABN', value: ENTITY.abn },
       { '@type': 'PropertyValue', propertyID: 'Australian Credit Licence', value: ENTITY.acl },
     ],
+    sameAs: [ENTITY.abnLookup],
+    founder: { '@id': PERSON_ID },
     areaServed: { '@type': 'Country', name: ENTITY.areaServed },
     address: { '@type': 'PostalAddress', addressCountry: 'AU' },
     priceRange: `${PRICING.platformFeeLabel} flat fee`,

@@ -8,7 +8,7 @@ import Header from '@/components/Header.astro';
 import Footer from '@/components/Footer.astro';
 import JsonLd from '@/components/JsonLd.astro';
 import { ENTITY } from '@/data/entity';
-import { graph, organization, website, webPage } from '@/lib/schema';
+import { graph, organization, person, website, webPage } from '@/lib/schema';
 
 interface Props {
   title: string;
@@ -40,6 +40,7 @@ const canonical = path === '/' ? `${ENTITY.siteUrl}/` : `${ENTITY.siteUrl}${path
 const fullTitle = title.includes('AssetMX') ? title : `${title} | AssetMX`;
 const ld = graph(
   organization(),
+  person(),
   website(),
   webPage({ url: canonical, name: fullTitle, description, type: pageType, dateModified }),
   ...schema,
