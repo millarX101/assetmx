@@ -82,7 +82,8 @@ export interface ChatFlowData {
     reason?: string;  // Why they did not qualify
     consentToShare?: boolean;  // Permission to share with partner brokers
     assetType?: string;  // What type of asset they want
-    loanAmount?: string;  // Rough loan amount range
+    assetDescription?: string;  // Make, model and year as typed
+    assetPrice?: number;  // Price including GST
   };
   // Eligibility tracking.
   // The hook coerces anything written through a step's `field` under `eligibility.` to a
@@ -1366,15 +1367,25 @@ export const CHAT_FLOW: ChatStep[] = [
     inputType: 'select',
     options: ["Vehicle", "Truck/Trailer", "Equipment", "Other"],
     field: 'lead.assetType',
-    nextStep: 'lead_capture_amount',
+    nextStep: 'lead_capture_asset',
   },
 
   {
-    id: 'lead_capture_amount',
-    messages: ["And roughly how much are you looking to borrow?"],
-    inputType: 'select',
-    options: ["Under $30k", "$30k - $75k", "$75k - $150k", "Over $150k"],
-    field: 'lead.loanAmount',
+    id: 'lead_capture_asset',
+    messages: ["What is it? Make, model and year if you know them."],
+    inputType: 'text',
+    field: 'lead.assetDescription',
+    placeholder: "e.g. 2024 Toyota Hilux SR5",
+    nextStep: 'lead_capture_price',
+  },
+
+  {
+    id: 'lead_capture_price',
+    messages: ["And the price including GST?"],
+    inputType: 'number',
+    field: 'lead.assetPrice',
+    placeholder: "e.g. 75000 or 75k",
+    validate: validateAmount,
     nextStep: 'lead_capture_name',
   },
 
@@ -1587,7 +1598,8 @@ const PROGRESS_MAP: Record<string, number> = {
   'submission_complete': 22,
   // Lead capture branch
   'lead_capture_asset_type': 5,
-  'lead_capture_amount': 5,
+  'lead_capture_asset': 5,
+  'lead_capture_price': 5,
   'lead_capture_name': 6,
   'lead_capture_phone': 6,
   'lead_capture_email': 6,

@@ -42,7 +42,7 @@ export function ChatApplication() {
     }
     // Default: document upload step for driver's licence
     return [
-      { id: 'drivers_licence', label: "Driver licence (front)", description: "Clear photo, no glare. I will read your name, date of birth and address." },
+      { id: 'drivers_licence', label: "Driver licence (front)", description: "Clear photo, no glare. I will read your name, date of birth and address. We do not keep the photo.", inline: true },
     ];
   };
 

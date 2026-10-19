@@ -24,10 +24,19 @@ const MAX_BYTES = 20 * 1024 * 1024;
 
 type Kind = 'quote' | 'licence';
 
+interface InlineFile {
+  data: string; // base64, no data: prefix
+  mediaType: string;
+}
+
 interface ExtractRequest {
   kind: Kind;
-  paths: string[]; // storage object paths inside the bucket
+  paths?: string[]; // storage object paths inside the bucket (quotes only)
+  files?: InlineFile[]; // sent in the request and never stored (licences must use this)
 }
+
+// Licences are never stored: the image arrives in the request, is read, and is dropped.
+const MAX_INLINE_B64 = 8 * 1024 * 1024;
 
 const SCHEMAS: Record<Kind, Record<string, unknown>> = {
   quote: {
@@ -44,7 +53,7 @@ const SCHEMAS: Record<Kind, Record<string, unknown>> = {
       priceIncGst: { type: ['number', 'null'], description: 'Total drive-away / invoice total including GST, in AUD' },
       priceExGst: { type: ['number', 'null'] },
       gst: { type: ['number', 'null'] },
-      condition: { type: ['string', 'null'], enum: ['new', 'demo', 'used', null] },
+      condition: { anyOf: [{ type: 'string', enum: ['new', 'demo', 'used'] }, { type: 'null' }] },
       description: { type: ['string', 'null'], description: 'One line: year make model, e.g. "2023 Toyota Hilux SR5"' },
       notes: { type: ['string', 'null'], description: 'Anything a credit assessor should know: accessories, trade-in, deposit already paid, odometer' },
     },
@@ -61,7 +70,7 @@ const SCHEMAS: Record<Kind, Record<string, unknown>> = {
       dateOfBirth: { type: ['string', 'null'], description: 'YYYY-MM-DD' },
       address: { type: ['string', 'null'], description: 'Residential address as printed, one line' },
       licenceNumber: { type: ['string', 'null'] },
-      state: { type: ['string', 'null'], enum: ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT', null] },
+      state: { anyOf: [{ type: 'string', enum: ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'] }, { type: 'null' }] },
       expiry: { type: ['string', 'null'], description: 'YYYY-MM-DD' },
       legible: { type: 'boolean', description: 'false if glare, blur or cropping prevented a confident read of any required field' },
     },
@@ -104,16 +113,40 @@ Deno.serve(async (req) => {
   } catch {
     return json({ error: 'Invalid JSON' }, 400);
   }
-  if (!body || (body.kind !== 'quote' && body.kind !== 'licence') || !Array.isArray(body.paths) || body.paths.length === 0) {
-    return json({ error: 'kind (quote|licence) and paths[] are required' }, 400);
+  if (!body || (body.kind !== 'quote' && body.kind !== 'licence')) {
+    return json({ error: 'kind (quote|licence) is required' }, 400);
+  }
+  const files = Array.isArray(body.files) ? body.files.slice(0, 2) : [];
+  const rawPaths = Array.isArray(body.paths) ? body.paths : [];
+  if (body.kind === 'licence' && rawPaths.length > 0) {
+    return json({ error: 'Licences must be sent inline, not from storage' }, 400);
+  }
+  if (files.length === 0 && rawPaths.length === 0) {
+    return json({ error: 'files[] or paths[] is required' }, 400);
   }
 
   // Only read inside the application-documents bucket; never follow arbitrary URLs.
-  const paths = body.paths.slice(0, 4).map((p) => String(p).replace(/^\/+/, ''));
+  const paths = rawPaths.slice(0, 4).map((p) => String(p).replace(/^\/+/, ''));
   if (paths.some((p) => p.includes('..'))) return json({ error: 'Invalid path' }, 400);
 
-  const supabase = createClient(supabaseUrl, serviceKey);
   const content: Anthropic.ContentBlockParam[] = [];
+
+  let inlineBytes = 0;
+  for (const file of files) {
+    const data = typeof file?.data === 'string' ? file.data : '';
+    const mime = String(file?.mediaType || '');
+    inlineBytes += data.length;
+    if (!data || inlineBytes > MAX_INLINE_B64) return json({ error: 'File missing or too large' }, 413);
+    if (mime === 'application/pdf') {
+      content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } });
+    } else if (IMAGE_TYPES.has(mime)) {
+      content.push({ type: 'image', source: { type: 'base64', media_type: mime as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif', data } });
+    } else {
+      return json({ error: `Unsupported file type ${mime}` }, 415);
+    }
+  }
+
+  const supabase = createClient(supabaseUrl, serviceKey);
 
   for (const path of paths) {
     const { data, error } = await supabase.storage.from(BUCKET).download(path);

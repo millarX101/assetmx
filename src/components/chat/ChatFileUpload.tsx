@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Camera, Upload, Image, FileText, CheckCircle, Loader2, X, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { fileToInlineDocument, stashInlineDocument } from '@/lib/doc-extract';
 
 interface UploadedFile {
   id: string;
@@ -14,7 +15,8 @@ interface UploadedFile {
 
 interface ChatFileUploadProps {
   applicationId?: string;
-  requiredDocs: { id: string; label: string; description?: string }[];
+  // inline: never uploaded - held in memory and sent straight to the reader (driver licences)
+  requiredDocs: { id: string; label: string; description?: string; inline?: boolean }[];
   onComplete: (files: UploadedFile[]) => void;
   onSkip?: () => void;
   disabled?: boolean;
@@ -53,7 +55,13 @@ export function ChatFileUpload({
     setUploading(docId);
 
     try {
-      if (!isSupabaseConfigured()) {
+      if (requiredDocs.find(d => d.id === docId)?.inline) {
+        // Not stored anywhere: kept in memory until the reader takes it
+        const doc = await fileToInlineDocument(file);
+        const id = `${docId}-inline-${Date.now()}`;
+        stashInlineDocument(id, doc);
+        setUploadedFiles(prev => ({ ...prev, [docId]: { id, name: file.name, type: doc.mediaType, url: '', uploadedAt: new Date() } }));
+      } else if (!isSupabaseConfigured()) {
         // Simulate upload for development
         await new Promise(resolve => setTimeout(resolve, 1500));
         const fakeUrl = URL.createObjectURL(file);

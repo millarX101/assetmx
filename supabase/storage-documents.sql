@@ -31,14 +31,9 @@ USING (
   AND auth.uid() IN (SELECT id FROM admin_users)
 );
 
--- Allow uploaders to view their own documents (within same session)
-CREATE POLICY "Uploaders can view own documents"
-ON storage.objects
-FOR SELECT
-USING (
-  bucket_id = 'application-documents'
-  AND (storage.foldername(name))[1] = 'temp'
-);
+-- No public read. "Uploaders can view own documents" (anyone could read temp/*)
+-- was dropped on prod 2026-10-19; the doc-extract function reads with the service role.
+DROP POLICY IF EXISTS "Uploaders can view own documents" ON storage.objects;
 
 -- Prevent public deletion
 CREATE POLICY "Only admins can delete documents"

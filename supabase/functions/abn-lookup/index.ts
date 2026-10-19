@@ -63,13 +63,16 @@ function parseABRResponse(xml: string): ABNLookupResult | null {
 
     const abn = abnMatch[1];
 
-    // Extract ABN status
-    const abnStatusMatch = xml.match(/<identifierStatus>([^<]+)<\/identifierStatus>/);
-    const abnStatus = abnStatusMatch ? abnStatusMatch[1] : 'Unknown';
+    // Extract ABN status - ABR sends <entityStatus><entityStatusCode>Active</entityStatusCode>...
+    const entityStatusMatch = xml.match(/<entityStatus>(.*?)<\/entityStatus>/s);
+    const abnStatusMatch = entityStatusMatch?.[1].match(/<entityStatusCode>([^<]+)<\/entityStatusCode>/) ||
+                           xml.match(/<identifierStatus>([^<]+)<\/identifierStatus>/);
+    const abnStatus = abnStatusMatch ? abnStatusMatch[1].trim() : 'Unknown';
 
     // Extract status from date (this is usually the ABN registration effective date)
     // ABR API can return dates in various field names - try all known patterns
-    const statusFromDateMatch = xml.match(/<identifierStatusFromDate>([^<]+)<\/identifierStatusFromDate>/);
+    const statusFromDateMatch = entityStatusMatch?.[1].match(/<effectiveFrom>([^<]+)<\/effectiveFrom>/) ||
+                                xml.match(/<identifierStatusFromDate>([^<]+)<\/identifierStatusFromDate>/);
     const abnStatusEffectiveFromMatch = xml.match(/<ABNStatusEffectiveFrom>([^<]+)<\/ABNStatusEffectiveFrom>/i);
     const effectiveFromMatch = xml.match(/<effectiveFrom>([^<]+)<\/effectiveFrom>/);
     const effectiveFromDateMatch = xml.match(/<effectiveFromDate>([^<]+)<\/effectiveFromDate>/);
@@ -109,7 +112,8 @@ function parseABRResponse(xml: string): ABNLookupResult | null {
     }
 
     // Extract entity type
-    const entityTypeMatch = xml.match(/<entityTypeText>([^<]+)<\/entityTypeText>/);
+    const entityTypeMatch = xml.match(/<entityType>.*?<entityDescription>([^<]+)<\/entityDescription>.*?<\/entityType>/s) ||
+                            xml.match(/<entityTypeText>([^<]+)<\/entityTypeText>/);
     const entityType = entityTypeMatch ? entityTypeMatch[1] : 'Unknown';
 
     const entityTypeCodeMatch = xml.match(/<entityTypeCode>([^<]+)<\/entityTypeCode>/);

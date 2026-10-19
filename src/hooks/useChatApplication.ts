@@ -11,7 +11,7 @@ import {
 import { lookupABN, cleanABN, searchABNByName } from '@/lib/abn-lookup';
 import { calculateQuote, getMaxBalloon } from '@/lib/calculator';
 import { assist } from '@/hooks/useChatAI';
-import { extractDocument } from '@/lib/doc-extract';
+import { extractDocument, extractInlineDocument, takeInlineDocuments } from '@/lib/doc-extract';
 import type { ApplicationData, AssetType, AssetCondition } from '@/types/application';
 import { createEmptyApplication } from '@/types/application';
 import { supabase, isSupabaseConfigured, getSupabaseUrl, getSupabaseAnonKey } from '@/lib/supabase';
@@ -527,7 +527,8 @@ export function useChatApplication() {
       case 'extract_licence': {
         const licenceDocs = (flowData.uploadedDocuments || []).filter(d => /licence|license/i.test(d.id));
         if (licenceDocs.length > 0) {
-          const res = await extractDocument('licence', licenceDocs.map(d => d.id));
+          // The photo was never uploaded; this sends it and drops the in-memory copy
+          const res = await extractInlineDocument('licence', takeInlineDocuments(licenceDocs.map(d => d.id)));
           const f = res?.fields as Record<string, unknown> | undefined;
           if (f && f.found) {
             updatedData.extracted = {
@@ -649,14 +650,10 @@ export function useChatApplication() {
         const abnLookup = flowData.abnLookup;
         const business = flowData.application.business;
 
-        // Map loan amount range to a numeric value (midpoint)
-        const loanAmountMap: Record<string, number> = {
-          'Under $30k': 20000,
-          '$30k - $75k': 50000,
-          '$75k - $150k': 100000,
-          'Over $150k': 200000,
-        };
-        const loanAmount = lead?.loanAmount ? (loanAmountMap[lead.loanAmount] || 0) : 0;
+        const loanAmount = Number(lead?.assetPrice) || 0;
+        // "Vehicle - 2024 Toyota Hilux SR5"
+        const assetType = [lead?.assetType || flowData.application.asset?.assetType, lead?.assetDescription]
+          .filter(Boolean).join(' - ');
 
         try {
           const { error: insertError } = await supabase.from('leads').insert({
@@ -665,7 +662,7 @@ export function useChatApplication() {
             phone: lead?.phone || '',
             business_name: abnLookup?.entityName || business?.entityName || business?.businessName || '',
             abn: business?.abn || '',
-            asset_type: lead?.assetType || flowData.application.asset?.assetType || '',
+            asset_type: assetType,
             loan_amount: loanAmount,
             reason: lead?.reason || 'Did not qualify via chat',
             source: 'chat_application',
@@ -696,7 +693,7 @@ export function useChatApplication() {
                   phone: lead?.phone || '',
                   businessName: abnLookup?.entityName || business?.entityName || business?.businessName || '',
                   abn: business?.abn || '',
-                  assetType: lead?.assetType || '',
+                  assetType,
                   loanAmount: loanAmount,
                   reason: lead?.reason || 'Did not qualify via chat',
                   consentToShare: lead?.consentToShare ?? false,
@@ -853,7 +850,11 @@ export function useChatApplication() {
         const abnLookup = flowData.abnLookup;
 
         try {
-          const { data: inserted, error: insertError } = await supabase.from('applications').insert({
+          // The id is made here because anonymous visitors may insert but not read
+          // applications back, so .select('id') after the insert fails with a 401.
+          const applicationId = crypto.randomUUID();
+          const { error: insertError } = await supabase.from('applications').insert({
+            id: applicationId,
             // Business details
             abn: business?.abn || '',
             abn_status: abnLookup?.abnStatus || 'Active',
@@ -962,13 +963,12 @@ export function useChatApplication() {
             // Status
             status: 'submitted',
             step_completed: 5,
-          } as never).select('id').single();
+          } as never);
 
-          if (insertError || !inserted) {
+          if (insertError) {
             console.error('Failed to submit application:', insertError);
             updatedData.submissionError = insertError?.message || 'Could not save the application.';
           } else {
-            const applicationId = (inserted as { id: string }).id;
             updatedData.submittedApplicationId = applicationId;
             console.log('Application submitted successfully', applicationId);
             // Clear saved progress after successful submission
