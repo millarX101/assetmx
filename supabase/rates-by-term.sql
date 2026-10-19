@@ -12,8 +12,11 @@
 -- The old per-asset rows (term_months null) are left alone. Nothing reads
 -- them: the calculators and quote engine only use rows with a term_months.
 
--- 1. One row per term (NULLs stay distinct, so the old rows are unaffected)
-create unique index if not exists rate_config_term_months_key
+-- 1. One row per term (NULLs stay distinct, so the old rows are unaffected).
+-- Must NOT be partial: an earlier "... WHERE term_months IS NOT NULL" index of
+-- the same name can't back ON CONFLICT (term_months), so it is replaced.
+drop index if exists public.rate_config_term_months_key;
+create unique index rate_config_term_months_key
   on public.rate_config (term_months);
 
 -- 2. Drop the per-asset unique constraint, whatever Postgres named it
