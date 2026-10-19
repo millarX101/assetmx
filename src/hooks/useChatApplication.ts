@@ -8,7 +8,7 @@ import {
   type ChatStep,
   type ChatFlowData,
 } from '@/lib/chat-flow';
-import { lookupABN, cleanABN, searchABNByName } from '@/lib/abn-lookup';
+import { lookupABN, cleanABN, searchABNByName, warmAbnFunctions } from '@/lib/abn-lookup';
 import { calculateQuote, getMaxBalloon } from '@/lib/calculator';
 import { assist } from '@/hooks/useChatAI';
 import { extractDocument, extractInlineDocument, takeInlineDocuments } from '@/lib/doc-extract';
@@ -37,7 +37,10 @@ export interface ChatState {
 // Actions executed before their step's messages render, so the copy can report the result
 const PRE_RENDER_ACTIONS: string[] = ['calculate_quote', 'submit_application', 'extract_asset', 'extract_licence', 'email_quote'];
 
-const TYPING_DELAY = 800; // ms between bot messages
+// Typing pause before each bot message: enough to read as a conversation, short
+// enough not to slow the application down (was 800ms for every message).
+const TYPING_DELAY = 350; // first message of a step, and validation replies
+const FOLLOW_UP_DELAY = 200; // each further message in the same step
 const STORAGE_KEY = 'assetmx_chat_progress';
 const CALCULATOR_TO_CHAT_KEY = 'assetmx_calculator_quote';
 // Step the chat should open on when the public site handed over an ABN.
@@ -1069,7 +1072,7 @@ export function useChatApplication() {
     debugLog('STEP', `Messages to display: ${messages.length}`, messages);
 
     // Display messages with typing delay
-    for (const message of messages) {
+    for (const [i, message] of messages.entries()) {
       if (message === '📋 SUMMARY_CARD') {
         // Special case - summary card will be handled separately
         addBotMessage(message);
@@ -1077,7 +1080,7 @@ export function useChatApplication() {
       }
 
       showTyping(true);
-      await new Promise(resolve => setTimeout(resolve, TYPING_DELAY));
+      await new Promise(resolve => setTimeout(resolve, i === 0 ? TYPING_DELAY : FOLLOW_UP_DELAY));
       showTyping(false);
       addBotMessage(message);
     }
@@ -1377,6 +1380,7 @@ export function useChatApplication() {
   // Start or resume the chat
   const startChat = useCallback(async () => {
     debugLog('INIT', 'Starting chat...');
+    warmAbnFunctions();
     const saved = loadSavedState();
 
     if (saved && saved.currentStepId && !saved.currentStepId.startsWith('end_')) {

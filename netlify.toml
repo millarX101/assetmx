@@ -2,8 +2,10 @@
 # https://docs.netlify.com/configure-builds/file-based-configuration/
 # Domain: assetmx.com.au
 
+# Two Netlify sites build from this repo. The admin site sets APP_TARGET=admin
+# (build:netlify then builds admin.html into dist/, with its own _redirects).
 [build]
-  command = "npm run build"
+  command = "npm run build:netlify"
   publish = "dist"
 
 [build.environment]
@@ -174,7 +176,7 @@
 
 # Branch deploys
 [context.deploy-preview]
-  command = "npm run build"
+  command = "npm run build:netlify"
 
 [context.branch-deploy]
-  command = "npm run build"
+  command = "npm run build:netlify"

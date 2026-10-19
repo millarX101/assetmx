@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:admin": "vite --config vite.admin.config.ts",
+    "build:admin": "tsc -b && vite build --config vite.admin.config.ts",
+    "build:netlify": "if [ \"$APP_TARGET\" = \"admin\" ]; then tsc -b && vite build --config vite.admin.config.ts --outDir dist; else npm run build; fi"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

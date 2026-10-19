@@ -341,3 +341,13 @@ function getMockSearchResults(name: string, maxResults: number): ABNSearchResult
 
   return results;
 }
+
+/**
+ * Starts the ABN functions while the chat greeting is showing, so the first real
+ * search/lookup doesn't wait ~1s for a cold start. Empty input returns 400 at
+ * once without calling the ABR.
+ */
+export function warmAbnFunctions() {
+  void callEdgeFunction('abn-search', {});
+  void callEdgeFunction('abn-lookup', {});
+}
