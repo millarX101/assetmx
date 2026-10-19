@@ -50,13 +50,16 @@ export const useAuthStore = create<AuthState>()(
           }
 
           // Listen for auth changes
-          supabase.auth.onAuthStateChange(async (_event, session) => {
+          // Never await a Supabase call inside this callback: supabase-js runs it while
+          // holding its auth lock, so a query here waits on signInWithPassword, which is
+          // waiting on this callback - the login button then spins forever. Defer it.
+          supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
-              const isAdmin = await get().checkAdminStatus(session.user.id);
-              set({
-                user: session.user,
-                isAdmin
-              });
+              const user = session.user;
+              setTimeout(async () => {
+                const isAdmin = await get().checkAdminStatus(user.id);
+                set({ user, isAdmin });
+              }, 0);
             } else {
               set({
                 user: null,
