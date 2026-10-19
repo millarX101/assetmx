@@ -16,6 +16,8 @@ interface AuthState {
   signInWithEmail: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithMagicLink: (email: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
+  sendPasswordReset: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   checkAdminStatus: (userId: string) => Promise<boolean>;
 }
@@ -126,6 +128,22 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           return { error: 'An unexpected error occurred' };
         }
+      },
+
+      // Emails a reset link that opens /admin/reset-password on this site. The site
+      // must be in Supabase Auth > URL Configuration > Redirect URLs.
+      sendPasswordReset: async (email: string) => {
+        if (!isSupabaseConfigured()) return { error: 'Supabase not configured' };
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/admin/reset-password`,
+        });
+        return { error: error ? error.message : null };
+      },
+
+      // Sets a new password for the signed-in user (the reset link signs them in)
+      updatePassword: async (password: string) => {
+        const { error } = await supabase.auth.updateUser({ password });
+        return { error: error ? error.message : null };
       },
 
       signInWithGoogle: async () => {

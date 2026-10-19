@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AdminLogin } from '@/pages/admin/Login';
 import { AdminLayout } from '@/pages/admin/AdminLayout';
+import { AdminResetPassword } from '@/pages/admin/ResetPassword';
 import { useAuthStore } from '@/stores/authStore';
 
 // Admin app, served on its own site (admin.html). Paths keep the /admin prefix so
@@ -44,6 +45,7 @@ export function AdminApp() {
       <Suspense fallback={<Spinner />}>
         <Routes>
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/reset-password" element={<AdminResetPassword />} />
           <Route
             path="/admin"
             element={

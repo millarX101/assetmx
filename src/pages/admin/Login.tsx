@@ -10,12 +10,13 @@ import { Mail, CheckCircle, Loader2, Lock } from 'lucide-react';
 
 export function AdminLogin() {
   const navigate = useNavigate();
-  const { signInWithMagicLink, signInWithEmail, user, isAdmin, isLoading: authLoading, checkAdminStatus } = useAuthStore();
+  const { signInWithMagicLink, signInWithEmail, sendPasswordReset, user, isAdmin, isLoading: authLoading, checkAdminStatus } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [loginMethod, setLoginMethod] = useState<'password' | 'magic'>('password');
 
@@ -101,6 +102,19 @@ export function AdminLogin() {
     setIsLoading(false);
   };
 
+  const handleForgotPassword = async () => {
+    setError('');
+    if (!email.trim()) {
+      setError('Enter your email address first, then tap Forgot password.');
+      return;
+    }
+    setIsLoading(true);
+    const result = await sendPasswordReset(email.trim());
+    setIsLoading(false);
+    if (result.error) setError(result.error);
+    else setResetSent(true);
+  };
+
   const handleMagicLinkLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -137,6 +151,12 @@ export function AdminLogin() {
                 Copy <code className="bg-yellow-100 px-1 rounded">.env.local.example</code> to{' '}
                 <code className="bg-yellow-100 px-1 rounded">.env.local</code> and add your Supabase credentials.
               </p>
+            </div>
+          )}
+
+          {resetSent && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
+              If <strong>{email}</strong> has an admin account, a reset link is on its way. Open it on this device to set a new password.
             </div>
           )}
 
@@ -213,7 +233,12 @@ export function AdminLogin() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password">Password</Label>
+                      <button type="button" onClick={handleForgotPassword} className="text-xs text-slate-600 underline hover:text-slate-900" disabled={!configured || isLoading}>
+                        Forgot password?
+                      </button>
+                    </div>
                     <Input
                       id="password"
                       type="password"
