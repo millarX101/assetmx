@@ -8,6 +8,7 @@ export interface QuoteInput {
   termMonths: number;
   balloonPercentage: number;
   financePlatformFee?: boolean; // true = finance $800 into loan (default), false = pay upfront
+  rateOverride?: number; // admin quote builder: a lender-specific rate instead of the term table
 }
 
 export interface QuoteOutput {
@@ -221,7 +222,7 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
 
   // Get base rate based on term length
   // 1 year: 8.49%, 2 years: 7.49%, 3-5 years: 6.89%
-  const indicativeRate = getBaseRate(input.termMonths);
+  const indicativeRate = input.rateOverride ?? getBaseRate(input.termMonths);
 
   // Balloon is calculated on the ASSET VALUE (loan amount), not financed amount
   const balloonAmount = input.loanAmount * (input.balloonPercentage / 100);

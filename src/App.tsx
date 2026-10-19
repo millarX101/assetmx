@@ -20,6 +20,11 @@ import { AdminLayout } from '@/pages/admin/AdminLayout';
 import { AdminDashboard } from '@/pages/admin/Dashboard';
 import { AdminApplications } from '@/pages/admin/Applications';
 import { AdminLeads } from '@/pages/admin/Leads';
+import { LeadDetail } from '@/pages/admin/LeadDetail';
+import { AdminQuotes } from '@/pages/admin/Quotes';
+import { QuoteBuilder } from '@/pages/admin/QuoteBuilder';
+import { QuoteDetail } from '@/pages/admin/QuoteDetail';
+import { QuoteView } from '@/pages/QuoteView';
 import { AdminRates } from '@/pages/admin/Rates';
 import { AdminAnalytics } from '@/pages/admin/Analytics';
 import { useAuthStore } from '@/stores/authStore';
@@ -57,6 +62,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/apply" element={<Application />} />
         <Route path="/chat-apply" element={<ChatApply />} />
+        <Route path="/q/:token" element={<QuoteView />} />
 
         {/* Legal pages */}
         <Route path="/terms" element={<Terms />} />
@@ -91,6 +97,10 @@ function App() {
           <Route path="applications" element={<AdminApplications />} />
           <Route path="applications/:id" element={<AdminApplications />} />
           <Route path="leads" element={<AdminLeads />} />
+          <Route path="leads/:id" element={<LeadDetail />} />
+          <Route path="quotes" element={<AdminQuotes />} />
+          <Route path="quotes/new" element={<QuoteBuilder />} />
+          <Route path="quotes/:id" element={<QuoteDetail />} />
           <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="rates" element={<AdminRates />} />
         </Route>

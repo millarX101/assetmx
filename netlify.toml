@@ -138,6 +138,14 @@
     # Content Security Policy - adjust as needed
     # Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co"
 
+# Customer quote links are private (the token is the credential): keep them out
+# of search indexes and don't leak the token to third parties via Referer.
+[[headers]]
+  for = "/q/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "no-referrer"
+
 # Cache static assets aggressively
 [[headers]]
   for = "/assets/*"
