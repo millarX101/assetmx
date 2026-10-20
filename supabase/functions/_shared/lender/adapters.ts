@@ -1,0 +1,116 @@
+// Lender adapters: each turns the AssetMX standard application (./canonical.ts) into
+// one lender's format, and optionally sends it to that lender's API.
+//
+// To add a lender:
+//   1. Write an adapter below: `map` builds the lender's payload from the canonical
+//      application; `submit` (optional) POSTs it and returns the lender's reply.
+//   2. Add it to ADAPTERS. Credentials go in Supabase secrets, read inside `submit`.
+//   3. Nothing else changes: lender-export, the audit table and the admin button pick it up.
+
+import type { CanonicalApplication } from "./canonical.ts";
+
+export interface SubmitResult {
+  ok: boolean;
+  externalRef?: string | null; // the lender's application number
+  response: unknown; // stored as-is in lender_submissions.response
+}
+
+export interface LenderAdapter {
+  id: string;
+  name: string;
+  description: string;
+  map(app: CanonicalApplication): unknown;
+  submit?(payload: unknown): Promise<SubmitResult>;
+}
+
+// ── AssetMX standard ─────────────────────────────────────────────────────────
+// The canonical application itself, minus internal-only notes. The format to give a
+// lender that wants to build their own mapping.
+const canonical: LenderAdapter = {
+  id: "canonical",
+  name: "AssetMX standard (JSON)",
+  description: "Lender-neutral application in the AssetMX v1 schema.",
+  map: (app) => ({ ...app, businessCheck: { ...app.businessCheck, lenderNotes: undefined } }),
+};
+
+// ── Westpac Equipment Finance ────────────────────────────────────────────────
+// No public API: DriveOnline is keyed in by the broker. This lays the application
+// out in the order of Westpac's "Minimum Documentation Requirements" (items required
+// for all applications incl. DriveXpress / Matrix), with a check per item, so it can
+// be keyed in now and mapped to an API field-for-field later.
+const westpac: LenderAdapter = {
+  id: "westpac",
+  name: "Westpac Equipment Finance",
+  description: "Westpac minimum documentation layout (DriveOnline). Manual entry; no API yet.",
+  map: (app) => {
+    const primary = app.individuals.find((i) => i.isPrimaryContact) ?? app.individuals[0];
+    const everyoneConsented = app.individuals.length > 0 && app.individuals.every((i) => i.privacyConsent.given);
+    return {
+      lender: "westpac",
+      channel: "DriveOnline (manual entry)",
+      reference: app.reference,
+      submittedAt: app.submittedAt,
+      introducer: app.broker,
+      minimumDocumentation: {
+        clientInformation: {
+          satisfied: !!(primary?.detailsComplete && app.borrower.description),
+          business: {
+            legalName: app.borrower.legalName,
+            abn: app.borrower.abn,
+            acn: app.borrower.acn,
+            entityType: app.borrower.entityType,
+            tradingNames: app.borrower.tradingNames,
+            address: app.borrower.address,
+            industry: app.borrower.industry,
+            background: app.borrower.description,
+            backgroundSource: app.borrower.descriptionSource,
+            website: app.borrower.website,
+          },
+          directorsGuarantors: app.individuals.map((i) => ({
+            name: [i.firstName, i.lastName].filter(Boolean).join(" ") || null,
+            dateOfBirth: i.dateOfBirth,
+            residentialAddress: i.residentialAddress,
+            monthsAtAddress: i.monthsAtAddress,
+            previousAddress: i.previousAddress,
+            driverLicence: i.driverLicence,
+            mobile: i.mobile,
+            email: i.email,
+            detailsComplete: i.detailsComplete,
+          })),
+        },
+        goodsAndPurpose: {
+          satisfied: !!(app.goods.description && app.goods.purposeOfPurchase),
+          description: app.goods.description,
+          condition: app.goods.condition,
+          supplier: app.goods.supplier,
+          priceExGst: app.goods.priceExGst,
+          gst: app.goods.gst,
+          priceIncGst: app.goods.priceIncGst,
+          reasonForPurchase: app.goods.purposeOfPurchase,
+        },
+        abnAndGst: {
+          satisfied: (app.borrower.abnAgeMonths ?? 0) >= 24 && app.borrower.gstRegistered,
+          abnRegisteredDate: app.borrower.abnRegisteredDate,
+          abnAgeMonths: app.borrower.abnAgeMonths,
+          abnStatus: app.borrower.abnStatus,
+          gstRegistered: app.borrower.gstRegistered,
+          gstRegisteredDate: app.borrower.gstRegisteredDate,
+        },
+        privacyConsent: {
+          satisfied: everyoneConsented,
+          individuals: app.individuals.map((i) => ({
+            name: [i.firstName, i.lastName].filter(Boolean).join(" ") || i.email,
+            ...i.privacyConsent,
+          })),
+        },
+      },
+      finance: app.finance,
+      declarations: app.declarations,
+    };
+  },
+};
+
+export const ADAPTERS: Record<string, LenderAdapter> = { canonical, westpac };
+
+export const listAdapters = () =>
+  Object.values(ADAPTERS).map((a) => ({ id: a.id, name: a.name, description: a.description, canSubmit: !!a.submit }));
