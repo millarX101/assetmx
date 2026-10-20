@@ -14,8 +14,7 @@ export const RATES = {
     { termMonths: 48, ratePct: 7.98 },
     { termMonths: 60, ratePct: 8.06 },
   ],
-  // ATO residual guidelines, rounded down (mirrors the app's MAX_BALLOON_BY_TERM)
-  maxBalloonByTerm: { 12: 65, 24: 56, 36: 46, 48: 37, 60: 28, 72: 28, 84: 28 } as Record<number, number>,
+  maxBalloonByTerm: { 12: 65, 24: 60, 36: 50, 48: 40, 60: 30, 72: 30, 84: 30 } as Record<number, number>,
 } as const;
 
 /** EV and plug-in hybrid offer. Mirrors EV_DISCOUNT_* in src/lib/calculator.ts. */
@@ -35,5 +34,5 @@ export function rateForTerm(termMonths: number): number {
 
 export function maxBalloon(termMonths: number): number {
   const key = Math.ceil(termMonths / 12) * 12;
-  return RATES.maxBalloonByTerm[key] ?? 28;
+  return RATES.maxBalloonByTerm[key] ?? 30;
 }

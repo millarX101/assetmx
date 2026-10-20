@@ -119,7 +119,38 @@ const westpac: LenderAdapter = {
   },
 };
 
-export const ADAPTERS: Record<string, LenderAdapter> = { canonical, westpac };
+// ── Metro Finance ────────────────────────────────────────────────────────────
+// Streamlined products (Passenger Vehicle, Trucks/Trailers/Wheeled, Agri). Manual
+// submission; no API yet. Lays out what Metro's streamlined criteria turn on.
+const metro: LenderAdapter = {
+  id: "metro",
+  name: "Metro Finance",
+  description: "Metro streamlined layout: property position, credit reference, deposit. Manual; no API yet.",
+  map: (app) => ({
+    lender: "metro",
+    channel: "Broker submission (manual)",
+    reference: app.reference,
+    submittedAt: app.submittedAt,
+    introducer: app.broker,
+    streamlined: {
+      product: app.goods.category === "agri" ? "Agri" : app.goods.assetType === "vehicle" ? "Passenger Vehicle (<3.5t)" : "Trucks, Trailers & Wheeled Equipment",
+      propertyOwnership: app.route.propertyStatus, // own = borrower/guarantor name
+      comparableCreditReference: app.route.creditReference, // asset_finance, or mortgage statements (<= $100k)
+      gstRegisteredDate: app.borrower.gstRegisteredDate,
+      depositPercent: app.goods.priceIncGst ? Math.round(((app.finance.deposit + app.finance.tradeIn) / app.goods.priceIncGst) * 1000) / 10 : null,
+      assetAgeYears: app.goods.year ? new Date().getFullYear() - app.goods.year : null,
+      taxiRideshare: app.route.taxiRideshare,
+      whyNotDriveXpress: app.route.driveXpressMiss,
+    },
+    borrower: { ...app.borrower },
+    individuals: app.individuals,
+    goods: app.goods,
+    finance: app.finance,
+    declarations: app.declarations,
+  }),
+};
+
+export const ADAPTERS: Record<string, LenderAdapter> = { canonical, westpac, metro };
 
 export const listAdapters = () =>
   Object.values(ADAPTERS).map((a) => ({ id: a.id, name: a.name, description: a.description, canSubmit: !!a.submit }));

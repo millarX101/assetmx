@@ -8,7 +8,8 @@
 
 import { validateABN, cleanABN, type ABNSearchResult } from './abn-lookup';
 import type { BusinessProfile } from './business-profile';
-import { assetPolicyIssue, maxDriveXpressLoan } from './drivexpress';
+import { assetPolicyIssue, maxDriveXpressLoan, goodsClass } from './drivexpress';
+import { isMetroTrack, maxMetroLoan, metroIssue, metroRouteSummary, propertyStatus, METRO } from './metro';
 import { getMaxBalloon, PLATFORM_FEE, LENDER_ESTABLISHMENT_FEE, EV_DISCOUNT_PCT, evDiscountActive, evDiscountFor } from './calculator';
 import type { ApplicationData } from '@/types/application';
 
@@ -98,7 +99,12 @@ export interface ChatFlowData {
     canDeposit20?: boolean; // legacy: the 20% deposit path was replaced by DriveXpress rules
     existingWestpacCustomer?: boolean;
     taxUpToDate?: boolean;
-    restrictedUse?: boolean; // taxi, rideshare, hire or private import
+    restrictedUse?: boolean; // hire car or private import (neither lender)
+    taxiRideshare?: boolean; // Metro only, property-backed
+    propertyStatus?: 'own' | 'spouse' | 'none';
+    lenderTrack?: 'drivexpress' | 'metro';
+    driveXpressMiss?: string; // why it isn't DriveXpress, when routed to Metro
+    creditReference?: 'asset_finance' | 'mortgage'; // Metro's comparable credit reference
     creditDeclaration?: 'clear' | 'declare';
     creditDetails?: string;
   };
@@ -668,16 +674,22 @@ export const CHAT_FLOW: ChatStep[] = [
   },
 
   {
+    // One question that tells the two lenders apart: "Yes, both" fits Westpac DriveXpress;
+    // the others may still fit Metro (checked once the asset is known, policy_asset_check).
     id: 'eligibility_property',
-    messages: ["Do you, or another director, own a home or other residential property in your own name, and earn at least $75,000 a year?"],
+    messages: ["Do you, or another director, own a home or other residential property, and earn at least $75,000 a year?"],
     inputType: 'select',
-    options: ["Yes, both", "No"],
-    field: 'eligibility.ownsProperty',
+    options: ["Yes, both", "Property, but income under $75k", "Property in my spouse's name", "No property"],
     nextStep: (answer, data) => {
-      if (answer.toLowerCase().startsWith('no')) {
-        return outsidePolicy(data, 'The fast-track lender needs new customers to own residential property and earn at least $75,000 a year.', 'New to Westpac: no residential property and/or income under $75k');
+      const a = answer.toLowerCase();
+      const status = a.startsWith('yes') || a.includes('under') ? 'own' : a.includes('spouse') ? 'spouse' : 'none';
+      setEligibility(data, { propertyStatus: status, ownsProperty: status === 'own', incomeOver75k: a.startsWith('yes') });
+      if (!a.startsWith('yes')) {
+        setEligibility(data, {
+          lenderTrack: 'metro',
+          driveXpressMiss: 'New to Westpac without property in their own name plus $75k+ income',
+        });
       }
-      data.eligibility = { ...(data.eligibility || {}), incomeOver75k: true } as ChatFlowData['eligibility'];
       return 'eligibility_tax';
     },
   },
@@ -958,27 +970,100 @@ export const CHAT_FLOW: ChatStep[] = [
     skipIf: (data) => data.application.asset?.assetType !== 'vehicle',
     messages: ["Will it be used as a taxi, rideshare or hire car, or is it a private import?"],
     inputType: 'select',
-    options: ["No", "Yes"],
+    options: ["No", "Taxi or rideshare", "Hire car or private import"],
     nextStep: (answer, data) => {
-      if (answer.toLowerCase().startsWith('yes')) {
-        data.eligibility = { ...(data.eligibility || {}), restrictedUse: true } as ChatFlowData['eligibility'];
-        return outsidePolicy(data, 'The fast-track lender does not fund taxis, rideshare or hire cars, or private imports.', 'Car for taxi/rideshare/hire use or a private import');
+      const a = answer.toLowerCase();
+      if (a.includes('hire') || a.includes('import')) {
+        setEligibility(data, { restrictedUse: true });
+        return outsidePolicy(data, 'Our lenders do not fund hire cars or private imports online.', 'Car for hire use or a private import');
+      }
+      if (a.includes('taxi') || a.includes('rideshare')) {
+        // DriveXpress excludes taxis; Metro takes them when property-backed
+        setEligibility(data, { taxiRideshare: true, lenderTrack: 'metro', driveXpressMiss: 'Taxi or rideshare use' });
       }
       return 'policy_asset_check';
     },
   },
 
   {
-    // Router, never shown: checks the asset against DriveXpress (age, dealer-only, car
-    // price) however its details arrived (quote upload, description or questions).
+    // Router, never shown. Runs however the asset details arrived (quote upload,
+    // description or questions): Westpac DriveXpress first, then Metro Finance.
     id: 'policy_asset_check',
     skipIf: () => true,
     messages: [],
     inputType: 'confirm',
     nextStep: (_answer, data) => {
-      const issue = assetPolicyIssue(data);
-      return issue ? outsidePolicy(data, issue, `Asset outside DriveXpress: ${issue}`) : 'show_estimate';
+      if (!isMetroTrack(data)) {
+        const dxIssue = assetPolicyIssue(data);
+        if (!dxIssue) {
+          setEligibility(data, { lenderTrack: 'drivexpress' });
+          return 'show_estimate';
+        }
+        setEligibility(data, { lenderTrack: 'metro', driveXpressMiss: dxIssue });
+      }
+      // Metro needs the property position; existing Westpac customers weren't asked
+      if (!propertyStatus(data)) return 'metro_property';
+      const issue = metroIssue(data);
+      if (issue) {
+        const dx = data.eligibility?.driveXpressMiss;
+        return outsidePolicy(data, [dx && dx.endsWith('.') ? dx : '', issue].filter(Boolean).join(' '), `Outside DriveXpress (${dx}) and Metro: ${issue}`);
+      }
+      return 'metro_credit_ref';
     },
+  },
+
+  {
+    id: 'metro_property',
+    messages: ["Do you, or another director, own a home or other residential property?"],
+    inputType: 'select',
+    options: ["Yes, in my name", "In my spouse's name", "No"],
+    nextStep: (answer, data) => {
+      const a = answer.toLowerCase();
+      const status = a.startsWith('yes') ? 'own' : a.includes('spouse') ? 'spouse' : 'none';
+      setEligibility(data, { propertyStatus: status, ownsProperty: status === 'own' });
+      return 'policy_asset_check';
+    },
+  },
+
+  {
+    // Metro always needs a comparable credit reference
+    id: 'metro_credit_ref',
+    messages: ["Have you or the business had a vehicle or equipment loan in the last 12 months, paid on time?"],
+    inputType: 'select',
+    options: ["Yes", "No, but I have a home loan", "No"],
+    nextStep: (answer, data) => {
+      const a = answer.toLowerCase();
+      if (a.startsWith('yes')) {
+        setEligibility(data, { creditReference: 'asset_finance' });
+        return 'metro_intro';
+      }
+      if (a.includes('home loan') && goodsClass(data) === 'A') {
+        // 12 months of home loan statements stand in, for cars up to $100k
+        setEligibility(data, { creditReference: 'mortgage' });
+        return 'metro_intro';
+      }
+      return outsidePolicy(
+        data,
+        goodsClass(data) === 'A'
+          ? 'Metro Finance needs a recent vehicle or equipment loan, or a home loan, as a credit reference.'
+          : 'Metro Finance needs a vehicle or equipment loan in the last 12 months as a credit reference.',
+        'Metro: no comparable credit reference',
+      );
+    },
+  },
+
+  {
+    // Metro deals: no repayment estimate until we have Metro's rate card
+    id: 'metro_intro',
+    messages: (data) => [
+      `This one suits our lender Metro Finance, who can fund it ${metroRouteSummary(data)}.`,
+      "We will confirm Metro's rate and repayments with you before anything is signed. A few more questions and you are done.",
+    ],
+    inputType: 'select',
+    options: ["Continue", "Save for later"],
+    // Joined from the deposit question (over the DriveXpress limit): don't re-ask the term
+    nextStep: (answer, data) =>
+      answer.toLowerCase().includes('later') ? 'save_for_later' : Number(data.application.loan?.termMonths) > 0 ? 'deposit_amount' : 'loan_term',
   },
 
   {
@@ -1141,18 +1226,28 @@ export const CHAT_FLOW: ChatStep[] = [
           ? `We finance a minimum of ${formatMoney(5000)}, so we cannot take a deposit on a ${formatMoney(price)} asset.`
           : `We finance a minimum of ${formatMoney(5000)}, so on a ${formatMoney(price)} asset the most you can put in is ${formatMoney(maxDeposit)}.`;
       }
-      // DriveXpress loan limit: $150k new customers; existing $200k / $300k / $500k by goods
-      const maxLoan = maxDriveXpressLoan(data);
+      // Lender limits: DriveXpress $150k new / $200k-$500k existing; Metro by property position
+      const metro = isMetroTrack(data);
+      const maxLoan = metro ? maxMetroLoan(data) : maxDriveXpressLoan(data);
+      const lenderName = metro ? 'Metro Finance' : 'The fast-track lender';
       if (price > 0 && price - deposit > maxLoan) {
-        return `The fast-track lender lends up to ${formatMoney(maxLoan)} here, so on a ${formatMoney(price)} asset you would need to put in at least ${formatMoney(price - maxLoan)}. Enter that or more, or type 'no' to leave your details instead.`;
+        return `${lenderName} lends up to ${formatMoney(maxLoan)} here, so on a ${formatMoney(price)} asset you would need to put in at least ${formatMoney(price - maxLoan)}. Enter that or more, or type 'no'${metro ? ' to leave your details instead' : ' to see other options'}.`;
+      }
+      // Metro without property: 30% deposit
+      if (metro && propertyStatus(data) === 'none' && price > 0 && deposit < price * METRO.noPropertyMinDepositPct / 100) {
+        return `Without property, Metro Finance needs a deposit of at least ${METRO.noPropertyMinDepositPct}% (${formatMoney(Math.ceil(price * METRO.noPropertyMinDepositPct / 100))}). Enter that or more, or type 'no' to leave your details instead.`;
       }
       return null;
     },
     nextStep: (answer, data) => {
       if (answer.trim().toLowerCase() === 'no') {
         setLoanValue(data, 'depositAmount', 0);
-        const maxLoan = maxDriveXpressLoan(data);
-        return outsidePolicy(data, `This is above the ${formatMoney(maxLoan)} the fast-track lender lends here.`, `Amount over the DriveXpress limit of ${formatMoney(maxLoan)}`);
+        if (!isMetroTrack(data)) {
+          // Over the DriveXpress limit: Metro may lend more (trucks up to $250k property-backed)
+          setEligibility(data, { lenderTrack: 'metro', driveXpressMiss: `Amount over the DriveXpress limit of ${formatMoney(maxDriveXpressLoan(data))}` });
+          return 'policy_asset_check';
+        }
+        return outsidePolicy(data, `This is more than Metro Finance can lend here (${formatMoney(maxMetroLoan(data))}).`, `Over the Metro limit of ${formatMoney(maxMetroLoan(data))}`);
       }
       return 'business_check';
     },
@@ -1739,8 +1834,6 @@ const PROGRESS_MAP: Record<string, number> = {
   'eligibility_property': 4,
   'eligibility_tax': 4,
   'policy_outside': 4,
-  'eligibility_deposit': 4,
-  'eligibility_no_security': 4,
   // Asset
   'asset_type': 5,
   'ev_use_type': 5,
@@ -1757,6 +1850,9 @@ const PROGRESS_MAP: Record<string, number> = {
   'asset_ev_check': 9,
   'asset_use_check': 9,
   'policy_asset_check': 9,
+  'metro_property': 9,
+  'metro_credit_ref': 9,
+  'metro_intro': 9,
   'show_estimate': 9,
   'save_for_later': 9,
   'quote_email_name': 9,

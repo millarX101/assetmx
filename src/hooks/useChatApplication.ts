@@ -565,6 +565,11 @@ export function useChatApplication() {
       case 'calculate_quote': {
         const asset = flowData.application.asset;
         const loan = flowData.application.loan;
+        // Metro Finance deals: no figures until we have Metro's rate card (the table is Westpac's)
+        if (flowData.eligibility?.lenderTrack === 'metro') {
+          updatedData.quote = undefined;
+          break;
+        }
         if (asset?.assetPriceIncGst) {
           // Use whatever the applicant has actually chosen so far; fall back to the
           // defaults only when the value has not been collected yet.
@@ -1032,6 +1037,10 @@ export function useChatApplication() {
               indicativeRate: quote?.indicativeRate || 0,
               documentsUploaded: flowData.documentsUploaded || false,
               purchaseReason: flowData.purchaseReason || '',
+              lenderRoute:
+                flowData.eligibility?.lenderTrack === 'metro'
+                  ? `Metro Finance streamlined (${flowData.eligibility?.driveXpressMiss || 'outside DriveXpress'})`
+                  : 'Westpac DriveXpress',
               businessSummary:
                 flowData.businessProfile?.corrections || flowData.businessProfile?.description || flowData.businessProfile?.profile?.summary || '',
             };

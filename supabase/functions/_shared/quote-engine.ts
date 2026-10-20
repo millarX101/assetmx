@@ -18,11 +18,10 @@ export const LENDER_ESTABLISHMENT_FEE = 500;
 /** Fallback lender base rates by term, mirroring DEFAULT_RATES in src/lib/calculator.ts. */
 export const DEFAULT_RATES: Record<number, number> = { 12: 9.95, 24: 7.98, 36: 7.98, 48: 7.98, 60: 8.06 };
 
-// ATO residual guidelines, rounded down (mirrors src/lib/calculator.ts)
-const MAX_BALLOON_BY_TERM: Record<number, number> = { 12: 65, 24: 56, 36: 46, 48: 37, 60: 28, 72: 28, 84: 28 };
+const MAX_BALLOON_BY_TERM: Record<number, number> = { 12: 65, 24: 60, 36: 50, 48: 40, 60: 30, 72: 30, 84: 30 };
 
 export function getMaxBalloon(termMonths: number): number {
-  return MAX_BALLOON_BY_TERM[Math.ceil(termMonths / 12) * 12] ?? 28;
+  return MAX_BALLOON_BY_TERM[Math.ceil(termMonths / 12) * 12] ?? 30;
 }
 
 /**

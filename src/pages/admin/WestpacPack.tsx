@@ -119,7 +119,14 @@ export function WestpacPack() {
         <header className="flex justify-between items-start border-b-2 border-neutral-900 pb-3">
           <div>
             <h1 className="text-xl font-bold">Equipment finance application</h1>
-            <p className="text-neutral-600">Prepared for Westpac Equipment Finance (DriveOnline)</p>
+            <p className="text-neutral-600">
+              {elig.lenderTrack === 'metro'
+                ? 'Prepared for Metro Finance (streamlined product)'
+                : 'Prepared for Westpac Equipment Finance (DriveOnline, DriveXpress)'}
+            </p>
+            {elig.lenderTrack === 'metro' && elig.driveXpressMiss && (
+              <p className="text-xs text-neutral-500">Not DriveXpress: {elig.driveXpressMiss}</p>
+            )}
           </div>
           <div className="text-right">
             <p className="font-bold">{reference(app.id)}</p>
@@ -223,6 +230,13 @@ export function WestpacPack() {
             } />
             <Row label="Existing Westpac business customer" value={elig.existingWestpacCustomer === true ? 'Yes' : elig.existingWestpacCustomer === false ? 'No (new to business bank)' : '-'} />
             <Row label="Owns residential property, income 5k+" value={elig.ownsProperty === true ? 'Yes' : elig.ownsProperty === false ? 'No' : elig.existingWestpacCustomer ? 'Not required (existing customer)' : '-'} />
+            {elig.lenderTrack === 'metro' && (
+              <>
+                <Row label="Property position (Metro)" value={elig.propertyStatus === 'own' ? 'In borrower/guarantor name' : elig.propertyStatus === 'spouse' ? "In spouse's name" : elig.propertyStatus === 'none' ? 'Non-property backed' : '-'} />
+                <Row label="Comparable credit reference (Metro)" value={elig.creditReference === 'asset_finance' ? 'Vehicle/equipment loan in last 12 months, paid on time (obtain reference)' : elig.creditReference === 'mortgage' ? '12 months home loan statements (obtain)' : '-'} />
+                {elig.taxiRideshare && <Row label="Use" value="Taxi / rideshare (property-backed)" />}
+              </>
+            )}
             <Row label="Tax and BAS current, no ATO payment plan" value={elig.taxUpToDate === true ? 'Yes (verbal, in the online application)' : elig.taxUpToDate === false ? 'No' : '-'} />
           </tbody></table>
         </Section>

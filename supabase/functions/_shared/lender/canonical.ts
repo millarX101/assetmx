@@ -38,6 +38,15 @@ export interface CanonicalApplication {
   submittedAt: string;
   status: string;
   source: "assetmx_online";
+  // Which lender the chat routed this to, and why (Westpac DriveXpress first, then Metro)
+  route: {
+    lender: "westpac" | "metro" | null;
+    track: "drivexpress" | "metro_streamlined" | null;
+    driveXpressMiss: string | null;
+    propertyStatus: "own" | "spouse" | "none" | null;
+    creditReference: "asset_finance" | "mortgage" | null;
+    taxiRideshare: boolean;
+  };
   broker: { name: string; abn: string; acl: string; email: string };
   borrower: {
     legalName: string;
@@ -170,6 +179,14 @@ export function toCanonical(app: Row): CanonicalApplication {
     submittedAt: app.created_at,
     status: app.status,
     source: "assetmx_online",
+    route: {
+      lender: elig.lenderTrack === "metro" ? "metro" : elig.lenderTrack === "drivexpress" ? "westpac" : null,
+      track: elig.lenderTrack === "metro" ? "metro_streamlined" : elig.lenderTrack === "drivexpress" ? "drivexpress" : null,
+      driveXpressMiss: str(elig.driveXpressMiss),
+      propertyStatus: ["own", "spouse", "none"].includes(elig.propertyStatus) ? elig.propertyStatus : null,
+      creditReference: ["asset_finance", "mortgage"].includes(elig.creditReference) ? elig.creditReference : null,
+      taxiRideshare: elig.taxiRideshare === true,
+    },
     broker: { name: "Blackrock Leasing Pty Ltd trading as AssetMX", abn: "15 681 267 818", acl: "569484", email: "info@assetmx.com.au" },
     borrower: {
       legalName: app.entity_name,

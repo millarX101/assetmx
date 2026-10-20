@@ -23,11 +23,11 @@ describe('pmt', () => {
 
 describe('calculateQuote', () => {
   it('uses the term-based lender rate and itemises fees', () => {
-    const q = calculateQuote({ amount: 100_000, termMonths: 60, balloonPct: 28 });
+    const q = calculateQuote({ amount: 100_000, termMonths: 60, balloonPct: 30 });
     expect(q.ratePct).toBe(rateForTerm(60));
     expect(q.amountFinanced).toBe(101_300);
     expect(q.platformFee).toBe(800);
-    expect(q.balloon).toBe(28_000);
+    expect(q.balloon).toBe(30_000);
     expect(q.saving).toBeGreaterThan(0);
   });
   it('rejects a balloon above the term cap', () => {

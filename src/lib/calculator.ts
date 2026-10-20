@@ -123,16 +123,16 @@ export function getCachedRates(): Record<number, number> {
 
 // Maximum balloon percentages by term (years)
 // 1 year: 65%, 2 years: 60%, 3 years: 50%, 4 years: 40%, 5+ years: 30%
-// Westpac DriveXpress: residual within ATO guidelines (1y 65.63%, 2y 56.25%, 3y 46.88%,
-// 4y 37.5%, 5y 28.13%), rounded down to whole percentages. 6-7 years held at the 5-year figure.
+// Kept at 30% for 5 years by choice (Ben, 20 Oct 2026), slightly above the ATO residual
+// guideline (28.13%) that Westpac's Key Policies refer to.
 export const MAX_BALLOON_BY_TERM: Record<number, number> = {
   12: 65,  // 1 year
-  24: 56,  // 2 years
-  36: 46,  // 3 years
-  48: 37,  // 4 years
-  60: 28,  // 5 years
-  72: 28,  // 6 years
-  84: 28,  // 7 years
+  24: 60,  // 2 years
+  36: 50,  // 3 years
+  48: 40,  // 4 years
+  60: 30,  // 5 years
+  72: 30,  // 6 years
+  84: 30,  // 7 years
 };
 
 // Get maximum balloon for a given term
@@ -140,7 +140,7 @@ export function getMaxBalloon(termMonths: number): number {
   // Find the closest term (round up to nearest 12 months)
   const termYears = Math.ceil(termMonths / 12);
   const termKey = termYears * 12;
-  return MAX_BALLOON_BY_TERM[termKey] || 28;
+  return MAX_BALLOON_BY_TERM[termKey] || 30;
 }
 
 // Legacy BASE_RATES kept for backwards compatibility but now unused
