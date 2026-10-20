@@ -532,7 +532,7 @@ export function useChatApplication() {
       case 'load_business_profile': {
         // Started at ABN confirmation, normally finished by now (it takes about a minute)
         const abn = cleanABN(flowData.application.business?.abn || '');
-        const result = await getBusinessProfile(abn, 30000);
+        const result = await getBusinessProfile(abn, 60000);
         if (result) updatedData.businessProfile = { ...result };
         break;
       }
@@ -1094,7 +1094,10 @@ export function useChatApplication() {
     let actionAlreadyRun = false;
     if (step.action && PRE_RENDER_ACTIONS.includes(step.action)) {
       debugLog('STEP', `Running action ${step.action} before rendering ${step.id}`);
+      // Typing dots while it runs: document reads and the business check can take a while
+      showTyping(true);
       data = await executeAction(step.action, data);
+      showTyping(false);
       actionAlreadyRun = true;
       setState(prev => ({ ...prev, flowData: data }));
     }

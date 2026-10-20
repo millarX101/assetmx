@@ -1110,12 +1110,21 @@ export const CHAT_FLOW: ChatStep[] = [
     messages: (data) => {
       const p = data.businessProfile?.profile;
       if (!p?.matched || !p.summary) return [];
-      const extra = [p.website ? `Website: ${p.website}` : '', p.tradingNames?.length ? `Trading as: ${p.tradingNames.join(', ')}` : '']
-        .filter(Boolean)
-        .join('\n');
+      // The full profile, so they can check every detail the lender will see
+      const details = [
+        p.servicesProducts?.length ? `Services: ${p.servicesProducts.join(', ')}` : '',
+        p.customers ? `Customers: ${p.customers}` : '',
+        p.serviceArea ? `Area: ${p.serviceArea}` : '',
+        p.locations?.length ? `Premises: ${p.locations.join('; ')}` : '',
+        p.operatingSince ? `Operating since: ${p.operatingSince}` : '',
+        p.size ? `Size: ${p.size}` : '',
+        p.accreditations?.length ? `Licences and memberships: ${p.accreditations.join(', ')}` : '',
+        p.tradingNames?.length ? `Trading as: ${p.tradingNames.join(', ')}` : '',
+        p.website ? `Website: ${p.website}` : '',
+      ].filter(Boolean);
       return [
-        `Here is what we found about ${data.businessProfile?.entityName || 'your business'} from public sources:\n\n${p.summary}${extra ? `\n\n${extra}` : ''}`,
-        'Is that right?',
+        `Here is what we found about ${data.businessProfile?.entityName || 'your business'} from public sources:\n\n${p.description || p.summary}${details.length ? `\n\n${details.join('\n')}` : ''}`,
+        'Is that right? If anything is wrong or missing, tap Some changes.',
       ];
     },
     inputType: 'select',
@@ -1125,16 +1134,16 @@ export const CHAT_FLOW: ChatStep[] = [
       if (!answer || !p?.matched) return 'business_describe';
       if (answer.toLowerCase().includes('change')) return 'business_corrections';
       data.businessProfile = { ...data.businessProfile!, confirmed: true };
-      // Public sources often don't say what the business actually does
-      return p.activities ? 'purchase_reason' : 'business_describe';
+      // Public sources sometimes don't say what the business actually does
+      return p.activities || p.servicesProducts?.length ? 'purchase_reason' : 'business_describe';
     },
   },
 
   {
     id: 'business_corrections',
-    messages: ['What should it say? A sentence or two is plenty.'],
+    messages: ['What is wrong or missing? Tell me in your own words and we will pass it on with your application.'],
     inputType: 'text',
-    placeholder: 'e.g. We are a civil earthmoving contractor, not a leasing company',
+    placeholder: 'e.g. We are a civil earthmoving contractor with 12 staff, not a leasing company',
     nextStep: (answer, data) => {
       data.businessProfile = { ...(data.businessProfile || { status: 'failed' }), confirmed: false, corrections: answer.trim() };
       return 'purchase_reason';
@@ -1143,9 +1152,11 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'business_describe',
-    messages: ['In a sentence or two, what does the business do?'],
+    messages: [
+      'Tell me about the business: what it does, who your customers are, how long you have been operating, and roughly how many staff or vehicles. A few sentences is plenty.',
+    ],
     inputType: 'text',
-    placeholder: 'e.g. Civil earthmoving contractor, 6 staff, based in Geelong',
+    placeholder: 'e.g. Civil earthmoving contractor in Geelong since 2015. Residential and council work. 6 staff, 3 excavators.',
     nextStep: (answer, data) => {
       data.businessProfile = { ...(data.businessProfile || { status: 'failed' }), description: answer.trim() };
       return 'purchase_reason';

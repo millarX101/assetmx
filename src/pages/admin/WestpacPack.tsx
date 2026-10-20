@@ -166,8 +166,18 @@ export function WestpacPack() {
                 </>
               ) : <span className="text-red-700">Not provided</span>
             } />
-            {bp.website && <Row label="Website" value={bp.website} />}
+            {bp.description && bp.description !== background && <Row label="Business profile (public sources)" value={bp.description} />}
+            {bp.servicesProducts?.length > 0 && <Row label="Services / products" value={bp.servicesProducts.join(', ')} />}
+            {bp.customers && <Row label="Customers" value={bp.customers} />}
+            {bp.serviceArea && <Row label="Service area" value={bp.serviceArea} />}
+            {bp.locations?.length > 0 && <Row label="Premises" value={bp.locations.join('; ')} />}
             {bp.operatingSince && <Row label="Operating since" value={bp.operatingSince} />}
+            {bp.history && <Row label="History" value={bp.history} />}
+            {bp.size && <Row label="Size" value={bp.size} />}
+            {bp.accreditations?.length > 0 && <Row label="Licences and memberships" value={bp.accreditations.join(', ')} />}
+            {bp.website && <Row label="Website" value={bp.website} />}
+            {bp.onlinePresence?.length > 0 && <Row label="Online profiles" value={<span className="break-all">{bp.onlinePresence.join(' · ')}</span>} />}
+            {bp.reviews && <Row label="Reviews" value={bp.reviews} />}
             {bp.keyPeople?.length > 0 && <Row label="Key people (public sources)" value={bp.keyPeople.map((p: App) => `${p.name} (${p.role})`).join('; ')} />}
           </tbody></table>
           {bp.sources?.length > 0 && (
