@@ -59,6 +59,7 @@ export interface Director {
   // Licence details
   licenceNumber?: string;
   licenceState?: string;
+  licenceExpiry?: string; // YYYY-MM-DD, read from the licence photo
   // Personal financial position - individual assets
   ownsProperty?: boolean;
   propertyValue?: number;

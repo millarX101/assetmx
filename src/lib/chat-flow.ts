@@ -7,6 +7,7 @@
 // off the documents they upload (dealer quote, driver licence) and confirmed in a card.
 
 import { validateABN, cleanABN, type ABNSearchResult } from './abn-lookup';
+import type { BusinessProfile } from './business-profile';
 import { getMaxBalloon, PLATFORM_FEE, LENDER_ESTABLISHMENT_FEE, EV_DISCOUNT_PCT, evDiscountActive, evDiscountFor } from './calculator';
 import type { ApplicationData } from '@/types/application';
 
@@ -26,7 +27,9 @@ export type ChatAction =
   // Document reading. Both must be listed in the hook's PRE_RENDER_ACTIONS so the
   // extracted values exist by the time the confirmation card renders its messages.
   | 'extract_asset'
-  | 'extract_licence';
+  | 'extract_licence'
+  // Background business check started at ABN confirmation; awaited here. PRE_RENDER.
+  | 'load_business_profile';
 
 export interface ChatStep {
   id: string;
@@ -137,6 +140,10 @@ export interface ChatFlowData {
   fromCalculator?: boolean;
   // Electric or plug-in hybrid vehicle (EV discount). Undefined until asked.
   isEv?: boolean;
+  // Background business check (Westpac: business background) and what the applicant said
+  businessProfile?: BusinessProfile & { confirmed?: boolean; corrections?: string; description?: string };
+  // Westpac: reason for purchase
+  purchaseReason?: string;
   // Privacy consent - the hook stamps the time when consent is given
   consentAt?: string;
   // Set once the application row has been inserted - guards against double submission
@@ -161,6 +168,17 @@ const currentTermMonths = (data: ChatFlowData): number => {
 };
 
 // Human label for the current term, e.g. "5 years"
+// Shown at privacy_consent and saved with the application as the consent record
+export const PRIVACY_CONSENT_TEXT =
+  'Before you submit: we share your identity, business and asset details, and any bank statements we ask for later, with our lender panel and with credit reporting bodies. Submitting means a credit enquiry is made.';
+
+// 'the 2024 Toyota Hilux SR5', else 'the asset'
+const assetLabel = (data: ChatFlowData): string => {
+  const a = data.application.asset;
+  const name = [a?.assetYear, a?.assetMake, a?.assetModel].filter(Boolean).join(' ');
+  return name ? `the ${name}` : 'the asset';
+};
+
 const termLabel = (data: ChatFlowData): string => {
   const years = Math.round(currentTermMonths(data) / 12);
   return `${years} year${years === 1 ? '' : 's'}`;
@@ -393,6 +411,7 @@ export function applyExtractedLicence(data: ChatFlowData): ChatFlowData {
   }
   if (licence.licenceNumber) director.licenceNumber = licence.licenceNumber;
   if (licence.state) director.licenceState = licence.state;
+  if (licence.expiry) director.licenceExpiry = licence.expiry;
 
   data.extractedApplied = { ...(data.extractedApplied || {}), licence: true };
   return data;
@@ -1078,6 +1097,68 @@ export const CHAT_FLOW: ChatStep[] = [
         setLoanValue(data, 'depositAmount', 0);
         return 'eligibility_no_security';
       }
+      return 'business_check';
+    },
+  },
+
+  // ========== BUSINESS BACKGROUND + PURPOSE (Westpac minimum documentation) ==========
+  {
+    id: 'business_check',
+    // load_business_profile awaits the check started when they confirmed the ABN. No
+    // skipIf (it runs before the action); with no profile it moves straight on.
+    action: 'load_business_profile',
+    messages: (data) => {
+      const p = data.businessProfile?.profile;
+      if (!p?.matched || !p.summary) return [];
+      const extra = [p.website ? `Website: ${p.website}` : '', p.tradingNames?.length ? `Trading as: ${p.tradingNames.join(', ')}` : '']
+        .filter(Boolean)
+        .join('\n');
+      return [
+        `Here is what we found about ${data.businessProfile?.entityName || 'your business'} from public sources:\n\n${p.summary}${extra ? `\n\n${extra}` : ''}`,
+        'Is that right?',
+      ];
+    },
+    inputType: 'select',
+    options: (data) => (data.businessProfile?.profile?.matched && data.businessProfile.profile.summary ? ['Yes, that is right', 'Some changes'] : []),
+    nextStep: (answer, data) => {
+      const p = data.businessProfile?.profile;
+      if (!answer || !p?.matched) return 'business_describe';
+      if (answer.toLowerCase().includes('change')) return 'business_corrections';
+      data.businessProfile = { ...data.businessProfile!, confirmed: true };
+      // Public sources often don't say what the business actually does
+      return p.activities ? 'purchase_reason' : 'business_describe';
+    },
+  },
+
+  {
+    id: 'business_corrections',
+    messages: ['What should it say? A sentence or two is plenty.'],
+    inputType: 'text',
+    placeholder: 'e.g. We are a civil earthmoving contractor, not a leasing company',
+    nextStep: (answer, data) => {
+      data.businessProfile = { ...(data.businessProfile || { status: 'failed' }), confirmed: false, corrections: answer.trim() };
+      return 'purchase_reason';
+    },
+  },
+
+  {
+    id: 'business_describe',
+    messages: ['In a sentence or two, what does the business do?'],
+    inputType: 'text',
+    placeholder: 'e.g. Civil earthmoving contractor, 6 staff, based in Geelong',
+    nextStep: (answer, data) => {
+      data.businessProfile = { ...(data.businessProfile || { status: 'failed' }), description: answer.trim() };
+      return 'purchase_reason';
+    },
+  },
+
+  {
+    id: 'purchase_reason',
+    messages: (data) => [`What will ${assetLabel(data)} be used for?`],
+    inputType: 'text',
+    placeholder: 'e.g. Replacing an older ute for site work',
+    nextStep: (answer, data) => {
+      data.purchaseReason = answer.trim();
       return 'document_upload';
     },
   },
@@ -1327,9 +1408,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'privacy_consent',
-    messages: [
-      "Before you submit: we share your identity, business and asset details, and any bank statements we ask for later, with our lender panel and with credit reporting bodies. Submitting means a credit enquiry is made."
-    ],
+    messages: [PRIVACY_CONSENT_TEXT],
     inputType: 'select',
     options: ["I agree", "Not now"],
     field: 'consent',
@@ -1611,6 +1690,10 @@ const PROGRESS_MAP: Record<string, number> = {
   'balloon_explain': 11,
   'deposit_amount': 12,
   // Identity
+  'business_check': 12,
+  'business_corrections': 12,
+  'business_describe': 12,
+  'purchase_reason': 12,
   'document_upload': 13,
   'identity_confirm': 14,
   'identity_name': 14,

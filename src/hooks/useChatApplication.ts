@@ -5,6 +5,7 @@ import {
   mapOptionToValue,
   parseAmount,
   getStepProgress,
+  PRIVACY_CONSENT_TEXT,
   type ChatStep,
   type ChatFlowData,
 } from '@/lib/chat-flow';
@@ -12,6 +13,7 @@ import { lookupABN, cleanABN, searchABNByName, warmAbnFunctions } from '@/lib/ab
 import { calculateQuote, getMaxBalloon } from '@/lib/calculator';
 import { assist } from '@/hooks/useChatAI';
 import { extractDocument, extractInlineDocument, takeInlineDocuments } from '@/lib/doc-extract';
+import { startBusinessProfile, getBusinessProfile } from '@/lib/business-profile';
 import type { ApplicationData, AssetType, AssetCondition } from '@/types/application';
 import { createEmptyApplication } from '@/types/application';
 import { supabase, isSupabaseConfigured, getSupabaseUrl, getSupabaseAnonKey } from '@/lib/supabase';
@@ -35,7 +37,7 @@ export interface ChatState {
 }
 
 // Actions executed before their step's messages render, so the copy can report the result
-const PRE_RENDER_ACTIONS: string[] = ['calculate_quote', 'submit_application', 'extract_asset', 'extract_licence', 'email_quote'];
+const PRE_RENDER_ACTIONS: string[] = ['calculate_quote', 'submit_application', 'extract_asset', 'extract_licence', 'email_quote', 'load_business_profile'];
 
 // Typing pause before each bot message: enough to read as a conversation, short
 // enough not to slow the application down (was 800ms for every message).
@@ -527,6 +529,14 @@ export function useChatApplication() {
         break;
       }
 
+      case 'load_business_profile': {
+        // Started at ABN confirmation, normally finished by now (it takes about a minute)
+        const abn = cleanABN(flowData.application.business?.abn || '');
+        const result = await getBusinessProfile(abn, 30000);
+        if (result) updatedData.businessProfile = { ...result };
+        break;
+      }
+
       case 'extract_licence': {
         const licenceDocs = (flowData.uploadedDocuments || []).filter(d => /licence|license/i.test(d.id));
         if (licenceDocs.length > 0) {
@@ -932,6 +942,7 @@ export function useChatApplication() {
                 address: d.residentialAddress || d.address,
                 licenceNumber: d.licenceNumber,
                 licenceState: d.licenceState,
+                licenceExpiry: d.licenceExpiry,
                 // Address duration
                 addressYearsMonths: d.addressYearsMonths,
                 addressMonths: d.addressMonths,
@@ -964,6 +975,23 @@ export function useChatApplication() {
               };
             }),
             primary_contact_index: app.directors?.primaryContactIndex || 0,
+
+            // Westpac minimum documentation: business background, purpose, privacy consent
+            business_profile: flowData.businessProfile
+              ? {
+                  status: flowData.businessProfile.status,
+                  ...(flowData.businessProfile.profile || {}),
+                  sources: flowData.businessProfile.sources || [],
+                  confirmedByApplicant: flowData.businessProfile.confirmed === true,
+                  applicantCorrections: flowData.businessProfile.corrections || null,
+                  applicantDescription: flowData.businessProfile.description || null,
+                }
+              : null,
+            purchase_reason: flowData.purchaseReason || null,
+            // Property, deposit and credit declaration answers (creditDeclaration / creditDetails)
+            eligibility_checks: flowData.eligibility || null,
+            privacy_consent_at: flowData.consentAt || null,
+            privacy_consent_text: flowData.consentAt ? PRIVACY_CONSENT_TEXT : null,
 
             // Status
             status: 'submitted',
@@ -999,6 +1027,9 @@ export function useChatApplication() {
               monthlyRepayment: quote?.monthlyRepayment || 0,
               indicativeRate: quote?.indicativeRate || 0,
               documentsUploaded: flowData.documentsUploaded || false,
+              purchaseReason: flowData.purchaseReason || '',
+              businessSummary:
+                flowData.businessProfile?.corrections || flowData.businessProfile?.description || flowData.businessProfile?.profile?.summary || '',
             };
 
             // Call the edge function to send emails (direct fetch to bypass auth token issues)
@@ -1222,6 +1253,11 @@ export function useChatApplication() {
     setState(prev => ({ ...prev, isWaitingForInput: false }));
 
     let flowData = { ...(flowDataOverride ?? state.flowData) };
+
+    // They confirmed the ABN: start the background business check now, show it later
+    if (currentStep.id === 'abn_result' && /^yes/i.test(input.trim())) {
+      startBusinessProfile(flowData.application.business?.abn || '');
+    }
 
     // Validate input if needed. When a typed answer fails, ask Claude whether it was a
     // differently-phrased answer, a question, or a request for a person, before re-asking.

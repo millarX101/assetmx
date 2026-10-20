@@ -19,6 +19,7 @@ const QuoteBuilder = page(() => import('@/pages/admin/QuoteBuilder'), 'QuoteBuil
 const QuoteDetail = page(() => import('@/pages/admin/QuoteDetail'), 'QuoteDetail');
 const AdminAnalytics = page(() => import('@/pages/admin/Analytics'), 'AdminAnalytics');
 const AdminRates = page(() => import('@/pages/admin/Rates'), 'AdminRates');
+const WestpacPack = page(() => import('@/pages/admin/WestpacPack'), 'WestpacPack');
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -46,6 +47,8 @@ export function AdminApp() {
         <Routes>
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/reset-password" element={<AdminResetPassword />} />
+          {/* Printable, outside the admin layout */}
+          <Route path="/admin/applications/:id/westpac" element={<ProtectedRoute><WestpacPack /></ProtectedRoute>} />
           <Route
             path="/admin"
             element={

@@ -25,6 +25,8 @@ interface ApplicationData {
   balloonPercentage: number;
   depositAmount: number;
   assetPrice?: number;
+  purchaseReason?: string;
+  businessSummary?: string;
   monthlyRepayment?: number;
   indicativeRate?: number;
   documentsUploaded: boolean;
@@ -147,6 +149,8 @@ const getAdminEmailHtml = (data: ApplicationData): string => {
     ${balloonPct > 0 ? row("Balloon", `${balloonPct}%`) : ""}
     ${data.indicativeRate ? row("Indicative rate", `${pct(data.indicativeRate)} p.a.`) : ""}
     ${data.monthlyRepayment ? row("Indicative repayment", `${aud(data.monthlyRepayment)} per month`) : ""}
+    ${data.purchaseReason ? row("Reason for purchase", data.purchaseReason) : ""}
+    ${data.businessSummary ? row("Business", data.businessSummary) : ""}
     ${row("Documents", data.documentsUploaded ? "Uploaded in chat" : "None uploaded")}
   </table>
 </td></tr>
