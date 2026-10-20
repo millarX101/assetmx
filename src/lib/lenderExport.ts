@@ -1,6 +1,6 @@
 // Admin: application export for lenders (edge function lender-export).
 // Adapters live server-side in supabase/functions/_shared/lender/adapters.ts.
-import { supabase } from '@/lib/supabase';
+import { supabase, getSupabaseUrl, getSupabaseAnonKey } from '@/lib/supabase';
 
 export interface LenderOption {
   id: string;
@@ -34,6 +34,31 @@ export async function exportForLender(applicationId: string, lender: string): Pr
   const a = document.createElement('a');
   a.href = url;
   a.download = `${ref}-${lender}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Downloads Westpac's SIMPLE+ application form pre-filled (edge function simple-plus-form). */
+export async function downloadSimplePlusForm(applicationId: string): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const res = await fetch(`${getSupabaseUrl()}/functions/v1/simple-plus-form`, {
+    method: 'POST',
+    headers: {
+      apikey: getSupabaseAnonKey() ?? '',
+      Authorization: `Bearer ${session?.access_token ?? ''}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ application_id: applicationId }),
+  });
+  if (!res.ok) {
+    const msg = await res.json().then((j) => j.error).catch(() => null);
+    throw new Error(msg || `Form request failed (${res.status})`);
+  }
+  const name = res.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'westpac-simple-plus.pdf';
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
   a.click();
   URL.revokeObjectURL(url);
 }
