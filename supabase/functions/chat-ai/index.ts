@@ -5,8 +5,9 @@
 // cannot parse: it extracts the value in canonical form, answers a question
 // grounded in the facts below, or flags that a human should take over.
 //
-// Model: Claude Fable 5.1 (explicitly requested) with server-side refusal
-// fallbacks enabled, low effort (classification/extraction), cached system prompt.
+// Model: Claude Haiku 5.5 (chosen for speed: this runs while the customer waits),
+// low effort (classification/extraction), cached system prompt. Haiku has no
+// server-side refusal fallback; a refusal hands the customer to a person.
 
 import Anthropic from 'npm:@anthropic-ai/sdk@0.124.0';
 
@@ -15,7 +16,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MODEL = 'claude-fable-5-1';
+const MODEL = 'claude-haiku-5-5';
 
 // Facts are the single source of truth for what Claude may say about AssetMX.
 // Keep identical to site/src/data/entity.ts and site/src/data/rates.ts.
@@ -140,12 +141,9 @@ Deno.serve(async (req) => {
   }));
 
   try {
-    const response = await client.beta.messages.create({
+    const response = await client.messages.create({
       model: MODEL,
       max_tokens: 600,
-      betas: ['server-side-fallback-2026-07-01'],
-      // @ts-expect-error fallbacks "default" form is newer than the SDK typings
-      fallbacks: 'default',
       output_config: {
         effort: 'low',
         format: { type: 'json_schema', schema: RESULT_SCHEMA },
