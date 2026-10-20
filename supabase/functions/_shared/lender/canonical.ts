@@ -59,6 +59,7 @@ export interface CanonicalApplication {
   individuals: Individual[];
   goods: {
     assetType: string | null;
+    category: string | null; // e.g. "agri" (DriveXpress goods class C)
     condition: string | null;
     year: number | null;
     make: string | null;
@@ -88,7 +89,11 @@ export interface CanonicalApplication {
   declarations: {
     creditHistory: "clear" | "declared" | null; // defaults, judgments, bankruptcies (5 years)
     creditHistoryDetails: string | null;
-    ownsProperty: boolean | null;
+    ownsProperty: boolean | null; // residential property in an applicant's or director's name
+    incomeOver75k: boolean | null;
+    existingWestpacCustomer: boolean | null;
+    taxUpToDate: boolean | null; // tax/BAS lodgements and payments current, no ATO plan
+    restrictedUse: boolean | null; // taxi, rideshare, hire or private import
   };
   businessCheck: {
     status: string | null;
@@ -186,6 +191,7 @@ export function toCanonical(app: Row): CanonicalApplication {
     individuals,
     goods: {
       assetType: str(app.asset_type),
+      category: str(app.asset_category),
       condition: str(app.asset_condition),
       year: num(app.asset_year),
       make: str(app.asset_make),
@@ -216,6 +222,10 @@ export function toCanonical(app: Row): CanonicalApplication {
       creditHistory: elig.creditDeclaration === "clear" ? "clear" : elig.creditDeclaration === "declare" ? "declared" : null,
       creditHistoryDetails: str(elig.creditDetails),
       ownsProperty: typeof elig.ownsProperty === "boolean" ? elig.ownsProperty : null,
+      incomeOver75k: typeof elig.incomeOver75k === "boolean" ? elig.incomeOver75k : null,
+      existingWestpacCustomer: typeof elig.existingWestpacCustomer === "boolean" ? elig.existingWestpacCustomer : null,
+      taxUpToDate: typeof elig.taxUpToDate === "boolean" ? elig.taxUpToDate : null,
+      restrictedUse: typeof elig.restrictedUse === "boolean" ? elig.restrictedUse : null,
     },
     businessCheck: {
       status: str(bp.status),

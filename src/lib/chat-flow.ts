@@ -8,6 +8,7 @@
 
 import { validateABN, cleanABN, type ABNSearchResult } from './abn-lookup';
 import type { BusinessProfile } from './business-profile';
+import { assetPolicyIssue, maxDriveXpressLoan } from './drivexpress';
 import { getMaxBalloon, PLATFORM_FEE, LENDER_ESTABLISHMENT_FEE, EV_DISCOUNT_PCT, evDiscountActive, evDiscountFor } from './calculator';
 import type { ApplicationData } from '@/types/application';
 
@@ -92,11 +93,17 @@ export interface ChatFlowData {
   // The hook coerces anything written through a step's `field` under `eligibility.` to a
   // boolean, so the two string values below are set from the step's nextStep instead.
   eligibility?: {
-    ownsProperty?: boolean;
-    canDeposit20?: boolean;
+    ownsProperty?: boolean; // new customers: residential property in their or a director's name
+    incomeOver75k?: boolean; // asked with ownsProperty
+    canDeposit20?: boolean; // legacy: the 20% deposit path was replaced by DriveXpress rules
+    existingWestpacCustomer?: boolean;
+    taxUpToDate?: boolean;
+    restrictedUse?: boolean; // taxi, rideshare, hire or private import
     creditDeclaration?: 'clear' | 'declare';
     creditDetails?: string;
   };
+  // Why the deal is outside the fast-track policy, shown at policy_outside
+  policyIssue?: string;
   // Values read off an uploaded document (dealer quote / tax invoice, driver licence).
   // Written by the extract_asset / extract_licence actions, confirmed by the applicant,
   // then copied onto the application by applyExtractedAsset / applyExtractedLicence.
@@ -308,6 +315,13 @@ export const parseAmount = (value: string): number => {
 // ---------------------------------------------------------------------------
 
 type MutableDirector = Record<string, unknown>;
+
+/** Records why the deal is outside DriveXpress and routes to the leave-your-details step. */
+function outsidePolicy(data: ChatFlowData, message: string, leadReason: string): string {
+  data.policyIssue = message;
+  data.lead = { ...(data.lead || {}), reason: leadReason };
+  return 'policy_outside';
+}
 
 function getDirector(data: ChatFlowData, index = 0): MutableDirector {
   const app = data.application as Record<string, unknown>;
@@ -568,7 +582,7 @@ export const CHAT_FLOW: ChatStep[] = [
       if (monthsSince(data.abnLookup.abnRegisteredDate) < 24) return 'abn_too_young';
       if (!data.abnLookup.gstRegistered) return 'no_gst_warning';
 
-      return 'eligibility_property';
+      return 'eligibility_existing';
     },
   },
 
@@ -641,50 +655,57 @@ export const CHAT_FLOW: ChatStep[] = [
     },
   },
 
-  // ========== PHASE 2: SECURITY POSITION ==========
+  // ========== PHASE 2: FAST-TRACK ELIGIBILITY (Westpac DriveXpress, src/lib/drivexpress.ts) ==========
+  // Existing Westpac business customers skip the property and income test and get higher
+  // limits; new customers must own residential property and earn $75k+.
   {
-    id: 'eligibility_property',
-    messages: ["Do you own property, a home or an investment property?"],
+    id: 'eligibility_existing',
+    messages: ["Does the business already borrow from Westpac? A business loan, or Westpac equipment finance that is current or was paid out in the last 12 months."],
     inputType: 'select',
     options: ["Yes", "No"],
-    field: 'eligibility.ownsProperty',
-    nextStep: (answer) => {
-      if (answer.toLowerCase().startsWith('no')) {
-        return 'eligibility_deposit';
-      }
-      return 'asset_type';
-    },
+    field: 'eligibility.existingWestpacCustomer',
+    nextStep: (answer) => (answer.toLowerCase().startsWith('yes') ? 'eligibility_tax' : 'eligibility_property'),
   },
 
   {
-    id: 'eligibility_deposit',
-    messages: ["Without property, lenders want a deposit or trade-in of at least 20 percent of the price. Can you do that?"],
+    id: 'eligibility_property',
+    messages: ["Do you, or another director, own a home or other residential property in your own name, and earn at least $75,000 a year?"],
     inputType: 'select',
-    options: ["Yes, 20 percent or more", "No"],
-    field: 'eligibility.canDeposit20',
-    nextStep: (answer) => {
+    options: ["Yes, both", "No"],
+    field: 'eligibility.ownsProperty',
+    nextStep: (answer, data) => {
       if (answer.toLowerCase().startsWith('no')) {
-        return 'eligibility_no_security';
+        return outsidePolicy(data, 'The fast-track lender needs new customers to own residential property and earn at least $75,000 a year.', 'New to Westpac: no residential property and/or income under $75k');
+      }
+      data.eligibility = { ...(data.eligibility || {}), incomeOver75k: true } as ChatFlowData['eligibility'];
+      return 'eligibility_tax';
+    },
+  },
+
+  {
+    id: 'eligibility_tax',
+    messages: ["Are the business's tax and BAS lodgements and payments up to date, with no ATO payment plan in place?"],
+    inputType: 'select',
+    options: ["Yes", "No"],
+    field: 'eligibility.taxUpToDate',
+    nextStep: (answer, data) => {
+      if (answer.toLowerCase().startsWith('no')) {
+        return outsidePolicy(data, 'The fast-track lender needs tax and BAS up to date with no ATO payment plan.', 'Tax/BAS not up to date or ATO payment plan in place');
       }
       return 'asset_type';
     },
   },
 
+  // Anything outside the fast track: explain why and offer the team
   {
-    id: 'eligibility_no_security',
-    messages: [
-      "This product needs either property ownership or a deposit of 20 percent.",
-      "Our team works with lenders who look at things differently. Would you like to leave your details?"
+    id: 'policy_outside',
+    messages: (data) => [
+      data.policyIssue || 'This one is outside our fast-track lending policy.',
+      'Our team can look at other lender options for you. Would you like to leave your details?',
     ],
     inputType: 'select',
     options: ["Yes, take my details", "No thanks"],
-    nextStep: (answer, data) => {
-      if (answer.toLowerCase().includes('no')) {
-        return 'end_saved';
-      }
-      data.lead = { ...(data.lead || {}), reason: 'No property security and unable to provide a 20 percent deposit' };
-      return 'lead_capture_asset_type';
-    },
+    nextStep: (answer) => (answer.toLowerCase().includes('no') ? 'end_saved' : 'lead_capture_asset_type'),
   },
 
   // ========== PHASE 3: THE ASSET ==========
@@ -694,9 +715,11 @@ export const CHAT_FLOW: ChatStep[] = [
     skipIf: (data) => !!data.fromCalculator && !!data.application.asset?.assetType,
     messages: ["What are you financing?"],
     inputType: 'select',
-    options: ["Car, ute or van", "Truck or trailer", "Equipment or machinery", "Electric or plug-in hybrid"],
+    options: ["Car, ute or van", "Truck or trailer", "Equipment or machinery", "Tractor or farm machinery", "Electric or plug-in hybrid"],
     field: 'asset.assetType',
     nextStep: (answer, data) => {
+      // Farm machinery is DriveXpress goods class C (up to 7 years old)
+      if (/tractor|farm/i.test(answer)) setAssetValue(data, 'assetCategory', 'agri');
       if (answer.toLowerCase().includes('electric')) {
         data.isEv = true;
         return 'ev_use_type';
@@ -922,8 +945,39 @@ export const CHAT_FLOW: ChatStep[] = [
     inputType: 'select',
     options: ["Yes, electric or plug-in hybrid", "No"],
     nextStep: (answer, data) => {
-      data.isEv = answer.toLowerCase().startsWith('yes');
-      return 'show_estimate';
+      // Skipped steps call nextStep with '': only an actual answer may set isEv, or picking
+      // "Electric or plug-in hybrid" up front was silently reset to false (no EV discount)
+      if (answer) data.isEv = answer.toLowerCase().startsWith('yes');
+      return 'asset_use_check';
+    },
+  },
+
+  {
+    id: 'asset_use_check',
+    // DriveXpress cars exclude taxi / hire / import. One tap, cars only.
+    skipIf: (data) => data.application.asset?.assetType !== 'vehicle',
+    messages: ["Will it be used as a taxi, rideshare or hire car, or is it a private import?"],
+    inputType: 'select',
+    options: ["No", "Yes"],
+    nextStep: (answer, data) => {
+      if (answer.toLowerCase().startsWith('yes')) {
+        data.eligibility = { ...(data.eligibility || {}), restrictedUse: true } as ChatFlowData['eligibility'];
+        return outsidePolicy(data, 'The fast-track lender does not fund taxis, rideshare or hire cars, or private imports.', 'Car for taxi/rideshare/hire use or a private import');
+      }
+      return 'policy_asset_check';
+    },
+  },
+
+  {
+    // Router, never shown: checks the asset against DriveXpress (age, dealer-only, car
+    // price) however its details arrived (quote upload, description or questions).
+    id: 'policy_asset_check',
+    skipIf: () => true,
+    messages: [],
+    inputType: 'confirm',
+    nextStep: (_answer, data) => {
+      const issue = assetPolicyIssue(data);
+      return issue ? outsidePolicy(data, issue, `Asset outside DriveXpress: ${issue}`) : 'show_estimate';
     },
   },
 
@@ -1087,15 +1141,18 @@ export const CHAT_FLOW: ChatStep[] = [
           ? `We finance a minimum of ${formatMoney(5000)}, so we cannot take a deposit on a ${formatMoney(price)} asset.`
           : `We finance a minimum of ${formatMoney(5000)}, so on a ${formatMoney(price)} asset the most you can put in is ${formatMoney(maxDeposit)}.`;
       }
-      if (!data.eligibility?.ownsProperty && price > 0 && deposit < price * 0.2) {
-        return `Without property, the lender needs at least 20 percent (${formatMoney(Math.round(price * 0.2))}). Enter a deposit of at least that, or type 'no' to leave your details instead.`;
+      // DriveXpress loan limit: $150k new customers; existing $200k / $300k / $500k by goods
+      const maxLoan = maxDriveXpressLoan(data);
+      if (price > 0 && price - deposit > maxLoan) {
+        return `The fast-track lender lends up to ${formatMoney(maxLoan)} here, so on a ${formatMoney(price)} asset you would need to put in at least ${formatMoney(price - maxLoan)}. Enter that or more, or type 'no' to leave your details instead.`;
       }
       return null;
     },
     nextStep: (answer, data) => {
       if (answer.trim().toLowerCase() === 'no') {
         setLoanValue(data, 'depositAmount', 0);
-        return 'eligibility_no_security';
+        const maxLoan = maxDriveXpressLoan(data);
+        return outsidePolicy(data, `This is above the ${formatMoney(maxLoan)} the fast-track lender lends here.`, `Amount over the DriveXpress limit of ${formatMoney(maxLoan)}`);
       }
       return 'business_check';
     },
@@ -1487,6 +1544,7 @@ export const CHAT_FLOW: ChatStep[] = [
   // ========== LEAD CAPTURE FLOW ==========
   {
     id: 'lead_capture_asset_type',
+    skipIf: (data) => !!data.application.asset?.assetType,
     messages: ["Before we save your details, what type of asset are you looking to finance?"],
     inputType: 'select',
     options: ["Vehicle", "Truck/Trailer", "Equipment", "Other"],
@@ -1496,6 +1554,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'lead_capture_asset',
+    skipIf: (data) => !!(data.application.asset?.assetMake || data.application.asset?.assetDescription),
     messages: ["What is it? Make, model and year if you know them."],
     inputType: 'text',
     field: 'lead.assetDescription',
@@ -1505,6 +1564,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'lead_capture_price',
+    skipIf: (data) => Number(data.application.asset?.assetPriceIncGst) > 0,
     messages: ["And the price including GST?"],
     inputType: 'number',
     field: 'lead.assetPrice',
@@ -1515,6 +1575,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'lead_capture_name',
+    skipIf: (data) => !!data.lead?.name,
     messages: ["What is your name?"],
     inputType: 'text',
     field: 'lead.name',
@@ -1540,6 +1601,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'lead_capture_email',
+    skipIf: (data) => !!data.lead?.email,
     messages: ["And your email address?"],
     inputType: 'email',
     field: 'lead.email',
@@ -1673,7 +1735,10 @@ const PROGRESS_MAP: Record<string, number> = {
   'abn_unverified': 3,
   'no_gst_warning': 3,
   // Security position
+  'eligibility_existing': 4,
   'eligibility_property': 4,
+  'eligibility_tax': 4,
+  'policy_outside': 4,
   'eligibility_deposit': 4,
   'eligibility_no_security': 4,
   // Asset
@@ -1690,6 +1755,8 @@ const PROGRESS_MAP: Record<string, number> = {
   'asset_price': 8,
   'asset_condition_q': 8,
   'asset_ev_check': 9,
+  'asset_use_check': 9,
+  'policy_asset_check': 9,
   'show_estimate': 9,
   'save_for_later': 9,
   'quote_email_name': 9,

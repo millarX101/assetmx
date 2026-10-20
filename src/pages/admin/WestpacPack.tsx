@@ -221,7 +221,9 @@ export function WestpacPack() {
                 : elig.creditDeclaration === 'declare' ? <span className="text-red-700">Declared: {elig.creditDetails || 'no details given'}</span>
                 : '-'
             } />
-            <Row label="Owns property" value={elig.ownsProperty === true ? 'Yes' : elig.ownsProperty === false ? 'No' : '-'} />
+            <Row label="Existing Westpac business customer" value={elig.existingWestpacCustomer === true ? 'Yes' : elig.existingWestpacCustomer === false ? 'No (new to business bank)' : '-'} />
+            <Row label="Owns residential property, income 5k+" value={elig.ownsProperty === true ? 'Yes' : elig.ownsProperty === false ? 'No' : elig.existingWestpacCustomer ? 'Not required (existing customer)' : '-'} />
+            <Row label="Tax and BAS current, no ATO payment plan" value={elig.taxUpToDate === true ? 'Yes (verbal, in the online application)' : elig.taxUpToDate === false ? 'No' : '-'} />
           </tbody></table>
         </Section>
 

@@ -665,10 +665,13 @@ export function useChatApplication() {
         const abnLookup = flowData.abnLookup;
         const business = flowData.application.business;
 
-        const loanAmount = Number(lead?.assetPrice) || 0;
+        // Outside-policy applicants already gave the asset and price: lead capture skips them
+        const appAsset = flowData.application.asset;
+        const loanAmount = Number(lead?.assetPrice) || Number(appAsset?.assetPriceIncGst) || 0;
+        const assetDescription =
+          lead?.assetDescription || [appAsset?.assetYear, appAsset?.assetMake, appAsset?.assetModel].filter(Boolean).join(' ') || appAsset?.assetDescription;
         // "Vehicle - 2024 Toyota Hilux SR5"
-        const assetType = [lead?.assetType || flowData.application.asset?.assetType, lead?.assetDescription]
-          .filter(Boolean).join(' - ');
+        const assetType = [lead?.assetType || appAsset?.assetType, assetDescription].filter(Boolean).join(' - ');
 
         try {
           const { error: insertError } = await supabase.from('leads').insert({
@@ -885,6 +888,7 @@ export function useChatApplication() {
 
             // Asset details
             asset_type: asset?.assetType || 'vehicle',
+            asset_category: (asset as { assetCategory?: string } | undefined)?.assetCategory || null,
             asset_condition: asset?.assetCondition || 'new',
             asset_year: asset?.assetYear || null,
             asset_make: asset?.assetMake || '',

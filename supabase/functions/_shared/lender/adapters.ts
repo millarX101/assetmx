@@ -104,6 +104,15 @@ const westpac: LenderAdapter = {
           })),
         },
       },
+      driveXpress: {
+        // Answers behind the chat's DriveXpress checks (Key Policies Q1FY26)
+        customerType: app.declarations.existingWestpacCustomer ? "existing" : "new_to_business_bank",
+        ownsResidentialProperty: app.declarations.ownsProperty,
+        annualIncomeAtLeast75k: app.declarations.incomeOver75k,
+        statutoryObligationsCurrentNoArrangements: app.declarations.taxUpToDate,
+        goodsClass: app.goods.category === "agri" ? "C" : app.goods.assetType === "vehicle" ? "A" : "B",
+        assetAgeYears: app.goods.year ? new Date().getFullYear() - app.goods.year : null,
+      },
       finance: app.finance,
       declarations: app.declarations,
     };
