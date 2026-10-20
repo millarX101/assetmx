@@ -46,6 +46,7 @@ export interface CanonicalApplication {
     propertyStatus: "own" | "spouse" | "none" | null;
     creditReference: "asset_finance" | "mortgage" | null;
     taxiRideshare: boolean;
+    existingMetroCustomer: boolean | null;
   };
   broker: { name: string; abn: string; acl: string; email: string };
   borrower: {
@@ -194,6 +195,7 @@ export function toCanonical(app: Row): CanonicalApplication {
       propertyStatus: ["own", "spouse", "none"].includes(elig.propertyStatus) ? elig.propertyStatus : null,
       creditReference: ["asset_finance", "mortgage"].includes(elig.creditReference) ? elig.creditReference : null,
       taxiRideshare: elig.taxiRideshare === true,
+      existingMetroCustomer: typeof elig.existingMetroCustomer === "boolean" ? elig.existingMetroCustomer : null,
     },
     broker: { name: "Blackrock Leasing Pty Ltd trading as AssetMX", abn: "15 681 267 818", acl: "569484", email: "info@assetmx.com.au" },
     borrower: {

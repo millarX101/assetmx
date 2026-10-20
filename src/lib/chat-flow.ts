@@ -107,6 +107,7 @@ export interface ChatFlowData {
     lenderTrack?: 'drivexpress' | 'metro';
     driveXpressMiss?: string; // why it isn't DriveXpress, when routed to Metro
     creditReference?: 'asset_finance' | 'mortgage'; // Metro's comparable credit reference
+    existingMetroCustomer?: boolean; // current Metro contract (or paid out <6 months), 12 months good history
     westpacExposure?: number; // existing customers: current Westpac EF balances
     primaryProducer?: boolean; // Metro Agri: genuine primary producer, 40 ha+
     goodsFit?: 'yes' | 'unclear' | 'no'; // AI check: asset suits the business
@@ -1039,7 +1040,22 @@ export const CHAT_FLOW: ChatStep[] = [
         const dx = data.eligibility?.driveXpressMiss;
         return outsidePolicy(data, [dx && dx.endsWith('.') ? dx : '', issue].filter(Boolean).join(' '), `Outside DriveXpress (${dx}) and Metro: ${issue}`);
       }
-      return 'metro_credit_ref';
+      // Existing Metro customers: higher limits, and their Metro history is the credit reference
+      if (data.eligibility?.existingMetroCustomer === undefined) return 'metro_existing';
+      return data.eligibility.existingMetroCustomer ? 'metro_intro' : 'metro_credit_ref';
+    },
+  },
+
+  {
+    id: 'metro_existing',
+    messages: ["Does the business have a Metro Finance loan now, or one paid out in the last 6 months, with at least 12 months of on-time repayments?"],
+    inputType: 'select',
+    options: ["Yes", "No"],
+    nextStep: (answer, data) => {
+      const existing = answer.toLowerCase().startsWith('yes');
+      setEligibility(data, existing ? { existingMetroCustomer: true, creditReference: 'asset_finance' } : { existingMetroCustomer: false });
+      // Back through the router: the limits and checks depend on this
+      return 'policy_asset_check';
     },
   },
 
@@ -1895,6 +1911,7 @@ const PROGRESS_MAP: Record<string, number> = {
   'metro_property': 9,
   'metro_credit_ref': 9,
   'metro_agri_check': 9,
+  'metro_existing': 9,
   'eligibility_exposure': 4,
   'metro_intro': 9,
   'show_estimate': 9,

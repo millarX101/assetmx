@@ -234,6 +234,7 @@ export function WestpacPack() {
               <>
                 <Row label="Property position (Metro)" value={elig.propertyStatus === 'own' ? 'In borrower/guarantor name' : elig.propertyStatus === 'spouse' ? "In spouse's name" : elig.propertyStatus === 'none' ? 'Non-property backed' : '-'} />
                 <Row label="Comparable credit reference (Metro)" value={elig.creditReference === 'asset_finance' ? 'Vehicle/equipment loan in last 12 months, paid on time (obtain reference)' : elig.creditReference === 'mortgage' ? '12 months home loan statements (obtain)' : '-'} />
+                {elig.existingMetroCustomer != null && <Row label="Existing Metro customer (12 months good history)" value={elig.existingMetroCustomer ? 'Yes (higher limits; Metro history is the credit reference)' : 'No'} />}
                 {elig.taxiRideshare && <Row label="Use" value="Taxi / rideshare (property-backed)" />}
               </>
             )}

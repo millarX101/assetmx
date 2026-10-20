@@ -143,6 +143,7 @@ const metro: LenderAdapter = {
       assetAgeYears: app.goods.year ? new Date().getFullYear() - app.goods.year : null,
       taxiRideshare: app.route.taxiRideshare,
       whyNotDriveXpress: app.route.driveXpressMiss,
+      existingMetroCustomer12MonthsHistory: app.route.existingMetroCustomer,
       serialOrVin: app.goods.vin || app.goods.serialNumber || null, // assets must be serial numbered
       genuinePrimaryProducer40ha: app.declarations.primaryProducer,
       goodsNormallyUsedByBusiness: app.goods.fitsBusiness,

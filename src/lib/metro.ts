@@ -2,8 +2,8 @@
 // <3.5t; Trucks, Trailers & Wheeled Equipment; Agri). AssetMX's second lender: the chat
 // routes here when a deal is outside Westpac DriveXpress but fits Metro.
 //
-// New Metro customers only (the higher limits for 12-24 months of Metro history are not
-// used). Not encoded, checked by Metro or the team: satisfactory Equifax, goods normally
+// Existing Metro customers (current contract, or paid out in the last 6 months, with 12
+// months of good repayments) get the higher own-property limits. Not encoded, checked by Metro or the team: satisfactory Equifax, goods normally
 // used in the business (the chat runs an AI goods-fit check and flags it), total Metro
 // exposure. Equipment is split by equipmentKind(): yellow goods use the Trucks,
 // Trailers & Wheeled Equipment rules; tools / workshop machinery use Other Equipment.
@@ -24,6 +24,8 @@ export const METRO = {
   } as Record<'A' | 'B' | 'C', Record<PropertyStatus, number>>,
   maxAgeAtEndYears: { A: 12, B: 15, C: 15 },
   minGstMonths: { A: 24, B: 24, C: 60 },
+  // Existing Metro customers: own-property limits with 12 months good history
+  existingCustomerOwnMax: { A: 200000, B: 300000, C: 300000 } as Record<'A' | 'B' | 'C', number>,
   noPropertyMinDepositPct: 30,
   // Other Equipment product: tools of trade, workshop / manufacturing, CNC ...
   otherEquipment: { minLoan: 10000, maxLoan: 100000, maxAgeYears: 3 },
@@ -46,6 +48,7 @@ export function maxMetroLoan(data: ChatFlowData): number {
   const cls = goodsClass(data);
   const status = propertyStatus(data) ?? 'none';
   let max = METRO.maxLoan[cls][status];
+  if (status === 'own' && elig(data).existingMetroCustomer === true) max = METRO.existingCustomerOwnMax[cls];
   if (data.application.asset?.assetType === 'equipment' && cls === 'B') {
     const kind = equipmentKind(data);
     if (kind === 'not_financeable') return 0;
