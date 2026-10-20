@@ -27,6 +27,7 @@ interface ApplicationData {
   assetPrice?: number;
   purchaseReason?: string;
   lenderRoute?: string;
+  goodsFit?: string; // set only when the automatic goods check is not a clear yes
   businessSummary?: string;
   monthlyRepayment?: number;
   indicativeRate?: number;
@@ -152,6 +153,7 @@ const getAdminEmailHtml = (data: ApplicationData): string => {
     ${data.indicativeRate ? row("Indicative rate", `${pct(data.indicativeRate)} p.a.`) : ""}
     ${data.monthlyRepayment ? row("Indicative repayment", `${aud(data.monthlyRepayment)} per month`) : ""}
     ${data.purchaseReason ? row("Reason for purchase", data.purchaseReason) : ""}
+    ${data.goodsFit ? row("Suits the business?", data.goodsFit, true) : ""}
     ${data.businessSummary ? row("Business", data.businessSummary) : ""}
     ${row("Documents", data.documentsUploaded ? "Uploaded in chat" : "None uploaded")}
   </table>

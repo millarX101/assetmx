@@ -31,7 +31,9 @@ export type ChatAction =
   | 'extract_asset'
   | 'extract_licence'
   // Background business check started at ABN confirmation; awaited here. PRE_RENDER.
-  | 'load_business_profile';
+  | 'load_business_profile'
+  // After the purchase reason: AI check that the asset suits the business (flag only)
+  | 'assess_goods';
 
 export interface ChatStep {
   id: string;
@@ -105,6 +107,10 @@ export interface ChatFlowData {
     lenderTrack?: 'drivexpress' | 'metro';
     driveXpressMiss?: string; // why it isn't DriveXpress, when routed to Metro
     creditReference?: 'asset_finance' | 'mortgage'; // Metro's comparable credit reference
+    westpacExposure?: number; // existing customers: current Westpac EF balances
+    primaryProducer?: boolean; // Metro Agri: genuine primary producer, 40 ha+
+    goodsFit?: 'yes' | 'unclear' | 'no'; // AI check: asset suits the business
+    goodsFitNote?: string;
     creditDeclaration?: 'clear' | 'declare';
     creditDetails?: string;
   };
@@ -124,6 +130,11 @@ export interface ChatFlowData {
       gst?: number;
       condition?: string;
       description?: string;
+      accessoriesAmount?: number; // DriveXpress: max 10% of the invoice
+      vin?: string;
+      serialNumber?: string;
+      engineNumber?: string;
+      registration?: string;
     };
     licence?: {
       fullName?: string;
@@ -394,6 +405,11 @@ export function applyExtractedAsset(data: ChatFlowData): ChatFlowData {
   if (extracted.priceIncGst) asset.assetPriceIncGst = extracted.priceIncGst;
   if (extracted.priceExGst) asset.assetPriceExGst = extracted.priceExGst;
   if (extracted.gst) asset.assetGst = extracted.gst;
+  if (extracted.accessoriesAmount) asset.accessoriesAmount = extracted.accessoriesAmount;
+  if (extracted.vin) asset.vin = extracted.vin;
+  if (extracted.serialNumber) asset.serialNumber = extracted.serialNumber;
+  if (extracted.engineNumber) asset.engineNumber = extracted.engineNumber;
+  if (extracted.registration) asset.registration = extracted.registration;
   const condition = normaliseCondition(extracted.condition);
   if (condition) asset.assetCondition = condition;
 
@@ -670,7 +686,20 @@ export const CHAT_FLOW: ChatStep[] = [
     inputType: 'select',
     options: ["Yes", "No"],
     field: 'eligibility.existingWestpacCustomer',
-    nextStep: (answer) => (answer.toLowerCase().startsWith('yes') ? 'eligibility_tax' : 'eligibility_property'),
+    nextStep: (answer) => (answer.toLowerCase().startsWith('yes') ? 'eligibility_exposure' : 'eligibility_property'),
+  },
+
+  {
+    // DriveXpress caps total fast-track balances at $750k for existing customers
+    id: 'eligibility_exposure',
+    messages: ["Roughly how much does the business owe Westpac on equipment or vehicle finance today? Enter 0 if none."],
+    inputType: 'number',
+    placeholder: 'e.g. 120000 or 120k, or 0',
+    validate: (value) => (Number.isFinite(parseAmount(value)) && parseAmount(value) >= 0 ? null : 'Enter an amount, for example 120000 or 120k, or 0.'),
+    nextStep: (answer, data) => {
+      setEligibility(data, { westpacExposure: parseAmount(answer) });
+      return 'eligibility_tax';
+    },
   },
 
   {
@@ -1003,6 +1032,8 @@ export const CHAT_FLOW: ChatStep[] = [
       }
       // Metro needs the property position; existing Westpac customers weren't asked
       if (!propertyStatus(data)) return 'metro_property';
+      // Metro Agri: genuine primary producer farming 40 ha+ (asked only for farm machinery)
+      if (goodsClass(data) === 'C' && data.eligibility?.primaryProducer === undefined) return 'metro_agri_check';
       const issue = metroIssue(data);
       if (issue) {
         const dx = data.eligibility?.driveXpressMiss;
@@ -1021,6 +1052,17 @@ export const CHAT_FLOW: ChatStep[] = [
       const a = answer.toLowerCase();
       const status = a.startsWith('yes') ? 'own' : a.includes('spouse') ? 'spouse' : 'none';
       setEligibility(data, { propertyStatus: status, ownsProperty: status === 'own' });
+      return 'policy_asset_check';
+    },
+  },
+
+  {
+    id: 'metro_agri_check',
+    messages: ["Is the business a primary producer, farming at least 40 hectares?"],
+    inputType: 'select',
+    options: ["Yes", "No"],
+    nextStep: (answer, data) => {
+      setEligibility(data, { primaryProducer: answer.toLowerCase().startsWith('yes') });
       return 'policy_asset_check';
     },
   },
@@ -1319,6 +1361,8 @@ export const CHAT_FLOW: ChatStep[] = [
     id: 'purchase_reason',
     messages: (data) => [`What will ${assetLabel(data)} be used for?`],
     inputType: 'text',
+    // Runs after the answer: does the asset suit the business? Flags only, never blocks
+    action: 'assess_goods',
     placeholder: 'e.g. Replacing an older ute for site work',
     nextStep: (answer, data) => {
       data.purchaseReason = answer.trim();
@@ -1470,7 +1514,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'credit_declaration',
-    messages: ["Any defaults, judgments or bankruptcies against you or the business in the last five years?"],
+    messages: ["Any defaults, judgments or bankruptcies against you, any other director, or the business in the last five years?"],
     inputType: 'select',
     options: ["No, all clear", "Yes, something to declare"],
     // Written from nextStep: the hook coerces eligibility fields to booleans
@@ -1502,7 +1546,8 @@ export const CHAT_FLOW: ChatStep[] = [
       const entityType = data.abnLookup?.entityType?.toLowerCase() || '';
       return entityType.includes('sole_trader') || entityType.includes('sole trader') || entityType.includes('individual');
     },
-    messages: ["Are there other directors or guarantors?"],
+    // Both lenders: every director guarantees the loan
+    messages: ["Every director guarantees the loan. Are there other directors or guarantors?"],
     inputType: 'select',
     options: ["Just me", "Yes, add another"],
     nextStep: (answer) => {
@@ -1852,6 +1897,8 @@ const PROGRESS_MAP: Record<string, number> = {
   'policy_asset_check': 9,
   'metro_property': 9,
   'metro_credit_ref': 9,
+  'metro_agri_check': 9,
+  'eligibility_exposure': 4,
   'metro_intro': 9,
   'show_estimate': 9,
   'save_for_later': 9,

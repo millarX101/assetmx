@@ -42,7 +42,7 @@ const SCHEMAS: Record<Kind, Record<string, unknown>> = {
   quote: {
     type: 'object',
     additionalProperties: false,
-    required: ['found', 'make', 'model', 'year', 'supplierName', 'supplierAbn', 'priceIncGst', 'priceExGst', 'gst', 'condition', 'description', 'notes'],
+    required: ['found', 'make', 'model', 'year', 'supplierName', 'supplierAbn', 'priceIncGst', 'priceExGst', 'gst', 'condition', 'description', 'notes', 'accessoriesAmount', 'vin', 'serialNumber', 'engineNumber', 'registration'],
     properties: {
       found: { type: 'boolean', description: 'true if the document is a vehicle/equipment quote, invoice or contract of sale' },
       make: { type: ['string', 'null'] },
@@ -56,6 +56,11 @@ const SCHEMAS: Record<Kind, Record<string, unknown>> = {
       condition: { anyOf: [{ type: 'string', enum: ['new', 'demo', 'used'] }, { type: 'null' }] },
       description: { type: ['string', 'null'], description: 'One line: year make model, e.g. "2023 Toyota Hilux SR5"' },
       notes: { type: ['string', 'null'], description: 'Anything a credit assessor should know: accessories, trade-in, deposit already paid, odometer' },
+      accessoriesAmount: { type: ['number', 'null'], description: 'Total of aftermarket accessories, modifications and dealer-fitted extras listed separately from the base vehicle/equipment price (e.g. canopy, bull bar, tow bar, tint, racks), inc GST. Exclude on-road costs, registration, stamp duty and warranty. Null if none listed.' },
+      vin: { type: ['string', 'null'], description: 'Vehicle identification number (17 characters) if printed' },
+      serialNumber: { type: ['string', 'null'], description: 'Equipment serial / chassis / PIN number if printed' },
+      engineNumber: { type: ['string', 'null'] },
+      registration: { type: ['string', 'null'], description: 'Registration plate if printed' },
     },
   },
   licence: {

@@ -237,6 +237,10 @@ export function WestpacPack() {
                 {elig.taxiRideshare && <Row label="Use" value="Taxi / rideshare (property-backed)" />}
               </>
             )}
+            {elig.existingWestpacCustomer && (
+              <Row label="Existing Westpac EF balances (stated)" value={elig.westpacExposure != null ? aud(elig.westpacExposure, 0) : '-'} />
+            )}
+            {elig.primaryProducer != null && <Row label="Primary producer, 40 ha+ (Metro Agri)" value={elig.primaryProducer ? 'Yes' : 'No'} />}
             <Row label="Tax and BAS current, no ATO payment plan" value={elig.taxUpToDate === true ? 'Yes (verbal, in the online application)' : elig.taxUpToDate === false ? 'No' : '-'} />
           </tbody></table>
         </Section>
@@ -250,6 +254,25 @@ export function WestpacPack() {
             {app.asset_gst ? <Row label="GST" value={aud(app.asset_gst)} /> : null}
             <Row label="Price inc GST" value={aud(app.asset_price_inc_gst)} />
             <Row label="Reason for purchase" value={app.purchase_reason || <span className="text-red-700">Not provided</span>} />
+            {elig.goodsFit && (
+              <Row label="Suits the business (automatic check)" value={
+                <span className={elig.goodsFit === 'yes' ? '' : elig.goodsFit === 'no' ? 'text-red-700' : 'text-amber-700'}>
+                  {elig.goodsFit === 'yes' ? 'Yes' : elig.goodsFit === 'no' ? 'No: review' : 'Unclear: review'}{elig.goodsFitNote ? ` - ${elig.goodsFitNote}` : ''}
+                </span>
+              } />
+            )}
+            {Number(app.accessories_amount) > 0 && (
+              <Row label="Accessories / modifications" value={
+                <span className={Number(app.accessories_amount) / Number(app.asset_price_inc_gst || 1) > 0.1 ? 'text-red-700' : ''}>
+                  {aud(app.accessories_amount)} ({Math.round((Number(app.accessories_amount) / Number(app.asset_price_inc_gst || 1)) * 100)}% of the invoice; DriveXpress max 10%)
+                </span>
+              } />
+            )}
+            {(app.asset_vin || app.asset_serial_number) ? (
+              <Row label="VIN / serial" value={[app.asset_vin && `VIN ${app.asset_vin}`, app.asset_serial_number && `Serial ${app.asset_serial_number}`, app.asset_engine_number && `Engine ${app.asset_engine_number}`, app.asset_registration && `Rego ${app.asset_registration}`].filter(Boolean).join(' · ')} />
+            ) : (
+              <Row label="VIN / serial" value={<span className="text-amber-700">Not on the invoice: obtain before settlement{elig.lenderTrack === 'metro' ? ' (Metro: assets must be serial numbered)' : ''}</span>} />
+            )}
             {app.business_use_percentage ? <Row label="Business use" value={`${app.business_use_percentage}%`} /> : null}
           </tbody></table>
         </Section>

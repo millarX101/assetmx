@@ -494,6 +494,11 @@ export function useChatApplication() {
                 gst: typeof f.gst === 'number' ? f.gst : undefined,
                 condition: (f.condition as string) || undefined,
                 description: (f.description as string) || undefined,
+                accessoriesAmount: typeof f.accessoriesAmount === 'number' ? f.accessoriesAmount : undefined,
+                vin: (f.vin as string) || undefined,
+                serialNumber: (f.serialNumber as string) || undefined,
+                engineNumber: (f.engineNumber as string) || undefined,
+                registration: (f.registration as string) || undefined,
               },
             };
           }
@@ -525,6 +530,37 @@ export function useChatApplication() {
               // leave extracted unset; the flow asks the missing fields
             }
           }
+        }
+        break;
+      }
+
+      case 'assess_goods': {
+        // Does the asset suit the business? Flag for the team only; never blocks.
+        const supabaseUrl = getSupabaseUrl();
+        const anonKey = getSupabaseAnonKey();
+        if (!supabaseUrl || !anonKey) break;
+        const a = flowData.application.asset;
+        const bp = flowData.businessProfile;
+        try {
+          const res = await fetch(`${supabaseUrl}/functions/v1/goods-fit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+            body: JSON.stringify({
+              businessName: flowData.abnLookup?.entityName,
+              businessDescription: bp?.corrections || bp?.description || bp?.profile?.description || bp?.profile?.summary,
+              industry: bp?.profile?.industry,
+              asset: [a?.assetYear, a?.assetMake, a?.assetModel].filter(Boolean).join(' ') || a?.assetDescription,
+              assetType: a?.assetType,
+              purpose: userInput || flowData.purchaseReason,
+            }),
+            signal: AbortSignal.timeout(10000),
+          });
+          const r = await res.json();
+          if (r?.fit) {
+            updatedData.eligibility = { ...(updatedData.eligibility || {}), goodsFit: r.fit, goodsFitNote: r.note || '' };
+          }
+        } catch {
+          // Unavailable: the team checks by hand
         }
         break;
       }
@@ -894,6 +930,12 @@ export function useChatApplication() {
             // Asset details
             asset_type: asset?.assetType || 'vehicle',
             asset_category: (asset as { assetCategory?: string } | undefined)?.assetCategory || null,
+            // From the invoice: DriveXpress accessories cap; identifiers Metro needs
+            accessories_amount: (asset as { accessoriesAmount?: number } | undefined)?.accessoriesAmount ?? null,
+            asset_vin: (asset as { vin?: string } | undefined)?.vin || null,
+            asset_serial_number: (asset as { serialNumber?: string } | undefined)?.serialNumber || null,
+            asset_engine_number: (asset as { engineNumber?: string } | undefined)?.engineNumber || null,
+            asset_registration: (asset as { registration?: string } | undefined)?.registration || null,
             asset_condition: asset?.assetCondition || 'new',
             asset_year: asset?.assetYear || null,
             asset_make: asset?.assetMake || '',
@@ -1037,6 +1079,10 @@ export function useChatApplication() {
               indicativeRate: quote?.indicativeRate || 0,
               documentsUploaded: flowData.documentsUploaded || false,
               purchaseReason: flowData.purchaseReason || '',
+              goodsFit:
+                flowData.eligibility?.goodsFit && flowData.eligibility.goodsFit !== 'yes'
+                  ? `${flowData.eligibility.goodsFit === 'no' ? 'No' : 'Unclear'}: ${flowData.eligibility.goodsFitNote || 'review'}`
+                  : '',
               lenderRoute:
                 flowData.eligibility?.lenderTrack === 'metro'
                   ? `Metro Finance streamlined (${flowData.eligibility?.driveXpressMiss || 'outside DriveXpress'})`

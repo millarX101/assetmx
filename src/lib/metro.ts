@@ -4,12 +4,12 @@
 //
 // New Metro customers only (the higher limits for 12-24 months of Metro history are not
 // used). Not encoded, checked by Metro or the team: satisfactory Equifax, goods normally
-// used in the business, serial numbers, total Metro exposure, Agri's genuine primary
-// producer / 40 ha minimum, and the Other Equipment product's narrower asset list
-// (equipment is assessed under the Trucks, Trailers & Wheeled Equipment rules here).
+// used in the business (the chat runs an AI goods-fit check and flags it), total Metro
+// exposure. Equipment is split by equipmentKind(): yellow goods use the Trucks,
+// Trailers & Wheeled Equipment rules; tools / workshop machinery use Other Equipment.
 
 import type { ChatFlowData } from './chat-flow';
-import { goodsClass } from './drivexpress';
+import { goodsClass, equipmentKind } from './drivexpress';
 
 export type PropertyStatus = 'own' | 'spouse' | 'none';
 
@@ -25,6 +25,8 @@ export const METRO = {
   maxAgeAtEndYears: { A: 12, B: 15, C: 15 },
   minGstMonths: { A: 24, B: 24, C: 60 },
   noPropertyMinDepositPct: 30,
+  // Other Equipment product: tools of trade, workshop / manufacturing, CNC ...
+  otherEquipment: { minLoan: 10000, maxLoan: 100000, maxAgeYears: 3 },
   mortgageReferenceMaxLoan: 100000, // home loan statements instead of an asset finance reference
 };
 
@@ -44,6 +46,12 @@ export function maxMetroLoan(data: ChatFlowData): number {
   const cls = goodsClass(data);
   const status = propertyStatus(data) ?? 'none';
   let max = METRO.maxLoan[cls][status];
+  if (data.application.asset?.assetType === 'equipment' && cls === 'B') {
+    const kind = equipmentKind(data);
+    if (kind === 'not_financeable') return 0;
+    // Other Equipment: property in own name only, up to $100k
+    if (kind === 'other_equipment') max = status === 'own' ? METRO.otherEquipment.maxLoan : 0;
+  }
   // Non-property is motor vehicles only (cars, light commercials, trucks), not equipment
   if (status === 'none' && data.application.asset?.assetType === 'equipment') max = 0;
   if (elig(data).creditReference === 'mortgage') max = Math.min(max, METRO.mortgageReferenceMaxLoan);
@@ -56,13 +64,26 @@ export function metroIssue(data: ChatFlowData): string | null {
   const status = propertyStatus(data) ?? 'none';
   const asset = data.application.asset as Record<string, unknown> | undefined;
 
+  const kind = asset?.assetType === 'equipment' && cls === 'B' ? equipmentKind(data) : null;
+  if (kind === 'not_financeable') return 'Our lenders do not fund fit-outs, furniture, IT or similar equipment online.';
+  if (cls === 'C' && elig(data).primaryProducer === false) {
+    return 'For farm machinery, Metro Finance needs a genuine primary producer farming at least 40 hectares.';
+  }
   if (monthsSince(data.abnLookup?.gstRegisteredDate) < METRO.minGstMonths[cls]) {
     return `Metro Finance needs GST registration for at least ${METRO.minGstMonths[cls] / 12} years.`;
   }
   if (maxMetroLoan(data) === 0) {
+    if (kind === 'other_equipment') return 'For this type of equipment, Metro Finance needs property in your own name.';
     return status === 'none'
       ? 'Without property, Metro Finance only funds vehicles.'
       : 'For farm machinery, Metro Finance needs property in your own name.';
+  }
+  if (kind === 'other_equipment') {
+    if (/private/i.test(String(asset?.supplierName ?? ''))) return 'For this type of equipment, Metro Finance needs a recognised supplier, not a private sale.';
+    const year = Number(asset?.assetYear);
+    if (year > 1900 && new Date().getFullYear() - year > METRO.otherEquipment.maxAgeYears) {
+      return `For this type of equipment, Metro Finance funds items up to ${METRO.otherEquipment.maxAgeYears} years old.`;
+    }
   }
   if (status === 'none' && /private/i.test(String(asset?.supplierName ?? ''))) {
     return 'Without property, Metro Finance only funds purchases from a dealer.';

@@ -112,6 +112,8 @@ const westpac: LenderAdapter = {
         statutoryObligationsCurrentNoArrangements: app.declarations.taxUpToDate,
         goodsClass: app.goods.category === "agri" ? "C" : app.goods.assetType === "vehicle" ? "A" : "B",
         assetAgeYears: app.goods.year ? new Date().getFullYear() - app.goods.year : null,
+        accessoriesPercentOfInvoice: app.goods.accessoriesAmount && app.goods.priceIncGst ? Math.round((app.goods.accessoriesAmount / app.goods.priceIncGst) * 1000) / 10 : 0,
+        existingDriveXpressExposure: app.declarations.westpacExposure,
       },
       finance: app.finance,
       declarations: app.declarations,
@@ -141,6 +143,9 @@ const metro: LenderAdapter = {
       assetAgeYears: app.goods.year ? new Date().getFullYear() - app.goods.year : null,
       taxiRideshare: app.route.taxiRideshare,
       whyNotDriveXpress: app.route.driveXpressMiss,
+      serialOrVin: app.goods.vin || app.goods.serialNumber || null, // assets must be serial numbered
+      genuinePrimaryProducer40ha: app.declarations.primaryProducer,
+      goodsNormallyUsedByBusiness: app.goods.fitsBusiness,
     },
     borrower: { ...app.borrower },
     individuals: app.individuals,

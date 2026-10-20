@@ -80,6 +80,12 @@ export interface CanonicalApplication {
     priceIncGst: number | null;
     purposeOfPurchase: string | null;
     businessUsePercent: number | null;
+    accessoriesAmount: number | null; // from the invoice (DriveXpress: max 10%)
+    vin: string | null;
+    serialNumber: string | null;
+    engineNumber: string | null;
+    registration: string | null;
+    fitsBusiness: { result: "yes" | "unclear" | "no" | null; note: string | null }; // AI check, flag only
   };
   finance: {
     product: "chattel_mortgage"; // the only product sold online today
@@ -102,7 +108,9 @@ export interface CanonicalApplication {
     incomeOver75k: boolean | null;
     existingWestpacCustomer: boolean | null;
     taxUpToDate: boolean | null; // tax/BAS lodgements and payments current, no ATO plan
-    restrictedUse: boolean | null; // taxi, rideshare, hire or private import
+    restrictedUse: boolean | null; // hire car or private import
+    westpacExposure: number | null; // existing Westpac customers: current EF balances
+    primaryProducer: boolean | null; // Metro Agri: genuine primary producer, 40 ha+
   };
   businessCheck: {
     status: string | null;
@@ -220,6 +228,12 @@ export function toCanonical(app: Row): CanonicalApplication {
       priceIncGst: num(app.asset_price_inc_gst),
       purposeOfPurchase: str(app.purchase_reason),
       businessUsePercent: num(app.business_use_percentage),
+      accessoriesAmount: num(app.accessories_amount),
+      vin: str(app.asset_vin),
+      serialNumber: str(app.asset_serial_number),
+      engineNumber: str(app.asset_engine_number),
+      registration: str(app.asset_registration),
+      fitsBusiness: { result: ["yes", "unclear", "no"].includes(elig.goodsFit) ? elig.goodsFit : null, note: str(elig.goodsFitNote) },
     },
     finance: {
       product: "chattel_mortgage",
@@ -243,6 +257,8 @@ export function toCanonical(app: Row): CanonicalApplication {
       existingWestpacCustomer: typeof elig.existingWestpacCustomer === "boolean" ? elig.existingWestpacCustomer : null,
       taxUpToDate: typeof elig.taxUpToDate === "boolean" ? elig.taxUpToDate : null,
       restrictedUse: typeof elig.restrictedUse === "boolean" ? elig.restrictedUse : null,
+      westpacExposure: num(elig.westpacExposure),
+      primaryProducer: typeof elig.primaryProducer === "boolean" ? elig.primaryProducer : null,
     },
     businessCheck: {
       status: str(bp.status),
