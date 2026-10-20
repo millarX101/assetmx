@@ -26,6 +26,7 @@ const CACHE_DAYS = 30;
 const MAX_SEARCHES = 8;
 const MAX_FETCHES = 10; // ABN Lookup page + the business's own website pages
 const NOT_FOUND_CACHE_DAYS = 1; // a thin result is retried sooner
+const RUNNING_STALE_MS = 6 * 60 * 1000; // a 'running' row older than this is treated as dead
 
 const str = { anyOf: [{ type: 'string' }, { type: 'null' }] };
 const list = { type: 'array', items: { type: 'string' } };
@@ -83,48 +84,9 @@ Rules:
 - Do not research anyone's private life. People only as named in a business role.
 - Finish with a detailed plain-text findings report, citing the URL for each fact.`;
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-}
-
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  if (!apiKey || !supabaseUrl || !serviceKey || !anonKey) return json({ status: 'failed', error: 'Not configured' }, 500);
-
-  let abn = '';
-  try {
-    abn = String((await req.json())?.abn ?? '').replace(/\D/g, '');
-  } catch {
-    return json({ status: 'failed', error: 'Invalid JSON' }, 400);
-  }
-  if (abn.length !== 11) return json({ status: 'failed', error: 'abn (11 digits) is required' }, 400);
-
-  const db = createClient(supabaseUrl, serviceKey);
-
-  // Cached?
-  const since = new Date(Date.now() - CACHE_DAYS * 864e5).toISOString();
-  const { data: cached } = await db.from('business_profiles').select('*').eq('abn', abn).gte('created_at', since).maybeSingle();
-  const fresh = cached && (cached.status === 'done' || (cached.status === 'not_found' && Date.parse(cached.created_at) > Date.now() - NOT_FOUND_CACHE_DAYS * 864e5));
-  if (cached && fresh) {
-    return json({ status: cached.status, entityName: cached.entity_name, profile: cached.profile, sources: cached.sources, cached: true });
-  }
-
-  // Register check: only research active ABNs
-  const lookupRes = await fetch(`${supabaseUrl}/functions/v1/abn-lookup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', apikey: anonKey, Authorization: `Bearer ${anonKey}` },
-    body: JSON.stringify({ abn }),
-  });
-  const reg = await lookupRes.json().catch(() => ({}));
-  if (!lookupRes.ok || !reg.found || String(reg.abnStatus).toLowerCase() !== 'active') {
-    return json({ status: 'failed', error: 'ABN not active on the register' }, 422);
-  }
-
+/** The slow part (1-3 minutes): runs after the response, via EdgeRuntime.waitUntil. */
+// deno-lint-ignore no-explicit-any
+async function research(abn: string, reg: any, db: ReturnType<typeof createClient>, apiKey: string) {
   const client = new Anthropic({ apiKey });
   const brief =
     `Business to research:\n` +
@@ -201,11 +163,66 @@ Deno.serve(async (req) => {
     await db.from('business_profiles').upsert({
       abn, entity_name: reg.entityName, status, profile, sources: sources.slice(0, 12), model: structured.model, created_at: new Date().toISOString(),
     });
-    return json({ status, entityName: reg.entityName, profile, sources: sources.slice(0, 12) });
+
   } catch (error) {
     if (error instanceof Anthropic.APIError) console.error('Claude API error', error.status, error.message);
     else console.error('business-profile error', error);
     await db.from('business_profiles').upsert({ abn, entity_name: reg.entityName, status: 'failed', created_at: new Date().toISOString() });
-    return json({ status: 'failed' }, 502);
+
   }
+}
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  if (!apiKey || !supabaseUrl || !serviceKey || !anonKey) return json({ status: 'failed', error: 'Not configured' }, 500);
+
+  let abn = '';
+  try {
+    abn = String((await req.json())?.abn ?? '').replace(/\D/g, '');
+  } catch {
+    return json({ status: 'failed', error: 'Invalid JSON' }, 400);
+  }
+  if (abn.length !== 11) return json({ status: 'failed', error: 'abn (11 digits) is required' }, 400);
+
+  const db = createClient(supabaseUrl, serviceKey);
+
+  // Cached?
+  const since = new Date(Date.now() - CACHE_DAYS * 864e5).toISOString();
+  const { data: cached } = await db.from('business_profiles').select('*').eq('abn', abn).gte('created_at', since).maybeSingle();
+  const fresh = cached && (cached.status === 'done' || (cached.status === 'not_found' && Date.parse(cached.created_at) > Date.now() - NOT_FOUND_CACHE_DAYS * 864e5));
+  if (cached && fresh) {
+    return json({ status: cached.status, entityName: cached.entity_name, profile: cached.profile, sources: cached.sources, cached: true });
+  }
+
+  // Already being researched by an earlier call?
+  if (cached?.status === 'running' && Date.parse(cached.created_at) > Date.now() - RUNNING_STALE_MS) {
+    return json({ status: 'running', entityName: cached.entity_name });
+  }
+
+  // Register check: only research active ABNs
+  const lookupRes = await fetch(`${supabaseUrl}/functions/v1/abn-lookup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+    body: JSON.stringify({ abn }),
+  });
+  const reg = await lookupRes.json().catch(() => ({}));
+  if (!lookupRes.ok || !reg.found || String(reg.abnStatus).toLowerCase() !== 'active') {
+    return json({ status: 'failed', error: 'ABN not active on the register' }, 422);
+  }
+
+  // Start the research and answer straight away: it outlives the 150s request limit.
+  // The chat polls this endpoint until the row is done / not_found / failed.
+  await db.from('business_profiles').upsert({ abn, entity_name: reg.entityName, status: 'running', profile: null, sources: null, created_at: new Date().toISOString() });
+  // @ts-expect-error EdgeRuntime is provided by the Supabase edge runtime
+  EdgeRuntime.waitUntil(research(abn, reg, db, apiKey));
+  return json({ status: 'running', entityName: reg.entityName }, 202);
 });
