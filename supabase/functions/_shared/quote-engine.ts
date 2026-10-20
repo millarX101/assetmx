@@ -28,6 +28,9 @@ export function getMaxBalloon(termMonths: number): number {
  * EV and plug-in hybrid offer: 1% p.a. off the lender base rate, through
  * 31 December 2026 (Sydney time). Mirrors src/lib/calculator.ts.
  */
+/** Metro Finance rate = the term rate + 0.65% p.a. Mirrors src/lib/calculator.ts. */
+export const METRO_MARGIN_PCT = 0.65;
+
 export const EV_DISCOUNT_PCT = 1;
 export const EV_DISCOUNT_UNTIL = '2026-12-31';
 const EV_DISCOUNT_ENDS = Date.parse('2027-01-01T00:00:00+11:00');

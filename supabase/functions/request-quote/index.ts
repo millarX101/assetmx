@@ -23,7 +23,7 @@
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY, RESEND_API_KEY, APP_URL.
 
 import { aud, corsHeaders, json, quoteUrl, serviceClient } from "../_shared/quote.ts";
-import { baseRateFor, computeQuote, evDiscountFor, getMaxBalloon } from "../_shared/quote-engine.ts";
+import { baseRateFor, computeQuote, evDiscountFor, getMaxBalloon, METRO_MARGIN_PCT } from "../_shared/quote-engine.ts";
 import { deliverQuote } from "../_shared/quote-send.ts";
 
 const db = serviceClient();
@@ -120,6 +120,8 @@ Deno.serve(async (req) => {
   const feeFinanced = b.fee_financed !== false;
   const source = str(b.source, 20) || "chat";
   const evDiscount = evDiscountFor(b.is_ev === true && assetType === "vehicle");
+  // Metro Finance deals (routed by the chat): term rate + 0.65%
+  const lenderMargin = b.lender === "metro" ? METRO_MARGIN_PCT : 0;
 
   if (!name) return json({ error: "Name is required" }, 400);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "A valid email is required" }, 400);
@@ -145,7 +147,7 @@ Deno.serve(async (req) => {
       termMonths: term,
       balloonPct,
       feeFinanced,
-      ratePct: baseRateFor(term, await termRates()) - evDiscount,
+      ratePct: baseRateFor(term, await termRates()) + lenderMargin - evDiscount,
     });
   } catch (e) {
     return json({ error: (e as Error).message }, 422);

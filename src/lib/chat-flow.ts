@@ -1097,15 +1097,11 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     // Metro deals: no repayment estimate until we have Metro's rate card
     id: 'metro_intro',
-    messages: (data) => [
-      `This one suits our lender Metro Finance, who can fund it ${metroRouteSummary(data)}.`,
-      "We will confirm Metro's rate and repayments with you before anything is signed. A few more questions and you are done.",
-    ],
-    inputType: 'select',
-    options: ["Continue", "Save for later"],
-    // Joined from the deposit question (over the DriveXpress limit): don't re-ask the term
-    nextStep: (answer, data) =>
-      answer.toLowerCase().includes('later') ? 'save_for_later' : Number(data.application.loan?.termMonths) > 0 ? 'deposit_amount' : 'loan_term',
+    // Info only, then the estimate at Metro's rate (term rate + 0.65%)
+    messages: (data) => [`This one suits our lender Metro Finance, who can fund it ${metroRouteSummary(data)}.`],
+    inputType: 'confirm',
+    options: [],
+    nextStep: 'show_estimate',
   },
 
   {
@@ -1122,7 +1118,7 @@ export const CHAT_FLOW: ChatStep[] = [
       }
       const weekly = quote.weeklyRepayment || (quote.monthlyRepayment * 12) / 52;
       return [
-        `Indicative repayment: about ${formatMoney(quote.monthlyRepayment)} per month (${formatMoney(weekly)} per week) at ${quote.indicativeRate.toFixed(2)}% p.a. ${evDiscountFor(data.isEv) ? `(lender base rate less the ${EV_DISCOUNT_PCT}% EV discount)` : 'lender base rate'} over ${termLabel(data)}.`,
+        `Indicative repayment: about ${formatMoney(quote.monthlyRepayment)} per month (${formatMoney(weekly)} per week) at ${quote.indicativeRate.toFixed(2)}% p.a. ${evDiscountFor(data.isEv) ? `(${isMetroTrack(data) ? 'Metro Finance rate' : 'lender base rate'} less the ${EV_DISCOUNT_PCT}% EV discount)` : isMetroTrack(data) ? 'Metro Finance rate' : 'lender base rate'} over ${termLabel(data)}.`,
         `That includes the flat ${formatMoney(PLATFORM_FEE)} AssetMX fee and the ${formatMoney(LENDER_ESTABLISHMENT_FEE)} lender establishment fee financed into the loan.`,
         "Indicative only, not an offer of credit."
       ];
@@ -1136,7 +1132,8 @@ export const CHAT_FLOW: ChatStep[] = [
       if (answer.toLowerCase().includes('later') || answer.toLowerCase().includes('save')) {
         return 'save_for_later';
       }
-      return 'loan_term';
+      // Metro joined at the deposit question (over the DriveXpress limit): term already chosen
+      return Number(data.application.loan?.termMonths) > 0 ? 'deposit_amount' : 'loan_term';
     },
   },
 

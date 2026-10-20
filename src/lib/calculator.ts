@@ -11,6 +11,7 @@ export interface QuoteInput {
   financePlatformFee?: boolean; // true = finance $800 into loan (default), false = pay upfront
   rateOverride?: number; // admin quote builder: a lender-specific rate instead of the term table
   isEv?: boolean; // electric or plug-in hybrid: EV discount while it runs
+  lender?: 'westpac' | 'metro'; // Metro Finance: the term rate plus METRO_MARGIN_PCT
 }
 
 export interface QuoteOutput {
@@ -63,6 +64,9 @@ export const DEFAULT_RATES: Record<number, number> = {
  * EV and plug-in hybrid offer: 1% p.a. off the lender base rate, through
  * 31 December 2026 (Sydney time). Not applied to a manual rate override.
  */
+/** Metro Finance rate = the (Westpac) term rate + 0.65% p.a. (Ben, 20 Oct 2026). */
+export const METRO_MARGIN_PCT = 0.65;
+
 export const EV_DISCOUNT_PCT = 1;
 export const EV_DISCOUNT_UNTIL = '2026-12-31';
 const EV_DISCOUNT_ENDS = Date.parse('2027-01-01T00:00:00+11:00');
@@ -211,7 +215,8 @@ export function calculateQuote(input: QuoteInput): QuoteOutput {
   }
 
   // Term rate, less the EV/PHEV discount while it runs (a manual override is used as given)
-  const indicativeRate = input.rateOverride ?? Math.max(0, getBaseRate(input.termMonths) - evDiscountFor(input.isEv));
+  const lenderMargin = input.lender === 'metro' ? METRO_MARGIN_PCT : 0;
+  const indicativeRate = input.rateOverride ?? Math.max(0, getBaseRate(input.termMonths) + lenderMargin - evDiscountFor(input.isEv));
 
   // Balloon is calculated on the ASSET VALUE (loan amount), not financed amount
   const balloonAmount = input.loanAmount * (input.balloonPercentage / 100);

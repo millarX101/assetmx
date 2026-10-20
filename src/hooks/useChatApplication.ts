@@ -601,11 +601,6 @@ export function useChatApplication() {
       case 'calculate_quote': {
         const asset = flowData.application.asset;
         const loan = flowData.application.loan;
-        // Metro Finance deals: no figures until we have Metro's rate card (the table is Westpac's)
-        if (flowData.eligibility?.lenderTrack === 'metro') {
-          updatedData.quote = undefined;
-          break;
-        }
         if (asset?.assetPriceIncGst) {
           // Use whatever the applicant has actually chosen so far; fall back to the
           // defaults only when the value has not been collected yet.
@@ -621,6 +616,7 @@ export function useChatApplication() {
               termMonths,
               balloonPercentage,
               isEv: flowData.isEv,
+              lender: flowData.eligibility?.lenderTrack === 'metro' ? 'metro' : 'westpac',
             });
             updatedData.quote = {
               monthlyRepayment: quote.monthlyRepayment,
@@ -678,6 +674,7 @@ export function useChatApplication() {
               term_months: loan?.termMonths,
               balloon_pct: loan?.balloonPercentage,
               is_ev: !!flowData.isEv,
+              lender: flowData.eligibility?.lenderTrack === 'metro' ? 'metro' : 'westpac',
               source: 'chat',
             }),
           });
