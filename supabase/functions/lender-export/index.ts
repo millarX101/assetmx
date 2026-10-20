@@ -10,6 +10,7 @@
 import { corsHeaders, json, serviceClient } from "../_shared/quote.ts";
 import { SCHEMA_VERSION, toCanonical } from "../_shared/lender/canonical.ts";
 import { ADAPTERS, listAdapters } from "../_shared/lender/adapters.ts";
+import { withDirectorRequests } from "../_shared/lender/directors.ts";
 
 const db = serviceClient();
 
@@ -43,7 +44,7 @@ Deno.serve(async (req) => {
   const { data: app, error: appError } = await db.from("applications").select("*").eq("id", body.application_id).maybeSingle();
   if (appError || !app) return json({ error: "Application not found" }, 404);
 
-  const payload = adapter.map(toCanonical(app));
+  const payload = adapter.map(toCanonical(await withDirectorRequests(db, app)));
   const record = {
     application_id: app.id,
     lender: adapter.id,

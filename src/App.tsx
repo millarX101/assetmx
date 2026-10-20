@@ -21,6 +21,7 @@ const EquipmentFinance = page(() => import('@/pages/products/EquipmentFinance'),
 const EVLeasing = page(() => import('@/pages/products/EVLeasing'), 'EVLeasing');
 const HowWeCompare = page(() => import('@/pages/HowWeCompare'), 'HowWeCompare');
 const Contact = page(() => import('@/pages/Contact'), 'Contact');
+const DirectorForm = page(() => import('@/pages/DirectorForm'), 'DirectorForm');
 const HowAssetFinanceWorks = page(() => import('@/pages/guides/HowAssetFinanceWorks'), 'HowAssetFinanceWorks');
 const AdvertisedRatesMisleading = page(() => import('@/pages/guides/AdvertisedRatesMisleading'), 'AdvertisedRatesMisleading');
 const BrokerFeesExplained = page(() => import('@/pages/guides/BrokerFeesExplained'), 'BrokerFeesExplained');
@@ -44,6 +45,8 @@ function App() {
           <Route path="/apply" element={<Application />} />
           <Route path="/chat-apply" element={<ChatApply />} />
           <Route path="/q/:token" element={<QuoteView />} />
+          {/* Additional director: own details + privacy consent (link emailed by director-form) */}
+          <Route path="/director/:token" element={<DirectorForm />} />
 
           {/* Legal pages */}
           <Route path="/terms" element={<Terms />} />

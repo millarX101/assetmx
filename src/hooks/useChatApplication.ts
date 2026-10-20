@@ -827,53 +827,38 @@ export function useChatApplication() {
       }
 
       case 'send_director_form': {
-        // Send email to additional director with form link
-        if (!isSupabaseConfigured()) {
-          console.log('Supabase not configured - skipping director form email');
-          break;
-        }
-
+        // Email the additional director a one-time link to add their own details and
+        // privacy consent (edge function director-form). The token joins their details
+        // back to this application (directors[1].requestToken).
         const directorEmail = flowData.application.directors?.directors?.[1]?.email;
+        if (!directorEmail || !isSupabaseConfigured()) break;
         const primaryDirector = flowData.application.directors?.directors?.[0];
-        const business = flowData.application.business;
-        const abnLookup = flowData.abnLookup;
-
-        if (!directorEmail) {
-          console.log('No director email to send to');
-          break;
-        }
-
+        const anonKey = getSupabaseAnonKey();
         try {
-          const supabaseUrl = getSupabaseUrl();
-          const anonKey = getSupabaseAnonKey();
-
-          if (supabaseUrl && anonKey) {
-            const emailData = {
-              type: 'director_form_request',
+          const res = await fetch(`${getSupabaseUrl()}/functions/v1/director-form`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: anonKey ?? '', Authorization: `Bearer ${anonKey ?? ''}` },
+            body: JSON.stringify({
+              action: 'create',
               directorEmail,
-              businessName: business?.entityName || abnLookup?.entityName || '',
-              primaryContactName: `${primaryDirector?.firstName || ''} ${primaryDirector?.lastName || ''}`.trim() || 'The applicant',
+              businessName: flowData.application.business?.entityName || flowData.abnLookup?.entityName || '',
+              primaryContactName: `${primaryDirector?.firstName || ''} ${primaryDirector?.lastName || ''}`.trim() || 'A director',
               primaryContactEmail: primaryDirector?.email || '',
-            };
-
-            const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-application-emails`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'apikey': anonKey,
-                'Authorization': `Bearer ${anonKey}`,
-              },
-              body: JSON.stringify(emailData),
-            });
-
-            if (!emailResponse.ok) {
-              console.error('Failed to send director form email:', emailResponse.status);
-            } else {
-              console.log('Director form email sent successfully to:', directorEmail);
-            }
+            }),
+          });
+          const r = await res.json().catch(() => ({}));
+          if (r.token) {
+            const directors = [...(updatedData.application.directors?.directors || [])];
+            directors[1] = { ...(directors[1] || {}), requestToken: r.token } as (typeof directors)[number];
+            updatedData.application = {
+              ...updatedData.application,
+              directors: { ...(updatedData.application.directors || { primaryContactIndex: 0 }), directors },
+            } as typeof updatedData.application;
+          } else {
+            console.error('Director form request failed:', r.error);
           }
-        } catch (emailError) {
-          console.error('Director form email error:', emailError);
+        } catch (err) {
+          console.error('Director form request error:', err);
         }
         break;
       }
@@ -991,6 +976,8 @@ export function useChatApplication() {
                 licenceNumber: d.licenceNumber,
                 licenceState: d.licenceState,
                 licenceExpiry: d.licenceExpiry,
+                // Additional directors complete their own details online (director_requests)
+                requestToken: (d as { requestToken?: string }).requestToken,
                 // Address duration
                 addressYearsMonths: d.addressYearsMonths,
                 addressMonths: d.addressMonths,

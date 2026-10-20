@@ -16,6 +16,7 @@ import { PDFArray, PDFDocument, PDFName, decodePDFRawStream } from 'npm:pdf-lib@
 import { XMLBuilder, XMLParser } from 'npm:fast-xml-parser@4.5.0';
 import { corsHeaders, json, serviceClient } from '../_shared/quote.ts';
 import { toCanonical, type CanonicalApplication } from '../_shared/lender/canonical.ts';
+import { withDirectorRequests } from '../_shared/lender/directors.ts';
 
 const db = serviceClient();
 const FORM_PATH = 'westpac-simple-plus.pdf';
@@ -132,7 +133,7 @@ Deno.serve(async (req) => {
 
   const { data: row } = await db.from('applications').select('*').eq('id', body.application_id).maybeSingle();
   if (!row) return json({ error: 'Application not found' }, 404);
-  const app = toCanonical(row);
+  const app = toCanonical(await withDirectorRequests(db, row));
 
   const { data: blank, error: dlError } = await db.storage.from('lender-forms').download(FORM_PATH);
   if (dlError || !blank) return json({ error: 'Blank SIMPLE+ form not found in lender-forms storage' }, 500);

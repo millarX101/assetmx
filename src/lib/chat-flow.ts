@@ -1573,7 +1573,7 @@ export const CHAT_FLOW: ChatStep[] = [
 
   {
     id: 'additional_director_email_request',
-    messages: ["Their email. We will send them a short form to complete."],
+    messages: ["Their email? We will send them a link to add their own details and consent. It takes them about two minutes."],
     inputType: 'email',
     field: 'directors.directors.1.email',
     placeholder: "their@email.com",
@@ -1584,8 +1584,8 @@ export const CHAT_FLOW: ChatStep[] = [
   {
     id: 'additional_director_email_sent',
     messages: [
-      "Sent. They will get an email with a link to complete their details.",
-      "We can keep going, and I will let you know when they are done."
+      "Sent. They will get an email with a link to add their details.",
+      "We can keep going. Their details join your application when they finish."
     ],
     inputType: 'confirm',
     options: [],

@@ -68,6 +68,28 @@ function Check({ ok, warn, label, note }: { ok: boolean; warn?: boolean; label: 
   );
 }
 
+/** Joins additional directors' own submissions (director_requests) in by requestToken. */
+async function withDirectorRequests(app: App): Promise<App> {
+  const list: App[] = Array.isArray(app.directors) ? app.directors : app.directors?.directors || [];
+  const tokens = list.map((d) => d.requestToken).filter(Boolean);
+  if (!tokens.length) return app;
+  const { data } = await (supabase.from('director_requests') as any).select('token, status, details, consent_at, consent_text').in('token', tokens);
+  const byToken = new Map(((data as App[]) || []).map((r) => [r.token, r]));
+  const merged = list.map((d) => {
+    const r = d.requestToken ? byToken.get(d.requestToken) : null;
+    if (!r) return d;
+    if (r.status !== 'completed' || !r.details) return { ...d, directorRequestStatus: r.status };
+    const x = r.details;
+    return {
+      ...d, firstName: x.firstName, lastName: x.lastName, dateOfBirth: x.dateOfBirth, address: x.residentialAddress,
+      addressMonths: x.addressMonths, phone: x.mobile, licenceNumber: x.licenceNumber, licenceState: x.licenceState,
+      licenceExpiry: x.licenceExpiry, creditDeclaration: x.creditDeclaration, creditDetails: x.creditDetails,
+      privacyConsentAt: r.consent_at, directorRequestStatus: 'completed',
+    };
+  });
+  return { ...app, directors: Array.isArray(app.directors) ? merged : { ...app.directors, directors: merged } };
+}
+
 export function WestpacPack() {
   const { id } = useParams();
   const [app, setApp] = useState<App | null>(null);
@@ -81,7 +103,7 @@ export function WestpacPack() {
       .single()
       .then(({ data, error: e }: { data: App | null; error: { message: string } | null }) => {
         if (e || !data) setError(e?.message || 'Application not found');
-        else setApp(data);
+        else void withDirectorRequests(data).then(setApp);
       });
   }, [id]);
 
@@ -100,7 +122,10 @@ export function WestpacPack() {
   const clientOk = !!(primaryName && primary.dateOfBirth && primary.address && background);
   const goodsOk = !!(goods !== '-' && app.purchase_reason);
   const abnOk = abnMonths >= 24 && !!app.gst_registered && String(app.abn_status || 'Active').toLowerCase() === 'active';
-  const consentOk = !!app.privacy_consent_at && directors.length <= 1;
+  // Applicant consents in the chat; additional directors through their own link
+  const others = directors.filter((_, i) => i !== (app.primary_contact_index || 0));
+  const othersConsented = others.filter((d) => d.privacyConsentAt).length;
+  const consentOk = !!app.privacy_consent_at && othersConsented === others.length;
 
   return (
     <div className="min-h-screen bg-neutral-100 print:bg-white">
@@ -143,8 +168,12 @@ export function WestpacPack() {
               note={goodsOk ? undefined : `Missing: ${[goods === '-' && 'goods description', !app.purchase_reason && 'reason for purchase'].filter(Boolean).join(', ')}`} />
             <Check ok={abnOk} label="ABN for 2 years and GST registered"
               note={`ABN registered ${auDate(app.abn_registered_date)} (${Math.floor(abnMonths / 12)} years ${abnMonths % 12} months); ${app.gst_registered ? 'GST registered' : 'NOT GST registered'}`} />
-            <Check ok={consentOk} warn={!!app.privacy_consent_at && directors.length > 1} label="Privacy consent from all individuals"
-              note={!app.privacy_consent_at ? 'No consent record on this application' : directors.length > 1 ? `Applicant consented ${auDateTime(app.privacy_consent_at)}. Other directors/guarantors: consent still to be collected.` : `Consented ${auDateTime(app.privacy_consent_at)}`} />
+            <Check ok={consentOk} warn={!!app.privacy_consent_at && !consentOk} label="Privacy consent from all individuals"
+              note={!app.privacy_consent_at
+                ? 'No consent record on this application'
+                : others.length === 0
+                  ? `Consented ${auDateTime(app.privacy_consent_at)}`
+                  : `Applicant consented ${auDateTime(app.privacy_consent_at)}. Other directors: ${othersConsented} of ${others.length} consented online${othersConsented < others.length ? ' (link sent; waiting)' : ''}.`} />
           </ul>
         </section>
 
@@ -215,9 +244,17 @@ export function WestpacPack() {
                     <Row label="Driver licence" value={d.licenceNumber ? `${d.licenceNumber}${d.licenceState ? ` (${d.licenceState})` : ''}${d.licenceExpiry ? `, expires ${auDate(d.licenceExpiry)}` : ''}` : '-'} />
                     <Row label="Mobile" value={d.phone} />
                     <Row label="Email" value={d.email} />
+                    {i !== (app.primary_contact_index || 0) && (
+                      <>
+                        <Row label="Credit declaration" value={d.creditDeclaration === 'declare' ? <span className="text-red-700">Declared: {d.creditDetails || 'no details'}</span> : d.creditDeclaration === 'clear' ? 'None declared' : '-'} />
+                        <Row label="Privacy consent" value={d.privacyConsentAt ? `Consented online ${auDateTime(d.privacyConsentAt)}` : <span className="text-red-700">Not yet</span>} />
+                      </>
+                    )}
                   </tbody></table>
                 ) : (
-                  <p className="text-red-700">Details and privacy consent still to be collected{d.email ? ` (email: ${d.email})` : ''}.</p>
+                  <p className="text-red-700">
+                    {d.directorRequestStatus === 'pending' ? 'Link sent; waiting for this director to add their details and consent' : 'Details and privacy consent still to be collected'}{d.email ? ` (email: ${d.email})` : ''}.
+                  </p>
                 )}
               </div>
             );

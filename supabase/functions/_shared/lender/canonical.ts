@@ -28,7 +28,10 @@ export interface Individual {
   previousAddress: string | null;
   driverLicence: { number: string | null; state: string | null; expiry: string | null };
   privacyConsent: { given: boolean; at: string | null; wording: string | null; method: string | null };
+  creditHistory: "clear" | "declared" | null; // additional directors answer for themselves
+  creditHistoryDetails: string | null;
   detailsComplete: boolean;
+  detailsSource: "applicant" | "director_online" | "pending" | "not_requested";
 }
 
 export interface CanonicalApplication {
@@ -157,8 +160,11 @@ export function toCanonical(app: Row): CanonicalApplication {
 
   const individuals: Individual[] = directors.map((d, i) => {
     const isPrimary = i === primaryIndex;
-    // The online consent record covers the applicant only; others consent separately
-    const consentGiven = isPrimary && !!app.privacy_consent_at;
+    // The applicant consents in the chat; additional directors via their own link
+    // (joined in by withDirectorRequests: privacyConsentAt / privacyConsentText)
+    const consentAt = isPrimary ? app.privacy_consent_at : d.privacyConsentAt;
+    const consentWording = isPrimary ? app.privacy_consent_text : d.privacyConsentText;
+    const consentGiven = !!consentAt;
     return {
       role: "director_guarantor",
       isPrimaryContact: isPrimary,
@@ -173,11 +179,16 @@ export function toCanonical(app: Row): CanonicalApplication {
       driverLicence: { number: str(d.licenceNumber), state: str(d.licenceState), expiry: str(d.licenceExpiry) },
       privacyConsent: {
         given: consentGiven,
-        at: consentGiven ? app.privacy_consent_at : null,
-        wording: consentGiven ? str(app.privacy_consent_text) : null,
-        method: consentGiven ? "online_application_i_agree" : null,
+        at: consentGiven ? consentAt : null,
+        wording: consentGiven ? str(consentWording) : null,
+        method: consentGiven ? (isPrimary ? "online_application_i_agree" : "director_link_i_agree") : null,
       },
+      creditHistory: isPrimary
+        ? (elig.creditDeclaration === "clear" ? "clear" : elig.creditDeclaration === "declare" ? "declared" : null)
+        : (d.creditDeclaration === "clear" ? "clear" : d.creditDeclaration === "declare" ? "declared" : null),
+      creditHistoryDetails: isPrimary ? str(elig.creditDetails) : str(d.creditDetails),
       detailsComplete: !!(d.firstName && d.lastName && d.dateOfBirth && d.address),
+      detailsSource: isPrimary ? "applicant" : d.directorRequestStatus === "completed" ? "director_online" : d.requestToken ? "pending" : "not_requested",
     };
   });
 
